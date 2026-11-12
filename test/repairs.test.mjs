@@ -10,6 +10,8 @@ import { generateTown, generateWilderness } from '../src/local.js';
 import { mapHtml } from '../src/render.js';
 import { noise01 } from '../src/rng.js';
 import { TUNE } from '../src/tuning.js';
+import { pickMany, sayNPC } from '../src/people.js';
+import { BUILDING_POOLS, TOPIC_FALLBACKS } from '../src/content/pools.js';
 
 const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/\n$/, '').split('\n');
 const STORY_DONE = 'The story is done. (LOAD <password> to continue elsewhere.)';
@@ -220,4 +222,31 @@ test('D3: a burned town keeps one Survivor, standing at its first burned buildin
     say('EXIT');
   }
   assert.ok(withSurvivor > 60);
+});
+
+// Split what a command logged into replies: each starts at a "Name (TOPIC):" tag.
+const afterTag = (lines) => { const i = lines.findIndex((l) => /^[A-Z][A-Za-z ]* \([A-Z]+\):$/.test(l)); assert.ok(i >= 0, 'a name tag was logged'); return lines.slice(i + 1).filter((l) => !l.startsWith('(A gesture: ')); };
+
+test('D4: a speaker never falls silent, and never says one line twice in a reply', () => {
+  bootModules('talk-1');
+  const t = nearest((x, y) => isTownAt(x, y) && generateTown(x, y, false).map[2][2] === 'I');
+  walkTo(t.x, t.y); say('ENTER'); localTo(2, 2);
+  for (let i = 1; i <= 6; i++) {
+    const said = afterTag(say('TALK'));
+    assert.ok(said.length >= 3, `TALK ${i}: an opener, a line and a close (got ${said.length})`);
+    assert.equal(new Set(said).size, said.length, `TALK ${i}: no line twice`);
+  }
+  for (const topic of ['ROAD', 'ROAD', 'DOG', 'DOG', 'ROAD', 'DOG']) {
+    const said = afterTag(say('ASK ' + topic));
+    assert.ok(said.length >= 1, `ASK ${topic}: at least one line`);
+    assert.equal(new Set(said).size, said.length, `ASK ${topic}: no line twice`);
+  }
+
+  // the picker itself: a pool smaller than the window still answers, oldest line first
+  const pool = [{ t: 'one', v: [0, 0, 0, 0, 0] }, { t: 'two', v: [0, 0, 0, 0, 0] }];
+  G.recentFragments = ['two', 'x', 'one', 'y'];
+  assert.deepEqual(pickMany(pool, [0, 0, 0, 0, 0], 1), ['two'], 'the line shown longest ago');
+  G.recentFragments = ['one', 'two'];
+  assert.deepEqual(pickMany(pool, [0, 0, 0, 0, 0], 3), ['one', 'two'], 'a pool of two gives two lines, not a repeat');
+  assert.deepEqual(pickMany([], [0, 0, 0, 0, 0], 2), []);
 });
