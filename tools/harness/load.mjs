@@ -12,7 +12,7 @@
 //
 // With a seed the page is opened as ...?seed=<seed>, and Math.random and
 // Date.now are replaced by functions that throw, so a run cannot be anything
-// but deterministic.
+// but deterministic. With debug: true the page is opened with &debug=1.
 
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -69,7 +69,7 @@ function lineOf(p) {
 }
 
 export function load(htmlPath, opts = {}) {
-  const { seed = null, search = null } = opts;
+  const { seed = null, search = null, debug = false } = opts;
   const html = fs.readFileSync(htmlPath, 'utf8');
   const src = extractScript(html);
 
@@ -91,7 +91,7 @@ export function load(htmlPath, opts = {}) {
     mathObj.random = () => { throw new Error('Math.random() called in a seeded run'); };
     dateObj = class GuardedDate { static now() { throw new Error('Date.now() called in a seeded run'); } };
   }
-  const query = search !== null ? search : (seed !== null ? `?seed=${encodeURIComponent(seed)}` : '');
+  const query = search !== null ? search : (seed !== null ? `?seed=${encodeURIComponent(seed)}${debug ? '&debug=1' : ''}` : (debug ? '?debug=1' : ''));
 
   const sandbox = {
     document,
@@ -164,8 +164,8 @@ export function load(htmlPath, opts = {}) {
 }
 
 // Play a list of commands from a fresh load and return everything a test compares.
-export function play(htmlPath, seed, commands) {
-  const game = load(htmlPath, { seed });
+export function play(htmlPath, seed, commands, opts = {}) {
+  const game = load(htmlPath, { seed, debug: !!opts.debug });
   for (const c of commands) game.cmd(c);
   return {
     log: game.logs.slice(),

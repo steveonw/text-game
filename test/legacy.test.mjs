@@ -1,4 +1,6 @@
-// M0 baseline: pins the behaviour of legacy/quiet-roads-v13.html, defects included.
+// The v13 baseline: pins the behaviour of legacy/quiet-roads-v13.html, defects
+// included, against test/golden-v13/. Those files were recorded in M0 and frozen
+// in M2; they are never re-recorded.
 //
 // Nothing here says the behaviour is right. It says the behaviour is known, so
 // that later steps change it on purpose and can show exactly what changed.
@@ -9,10 +11,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { load, SNAPSHOT_EXPR } from '../tools/harness/load.mjs';
-import { ROOT, LEGACY, LEGACY_SHA256, COMPARED_FIELDS, readTranscripts, readWorldHashes, readLegacyCodes, replay, worldSignature } from '../tools/harness/golden.mjs';
+import { ROOT, LEGACY, LEGACY_SHA256, GOLDEN_V13, COMPARED_FIELDS, readTranscripts, readWorldHashes, readLegacyCodes, replay, worldSignature } from '../tools/harness/golden.mjs';
 import { sweepCore, sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 
-const transcripts = readTranscripts();
+const transcripts = readTranscripts(GOLDEN_V13);
 const texts = (t) => t.log.map(([, text]) => text);
 
 test('the legacy file is v13, byte for byte', () => {
@@ -90,7 +92,7 @@ test('transcripts pin the defects M2 will fix', () => {
 });
 
 test('world hashes: terrain, towns, capital and start tile for every sweep seed', () => {
-  const golden = readWorldHashes();
+  const golden = readWorldHashes(GOLDEN_V13);
   const game = load(LEGACY, { seed: 'hash-host' });
   let checked = 0;
   for (let i = 1; i <= SWEEP_SIZE; i++) {
@@ -102,7 +104,7 @@ test('world hashes: terrain, towns, capital and start tile for every sweep seed'
 });
 
 test('legacy save codes load to their recorded state', async (t) => {
-  const { codes } = readLegacyCodes();
+  const { codes } = readLegacyCodes(GOLDEN_V13);
   const formats = new Set(codes.map((c) => c.format));
   for (const f of ['packed-v4', 'packed-v3', 'base32-v2', 'base32-oldest']) assert.ok(formats.has(f), `no code in format ${f}`);
   assert.ok(codes.filter((c) => c.format === 'packed-v4').length >= 10, 'at least 10 SAVE codes');

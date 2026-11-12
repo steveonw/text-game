@@ -1,7 +1,11 @@
-// Reading and replaying the golden files in test/golden/.
+// Reading and replaying the golden files.
 //
-// A transcript is { name, covers, source, seed, commands, log, finalScreen,
+//   test/golden/       the current build: what the game does now
+//   test/golden-v13/   frozen in M2: what v13 did, recorded in M0 and never re-recorded
+//
+// A transcript is { name, covers, source, seed, debug?, commands, log, finalScreen,
 // finalMap, finalMapHash, finalStatus, finalMode, finalPos }:
+//   debug        true when the page is opened with ?debug=1 (DEBUG and BLOCK enabled)
 //   log          every line the game appended, in order, as [cls, text]
 //                (cls "m" = narrator, "" = speech), including lines later erased
 //   finalScreen  the lines still in the log element at the end
@@ -18,19 +22,20 @@ import { play } from './load.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const GOLDEN = path.join(ROOT, 'test', 'golden');
+export const GOLDEN_V13 = path.join(ROOT, 'test', 'golden-v13');
 export const LEGACY = path.join(ROOT, 'legacy', 'quiet-roads-v13.html');
 export const LEGACY_SHA256 = '85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c';
 
-export function readTranscripts() {
-  const dir = path.join(GOLDEN, 'transcripts');
+export function readTranscripts(golden = GOLDEN) {
+  const dir = path.join(golden, 'transcripts');
   return fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
     .map((f) => ({ file: f, ...JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) }));
 }
-export const readWorldHashes = () => JSON.parse(fs.readFileSync(path.join(GOLDEN, 'world-hashes.json'), 'utf8'));
-export const readLegacyCodes = () => JSON.parse(fs.readFileSync(path.join(GOLDEN, 'legacy-codes.json'), 'utf8'));
+export const readWorldHashes = (golden = GOLDEN) => JSON.parse(fs.readFileSync(path.join(golden, 'world-hashes.json'), 'utf8'));
+export const readLegacyCodes = (golden = GOLDEN) => JSON.parse(fs.readFileSync(path.join(golden, 'legacy-codes.json'), 'utf8'));
 
 export function replay(htmlPath, transcript) {
-  const r = play(htmlPath, transcript.seed, transcript.commands);
+  const r = play(htmlPath, transcript.seed, transcript.commands, { debug: !!transcript.debug });
   return {
     log: r.log,
     finalScreen: r.finalScreen,
