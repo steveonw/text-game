@@ -280,3 +280,26 @@ test('D5: every topic is answered from its own lines, never from ROAD', () => {
   const innRoad = texts(BUILDING_POOLS.I.road), townLines = texts(TOPIC_FALLBACKS.town);
   for (const line of afterTag(out)) { assert.ok(townLines.includes(line)); assert.ok(!innRoad.includes(line)); }
 });
+
+// The first step at which v13's war roll comes up for the current seed.
+const warStep = () => { for (let s = TUNE.warAfterStep + 1; s < 400; s++) if (noise01(s, 9001, G.seed ^ 0xBEEF) < TUNE.warChancePerStep) return s; return -1; };
+const warAt = (s) => noise01(s, 9001, G.seed ^ 0xBEEF) < TUNE.warChancePerStep;
+
+test('D10: REST does not skip the clock for the steps it passes', () => {
+  let checked = 0;
+  for (let n = 1; n <= 200 && checked < 5; n++) {
+    bootModules('d10-' + n);
+    const s = warStep();
+    // a seed where the roll succeeds on step s and fails on s+1, so only an every-step clock starts the war
+    if (s < 0 || warAt(s + 1) || !['.', 'F'].includes(finalTileAt(G.player.x, G.player.y))) continue;
+    say('ENTER');
+    while (G.steps < s - 1) say('WAIT');
+    assert.ok(!G.worldEvents.has('war_started'));
+    const out = say('REST');
+    assert.equal(G.steps, s + 1, 'REST still costs two steps');
+    assert.ok(G.worldEvents.has('war_started'), `d10-${n}: war started on step ${s}, inside the rest`);
+    assert.equal(out.filter((l) => l === 'Soldiers begin to appear on the roads.').length, 1);
+    checked++;
+  }
+  assert.equal(checked, 5);
+});

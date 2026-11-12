@@ -1,7 +1,7 @@
 // The parser and every command, and starting a new game.
 
 import { G } from './state.js';
-import { advanceWorldPressure, cabbageIndex, cabbageIsHereWorld, initCabbageRoute } from './clock.js';
+import { advanceWorldPressure, advanceWorldPressureFrom, cabbageIndex, cabbageIsHereWorld, initCabbageRoute } from './clock.js';
 import { BUILDING_POOLS, CABBAGE } from './content/pools.js';
 import { triggerEnding } from './endings.js';
 import { generateTown, generateWilderness } from './local.js';
@@ -307,18 +307,19 @@ export function cmdWait(){
 
 export function cmdRest(){
   if (G.mode!=="LOCAL"){ log("Not here.", "m"); return; }
+  const before = G.steps;
   if (G.local.kind==="TOWN"){
     G.steps += TUNE.restSteps;
     G.player.fatigue = clamp(G.player.fatigue - TUNE.restTownRecovers, 0, 5);
     log("You rest for a while.", "m");
-    advanceWorldPressure();
+    advanceWorldPressureFrom(before + 1); // D10
     render(); return;
   }
   G.steps += TUNE.restSteps;
   G.player.fatigue = clamp(G.player.fatigue - TUNE.restWildRecovers, 0, 5);
   if (noise01(G.steps, 404, G.seed^0xA357) < TUNE.shallowSleepChance) log("Sleep comes shallow. You wake too quickly.", "m");
   else log("You rest. The world does not.", "m");
-  advanceWorldPressure();
+  advanceWorldPressureFrom(before + 1); // D10
   render();
 }
 
@@ -340,9 +341,10 @@ export function cmdRide(){
   log("He complains the whole way.", "m");
   log("You rest.", "m");
 
+  const before = G.steps;
   G.steps += TUNE.rideSteps;
   G.player.fatigue = clamp(G.player.fatigue - TUNE.rideRecovers, 0, 5);
-  advanceWorldPressure();
+  advanceWorldPressureFrom(before + 1); // D10
 
   clearLogSoft();
   log("The wagon stops.", "m");
