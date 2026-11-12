@@ -10,7 +10,7 @@ import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './i
 import { clamp, fnv1a32, noise01 } from './rng.js';
 import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
-import { addDogHint, computeTowns, dogDirectionHint, dogIsNear, dogIsVeryNear, finalTileAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
+import { addDogHint, computeTowns, dogDirectionHint, dogIsNear, dogIsVeryNear, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
 // ---------- Command system ----------
 export function cmdHelp(){
@@ -64,16 +64,26 @@ export function moveWorld(dx,dy){
   render();
 }
 
+// What ENTER opens on a world tile: "TOWN", "WILD" or null.
+// D6: a ruins tile is a town only where a town stands (a burned town, the fallen
+// capital). Natural ruins open as wilderness until M4 gives them a map of their own.
+export function enterKind(x,y){
+  const tile = finalTileAt(x,y);
+  if (tile==="T" || tile==="C" || tile==="!" || (tile==="R" && isTownAt(x,y))) return "TOWN";
+  if (tile==="." || tile==="F" || tile==="R") return "WILD";
+  return null;
+}
+
 export function cmdEnter(){
   if (G.mode!=="WORLD"){ log("You are already inside.", "m"); return; }
-  const tile = finalTileAt(G.player.x, G.player.y);
-  if (tile==="T" || tile==="C" || tile==="!" || tile==="R"){
+  const kind = enterKind(G.player.x, G.player.y);
+  if (kind==="TOWN"){
     G.local = generateTown(G.player.x, G.player.y, false);
     G.mode="LOCAL";
     log("Buildings gather. The road narrows.", "m");
     render(); return;
   }
-  if (tile==="." || tile==="F"){
+  if (kind==="WILD"){
     G.local = generateWilderness(G.player.x, G.player.y);
     G.mode="LOCAL";
     log("The land closes around you.", "m");

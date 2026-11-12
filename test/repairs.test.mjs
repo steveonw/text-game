@@ -85,3 +85,30 @@ test('D17: DEBUG and BLOCK answer only when the page was opened with ?debug=1', 
   assert.deepEqual(say('BLOCK'), ['> BLOCK', 'Someone sets a barricade on the road.']);
   assert.ok(G.worldEvents.has('road_blocked_' + keyForXY(G.player.x, G.player.y)));
 });
+
+test('D6: natural ruins open as wilderness; a burned town and the fallen capital still open as towns', () => {
+  bootModules('ruins-1');
+  const r = nearest((x, y) => isNaturalRuin(x, y));
+  assert.ok(r, 'a natural ruins tile is reachable');
+  walkTo(r.x, r.y);
+  assert.ok(say('LOOK').includes('Old stones. A place avoided.'));
+  const out = say('ENTER');
+  assert.ok(out.includes('The land closes around you.'));
+  assert.ok(!out.includes('Buildings gather. The road narrows.'));
+  assert.equal(G.local.kind, 'WILD');
+  assert.ok(!mapRows().join('').includes('#'), 'no walls');
+  assert.ok(!/[IMSTGw]/.test(mapRows().join('')), 'no buildings and no wagon');
+  say('EXIT');
+
+  // the other two kinds of R are towns
+  const town = G.towns.find((t) => !(t.x === G.capital.x && t.y === G.capital.y));
+  G.worldEvents.add('burned_' + keyForXY(town.x, town.y));
+  G.worldEvents.add('capital_fallen');
+  for (const t of [town, G.capital]) {
+    G.player.x = t.x; G.player.y = t.y;
+    assert.equal(finalTileAt(t.x, t.y), 'R');
+    assert.ok(say('ENTER').includes('Buildings gather. The road narrows.'));
+    assert.equal(G.local.kind, 'TOWN');
+    say('EXIT');
+  }
+});
