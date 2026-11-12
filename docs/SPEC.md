@@ -334,12 +334,15 @@ text-game/
     record-goldens.mjs        records test/golden/ from a build
     sweep.mjs                 seed sweep and CI gates
     bot.mjs                   explorer, homecoming; later tracker, asker, waiter
+    tag-milestones.mjs        tags a step, mN, when its exit report reaches main
   test/
     golden/                   transcripts, world hashes, save codes: the current game
     golden-v13/               the same, recorded from v13 and frozen (M2)
     repairs.test.mjs          one test per repaired defect (M2)
     *.test.mjs                run by node --test
-  .github/workflows/ci.yml    test, sweep, build; publish on tag
+  .github/workflows/
+    ci.yml                    test, sweep, build; publish on tag
+    tag-milestones.yml        runs tools/tag-milestones.mjs on main
 ```
 
 ### Conventions
@@ -350,7 +353,7 @@ text-game/
 - **One state object.** Seed, mode, steps, player, events, memory and found sign live together, so save, load and tests see the same thing.
 - **No clock or dice in logic.** `Math.random` and `Date` appear only in `main.js`, for the initial seed.
 - **The world is frozen.** A golden hash of terrain, towns and capital per sweep seed fails CI if generation drifts.
-- **One branch per step.** `m0-baseline` through `m7-release`, merged by pull request and tagged `m0` through `m7`; `v1.0.0` at the end.
+- **One branch per step.** `m0-baseline` through `m7-release`, merged by pull request with a merge commit. A workflow tags each step, `m0` through `m7`, on that merge commit when the step's exit report reaches `main`. The owner pushes `v1.0.0` at the end.
 
 ### Commands
 

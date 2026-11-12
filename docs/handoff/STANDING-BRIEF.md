@@ -7,7 +7,7 @@ One sheet per major step, M0 to M7, each written to be pasted into a fresh AI co
 1. Start a new session for each step. Paste the standing brief below, then that step's sheet.
 2. Attach the previous step's exit report. M0 needs none.
 3. The session works on the step's branch, opens a pull request and writes its exit report.
-4. You check the pull request against the sheet's acceptance list, merge, and tag.
+4. You check the pull request against the sheet's acceptance list and merge it, with a merge commit. A workflow then tags the step: `mN`, on that merge commit, because `docs/handoff/exits/MN-exit.md` has reached `main`.
 
 A sheet assumes the step before it is merged and tagged. Do not run two steps at once.
 
@@ -66,3 +66,5 @@ npm run record
 4. Anything on the sheet left undone, and why.
 5. Decisions made that the sheet did not cover.
 6. Questions for the owner.
+
+The step is tagged on the merge that first carries this file. Finish the report, the CI result included, before asking for the merge.
