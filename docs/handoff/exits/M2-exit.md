@@ -48,7 +48,7 @@ fresh-trail truth: 40.2% (23934 of 59544)
 
 `npm run browser-check`, Chrome 153: 28 of 28 transcripts in `test/golden` match on the built page, and 27 of 27 in `test/golden-v13` match on the legacy page. No errors, no request beyond the page itself.
 
-CI on pull request 3: see the note at the end of this section, added once it had run.
+CI on pull request 3 passed both jobs: `test` on Node 20 (build, 227 tests, the built file uploaded) and `browser` on Node 22 with GitHub's Chrome. The pull request was merged as `a14bd5d`, and both jobs passed again on `main`.
 
 ### What moved in the sweep, and why
 
@@ -150,7 +150,7 @@ Invariants:
 
 ## 5. Left undone
 
-- **Tag `m2`.** This session cannot push tags. The owner creates it on the merge commit.
+- **Tag `m2`.** This session cannot push tags. The owner creates it on `main`. The M2 merge is `a14bd5d`; the commit after it only adds the CI result to this report, so the game is the same at both.
 - **D5 and D6 are closed only as far as v13's material goes,** as the defect table says ("M2, M5" and "M2, M4"). A Wanderer and a Survivor still speak from the generic pool. Natural ruins have no map of their own.
 - **LOOK on the Survivor's tile does not mention them.** It reads "Burned timbers. A place that won't return." The map draws them as `p`. A line for it would be new text, which M2 may not add. M5 writes the Survivor's lines.
 
