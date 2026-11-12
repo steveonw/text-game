@@ -1,0 +1,4 @@
+# The prototype is kept byte for byte: never convert its line endings.
+legacy/quiet-roads-v13.html -text
+# Goldens are compared as recorded.
+test/golden/** -text
