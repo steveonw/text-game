@@ -143,6 +143,27 @@ Each was reproduced in the headless run unless marked "read", which means found 
 | D18 | The opening sets a deadline, "Find it before the roads change", that the clock never reaches. No ending exists for a dog not found | Nothing follows `capital_fallen` | M4, M6 |
 | D19 | NEW typed inside a town or wilderness map starts the new world but leaves the old local map on screen; TALK there is answered by "Someone". Found while recording M0 | `startNewGame` resets neither `mode` nor `local` | M2 |
 
+### Since v13
+
+Everything above this heading describes v13 and stays true of `legacy/quiet-roads-v13.html`. The built game has moved on as follows.
+
+**M2 (repairs).** D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D17 and D19 are closed, each by a test of that name in `test/repairs.test.mjs`. D5 and D6 are closed as far as v13's own text and maps allow; M5 writes the missing lines and M4 gives ruins their own map. The worlds, the save format and every line of text are unchanged. Measured on the build, with the same seeds:
+
+| Measure | v13 | M2 | Why it moved |
+| --- | --- | --- | --- |
+| Seeds with a reachable dog | 1,992 | 1,992 | The same 8 seeds |
+| "The trail is fresh. ENTER to search." is true | 40.1% (20,494 of 51,152 tiles) | 40.2% (23,934 of 59,544) | D6: natural ruins can now be searched, and the dog can be there |
+| Reachable dog tiles per seed | median 10 | median 12 | D6 |
+| Steps from start to the nearest dog tile | median 4; 90th percentile 9 | median 3; 90th percentile 7 | D6 |
+| Towns where smith and guard both rolled: both drawn | 0 of 2,717 | 2,717 of 2,717 | D2 |
+| Explorer bot: endings over 500 seeds | Reunion 369, Found in Time 94, The Long Way Back 35, none 2 | Reunion 393, Found in Time 85, The Long Way Back 20, none 2 | D6 |
+| Explorer bot: step count at the ending | median 21 | median 18 | D6 |
+| Homecoming bot: endings over 500 seeds | Homecoming 248, Found in Time 180, The Long Way Back 70, none 2 | Homecoming 197, Found in Time 199, The Long Way Back 63, Reunion 39, none 2 | D3. See below |
+
+The two Homecoming rows are not the same bot. v13's earned its reputation by asking an empty field three times, which D3 removed. M2's walks to the nearest town and asks someone who is there; in 39 runs it found no one to ask and ended with Reunion. Played on v13, the honest bot scores Homecoming 181, Found in Time 205, The Long Way Back 78, Reunion 33, none 3.
+
+The search got slightly shorter, not longer: D6 added 3,440 dog tiles in natural ruins. That is v13's signal field doing what it does on more tiles. M3 replaces the field.
+
 ## 4. The logical end: 1.0
 
 1.0 makes the opening line true: one dog on one trail, a clock that ends, and people whose answers are worth the walk. Everything in this section is proposed.
@@ -312,9 +333,11 @@ text-game/
     harness/golden.mjs        reads and replays the golden files
     record-goldens.mjs        records test/golden/ from a build
     sweep.mjs                 seed sweep and CI gates
-    bot.mjs                   explorer, tracker, asker, waiter
+    bot.mjs                   explorer, homecoming; later tracker, asker, waiter
   test/
-    golden/                   transcripts, world hashes, legacy save codes
+    golden/                   transcripts, world hashes, save codes: the current game
+    golden-v13/               the same, recorded from v13 and frozen (M2)
+    repairs.test.mjs          one test per repaired defect (M2)
     *.test.mjs                run by node --test
   .github/workflows/ci.yml    test, sweep, build; publish on tag
 ```
@@ -335,6 +358,7 @@ text-game/
 npm test          # node --test test/
 npm run sweep     # seed sweep: winnability, clue truth, balance
 npm run build     # writes dist/index.html
+npm run record    # builds, then re-records test/golden/ from the build
 ```
 
 ## 6. Roadmap

@@ -53,7 +53,10 @@ If two of them conflict, stop and ask the owner.
 npm test
 npm run sweep
 npm run build
+npm run record
 ```
+
+**Goldens.** `test/golden/` is what the game does now. `npm run record` rewrites it from the build; do that only for a change the sheet asks for, and review every file it moves. `test/golden-v13/` is what v13 did. It is frozen: never re-record it. Its world hashes and save codes still bind the current game.
 
 **Exit report.** Before finishing, write `docs/handoff/exits/MN-exit.md` with:
 
