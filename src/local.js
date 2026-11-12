@@ -56,6 +56,13 @@ export function generateWilderness(tx,ty){
   return { kind:"WILD", tx, ty, size, map, px:4, py:4, dog, npcs };
 }
 
+// D2: every building has its own slot and its own roll, whatever else is missing.
+// In v13 both went by position in the list, so the guard post, fifth, landed on the
+// smithy's corner, and a town rearranged itself when sickness or fire removed a building.
+export const TOWN_BUILDINGS = ["I","M","S","T","G"];
+
+export const TOWN_SLOTS = { "I":[2,2], "M":[6,2], "S":[2,6], "T":[6,6], "G":[7,4] }; // G: the east end of the street
+
 export function generateTown(tx,ty, forceWagon=false){
   const size = LOCAL_SIZE;
   const map = Array.from({length:size}, ()=>Array(size).fill("."));
@@ -73,18 +80,19 @@ export function generateTown(tx,ty, forceWagon=false){
   const plagued = G.worldEvents.has("plague_"+k);
   const burned = G.worldEvents.has("burned_"+k);
 
-  let buildings = ["I","M","S","T","G"];
+  let buildings = TOWN_BUILDINGS.slice();
   if (plagued) buildings = buildings.filter(b=>b!=="M");
   if (burned) buildings = buildings.filter(b=>b!=="I");
 
   // Track NPC positions for rendering
   const npcs = [];
 
-  buildings.forEach((b,i)=>{
+  buildings.forEach((b)=>{
+    const i = TOWN_BUILDINGS.indexOf(b);
     const r = noise01(tx*10+i, ty*10+i, G.seed ^ 0x0B11D);
     if (r > TUNE.buildingAbove){
-      const x = (i%2===0)?2:6;
-      const y = (i<2)?2:6;
+      const x = TOWN_SLOTS[b][0];
+      const y = TOWN_SLOTS[b][1];
       map[y][x] = burned ? "r" : b;
       // NPCs present in non-burned buildings
       if (!burned && b !== "r") {

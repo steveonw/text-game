@@ -8,6 +8,8 @@ import { G } from '../src/state.js';
 import { isTownAt, tileAt, finalTileAt, dogIsVeryNear, keyForXY } from '../src/world.js';
 import { generateTown, generateWilderness } from '../src/local.js';
 import { mapHtml } from '../src/render.js';
+import { noise01 } from '../src/rng.js';
+import { TUNE } from '../src/tuning.js';
 
 const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/\n$/, '').split('\n');
 const STORY_DONE = 'The story is done. (LOAD <password> to continue elsewhere.)';
@@ -111,4 +113,30 @@ test('D6: natural ruins open as wilderness; a burned town and the fallen capital
     assert.equal(G.local.kind, 'TOWN');
     say('EXIT');
   }
+});
+
+test('D2: every town building has its own slot; the guard post no longer overwrites the smithy', () => {
+  const SLOT = { I: [2, 2], M: [6, 2], S: [2, 6], T: [6, 6], G: [7, 4] };
+  const rolled = (t) => 'IMSTG'.split('').filter((b, i) => noise01(t.x * 10 + i, t.y * 10 + i, G.seed ^ 0x0B11D) > TUNE.buildingAbove);
+  let towns = 0, both = 0;
+  for (let n = 1; n <= 300; n++) {
+    bootModules('sweep-' + n);
+    for (const t of G.towns) {
+      towns++;
+      const here = rolled(t), map = generateTown(t.x, t.y, false).map;
+      for (const b of 'IMSTG') {
+        const [x, y] = SLOT[b];
+        assert.equal(map[y][x], here.includes(b) ? b : (b === 'G' ? '|' : '.'), `sweep-${n} town ${t.x},${t.y}: slot of ${b}`);
+      }
+      assert.equal(map.flat().filter((c) => 'IMSTG'.includes(c)).length, here.length, 'no building anywhere else');
+      if (here.includes('S') && here.includes('G')) both++;
+      // sickness removes the market and moves nothing
+      G.worldEvents.add('plague_' + keyForXY(t.x, t.y));
+      const sick = generateTown(t.x, t.y, false).map;
+      for (const b of 'ISTG') { const [x, y] = SLOT[b]; assert.equal(sick[y][x], map[y][x], `sweep-${n}: ${b} stays put in a sick town`); }
+      assert.equal(sick[2][6], '.', 'no market in a sick town');
+      G.worldEvents.delete('plague_' + keyForXY(t.x, t.y));
+    }
+  }
+  assert.ok(towns > 900 && both > 300, `checked ${towns} towns, ${both} with both smith and guard`);
 });
