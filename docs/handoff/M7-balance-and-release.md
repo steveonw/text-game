@@ -48,6 +48,7 @@
 - Trail length and den positions decide where the dog is, so changing them can break M3's gates. Re-run every gate, not only the balance targets.
 - A bot must know nothing a player could not learn from the page. A bot that reads the trail from memory will flatter the numbers.
 - Pages serves the game from a sub-path. The seed in the URL must survive it.
+- The tagging workflow creates `m7`, and a tag pushed by a workflow does not start other workflows. `v1.0.0` has to be pushed by the owner, or the publish job needs a trigger the owner can run by hand.
 - The clock windows in spec 4.8 bound the roads changing to steps 80 to 130. If tuning moves a window, that target moves with it; record the new bounds.
 
 ## Out of scope

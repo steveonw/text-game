@@ -86,7 +86,8 @@ tools/build.mjs               the build
 tools/browser-check.mjs       plays the goldens in a real browser
 tools/harness/                runs a single-file build, or the modules, headlessly
 tools/sweep.mjs  tools/bot.mjs  tools/record-goldens.mjs
-test/                         legacy, modules, bundle, build-rule and repair tests
+tools/tag-milestones.mjs      tags a step, mN, when its exit report reaches main
+test/                         legacy, modules, bundle, build-rule, repair and tagging tests
 test/golden/                  transcripts, world hashes, save codes: the current game
 test/golden-v13/              the same, recorded from v13 and frozen
 docs/SPEC.md                  the spec

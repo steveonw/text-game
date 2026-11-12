@@ -1,0 +1,48 @@
+name: tag milestones
+
+# Creates the tag mN when a step's exit report, docs/handoff/exits/MN-exit.md,
+# reaches main. The tag goes on the merge commit that brought the report in.
+# A tag that exists is never moved. The rules are in tools/tag-milestones.mjs
+# and its tests in test/tag-milestones.test.mjs.
+#
+# It also runs when this file or the tool changes, and by hand from the Actions
+# tab ("Run workflow"). Either way it only fills in tags that are missing.
+#
+# Tags pushed with a workflow's own token do not start other workflows. That is
+# fine for m0 to m7. A release tag such as v1.0.0, which M7 publishes from, has
+# to be pushed by a person.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/handoff/exits/M*-exit.md'
+      - '.github/workflows/tag-milestones.yml'
+      - 'tools/tag-milestones.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tag-milestones
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tag finished steps
+        env:
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: node tools/tag-milestones.mjs --create --push
