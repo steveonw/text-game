@@ -6,7 +6,7 @@ import { BUILDING_POOLS, CABBAGE } from './content/pools.js';
 import { triggerEnding } from './endings.js';
 import { generateTown, generateWilderness } from './local.js';
 import { getNPC, maybeInternal, sayNPC, setNPC } from './people.js';
-import { clearLogSoft, freshSeed, log, render, renderLegend } from './io.js';
+import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './io.js';
 import { clamp, fnv1a32, noise01 } from './rng.js';
 import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
@@ -459,8 +459,9 @@ export function runCommand(raw){
     case "LOAD": { loadPasswordAny(arg); return; }
     case "NEW": return cmdNew(arg);
     case "CLEAR": clearLogSoft(); return;
-    case "DEBUG": return cmdDebug();
-    case "BLOCK": return cmdBlock();
+    // D17: without ?debug=1 these two are unknown words, like any other.
+    case "DEBUG": if (debugOn()) return cmdDebug(); log("Nothing comes of that.", "m"); return;
+    case "BLOCK": if (debugOn()) return cmdBlock(); log("Nothing comes of that.", "m"); return;
     default: log("Nothing comes of that.", "m"); return;
   }
 }

@@ -72,3 +72,16 @@ test('D1: after an ending, NEW starts a game, HELP answers, and LOAD takes the c
   assert.deepEqual(say('LOAD not-a-code').slice(1), ['Invalid password.']);
   assert.equal(G.mode, 'END');
 });
+
+test('D17: DEBUG and BLOCK answer only when the page was opened with ?debug=1', () => {
+  bootModules('debug-1');
+  assert.deepEqual(say('DEBUG'), ['> DEBUG', 'Nothing comes of that.']);
+  assert.deepEqual(say('BLOCK'), ['> BLOCK', 'Nothing comes of that.']);
+  assert.equal([...G.worldEvents].filter((e) => e.startsWith('road_blocked_')).length, 0, 'no road was blocked');
+  assert.deepEqual(say('xyzzy'), ['> xyzzy', 'Nothing comes of that.'], 'the same answer as any unknown word');
+
+  bootModules('debug-1', { debug: true });
+  assert.ok(say('DEBUG').some((l) => l.startsWith('Seed: ')));
+  assert.deepEqual(say('BLOCK'), ['> BLOCK', 'Someone sets a barricade on the road.']);
+  assert.ok(G.worldEvents.has('road_blocked_' + keyForXY(G.player.x, G.player.y)));
+});
