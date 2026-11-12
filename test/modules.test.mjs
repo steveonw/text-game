@@ -2,11 +2,12 @@
 //
 //   test/golden/       what the game does now. Every transcript must replay unchanged.
 //   test/golden-v13/   what v13 did. Two things there still bind the current game:
-//                      the worlds (terrain, towns, capital, start tile) and the save codes.
+//                      the worlds (terrain, towns, capital; the start tile on all but
+//                      ten sweep seeds, see MOVED_YARDS) and the save codes.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COMPARED_FIELDS, GOLDEN, GOLDEN_V13, readTranscripts, readWorldHashes, readLegacyCodes } from '../tools/harness/golden.mjs';
+import { COMPARED_FIELDS, GOLDEN, GOLDEN_V13, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes } from '../tools/harness/golden.mjs';
 import { bootModules, playModules, sendModules, snapshotModules, worldSignatureModules } from '../tools/harness/modules.mjs';
 import { sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 import { G, resetState } from '../src/state.js';
@@ -15,7 +16,7 @@ import { cmdNew } from '../src/commands.js';
 
 test('modules: golden transcripts replay unchanged', async (t) => {
   const transcripts = readTranscripts(GOLDEN);
-  assert.ok(transcripts.length >= 28);
+  assert.ok(transcripts.length >= 29);
   for (const g of transcripts) {
     await t.test(g.name, () => {
       const r = playModules(g.seed, g.commands, { debug: !!g.debug });
@@ -24,11 +25,11 @@ test('modules: golden transcripts replay unchanged', async (t) => {
   }
 });
 
-test('modules: every sweep seed still makes the world v13 made', () => {
+test('modules: every sweep seed still makes the world v13 made, and starts where v13 did on all but ten', () => {
   const v13 = readWorldHashes(GOLDEN_V13);
   for (let i = 1; i <= SWEEP_SIZE; i++) {
     const s = sweepSeed(i);
-    assert.deepEqual(worldSignatureModules(s), v13[s], `world for seed "${s}" changed`);
+    assert.deepEqual(worldSignatureModules(s), expectedWorld(v13[s], s), `world for seed "${s}" changed`);
   }
 });
 

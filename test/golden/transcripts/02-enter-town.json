@@ -71,8 +71,6 @@
     ["m","You notice old tracks crossing the land."],
     ["m","> LOOK"],
     ["m","A town sits where roads gather."],
-    ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> ENTER"],
     ["m","Buildings gather. The road narrows."],
     ["m","> ENTER"],
@@ -151,9 +149,7 @@
     ["m","> EXIT"],
     ["m","Not here."],
     ["m","> LOOK"],
-    ["m","A town sits where roads gather."],
-    ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."]
+    ["m","A town sits where roads gather."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -168,8 +164,6 @@
     ["m","You notice old tracks crossing the land."],
     ["m","> LOOK"],
     ["m","A town sits where roads gather."],
-    ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> ENTER"],
     ["m","Buildings gather. The road narrows."],
     ["m","> ENTER"],
@@ -248,9 +242,7 @@
     ["m","> EXIT"],
     ["m","Not here."],
     ["m","> LOOK"],
-    ["m","A town sits where roads gather."],
-    ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."]
+    ["m","A town sits where roads gather."]
   ],
   "finalMap": [
     ".....R~~~~~~~~~.....",
@@ -272,9 +264,9 @@
     "^^.^......~~...RR^.^",
     "^..^......~~...RR.^.",
     "F.......~~~...RRRFF^",
-    "RRR....~.~~~~~..FRF@"
+    "RRR....~.~~~~~..FR?@"
   ],
-  "finalMapHash": "189d4fd910ba002e",
+  "finalMapHash": "944b856471b7561d",
   "finalStatus": "Fatigue: near-done • Roads: quiet • Steps: 34",
   "finalMode": "WORLD",
   "finalPos": "(19,19) • seed -2024899298"

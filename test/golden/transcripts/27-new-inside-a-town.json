@@ -31,7 +31,7 @@
     ["m","LOOK around. TALK to people (p). ASK about your DOG."],
     ["m","CALL when you're close."],
     ["m","> N"],
-    ["m","Not many footprints."],
+    ["m","Paw prints. Fading."],
     ["m","> N"],
     ["m","> N"],
     ["m","> N"],
@@ -39,11 +39,11 @@
     ["m","> N"],
     ["m","> W"],
     ["m","> W"],
-    ["m","> N"],
     ["m","You're not alone."],
-    ["m","A traveler passes without speaking."],
     ["m","> N"],
     ["m","Animals have been restless. You feel it in the roads."],
+    ["m","A traveler passes without speaking."],
+    ["m","> N"],
     ["m","You feel like you are being watched."],
     ["m","> ENTER"],
     ["m","Buildings gather. The road narrows."],
@@ -61,7 +61,6 @@
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> TALK"],
     ["m","No one to speak with here."],
     ["m","> STATUS"],
@@ -71,8 +70,7 @@
     ["m","Not here."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
-    ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."]
+    ["m","Something moved through here recently."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -86,7 +84,6 @@
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> TALK"],
     ["m","No one to speak with here."],
     ["m","> STATUS"],
@@ -96,8 +93,7 @@
     ["m","Not here."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
-    ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."]
+    ["m","Something moved through here recently."]
   ],
   "finalMap": [
     "..~~~.~FF..........~",

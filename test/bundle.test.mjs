@@ -10,12 +10,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { load, SNAPSHOT_EXPR } from '../tools/harness/load.mjs';
-import { ROOT, LEGACY, GOLDEN, GOLDEN_V13, COMPARED_FIELDS, readTranscripts, readWorldHashes, readLegacyCodes, replay, worldSignature } from '../tools/harness/golden.mjs';
-import { sweepCore, sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
+import { ROOT, LEGACY, GOLDEN, GOLDEN_V13, COMPARED_FIELDS, MOVED_YARDS, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes, replay, worldSignature } from '../tools/harness/golden.mjs';
+import { sweepCore, sweepGates, sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 import { build, DIST, MARKER } from '../tools/build.mjs';
 
 const built = build();
-const SWEEP_PINS = { winnable: 1992, dogTiles: 23934, veryNearWild: 59544 };
+const SWEEP_PINS = { winnable: 2000, dogTiles: 2000, veryNearWild: 2000 };
 const html = fs.readFileSync(DIST, 'utf8');
 
 test('bundle: one file, one script, nothing from outside', () => {
@@ -61,19 +61,25 @@ test('bundle: golden transcripts replay unchanged', async (t) => {
   }
 });
 
-test('bundle: every sweep seed still makes the world v13 made', () => {
+test('bundle: every sweep seed still makes the world v13 made, and starts where v13 did on all but ten', () => {
   const v13 = readWorldHashes(GOLDEN_V13);
   const game = load(DIST, { seed: 'hash-host' });
+  let moved = 0;
   for (let i = 1; i <= SWEEP_SIZE; i++) {
     const s = sweepSeed(i);
-    assert.deepEqual(worldSignature(game, s), v13[s], `world for seed "${s}" changed`);
+    const now = worldSignature(game, s);
+    assert.deepEqual(now, expectedWorld(v13[s], s), `world for seed "${s}" changed`);
+    if (now[1] !== v13[s][1] || now[2] !== v13[s][2]) moved++;
   }
+  assert.equal(moved, Object.keys(MOVED_YARDS).length);
+  assert.equal(moved, 10);
 });
 
-test('goldens: the current world hashes are v13\'s, entry for entry', () => {
+test('goldens: the current world hashes are v13\'s, entry for entry, but for the ten moved yards', () => {
   const now = readWorldHashes(GOLDEN), v13 = readWorldHashes(GOLDEN_V13);
   delete now._source; delete v13._source;
-  assert.deepEqual(now, v13);
+  assert.deepEqual(Object.keys(now), Object.keys(v13));
+  for (const s of Object.keys(v13)) assert.deepEqual(now[s], expectedWorld(v13[s], s), s);
 });
 
 for (const [who, golden] of [['codes made by v13', GOLDEN_V13], ['codes made by the current game', GOLDEN]]) {
@@ -92,15 +98,24 @@ for (const [who, golden] of [['codes made by v13', GOLDEN_V13], ['codes made by 
 }
 
 // The sweep is pinned so that a change to the numbers is a decision, not an accident.
-// v13 measured 1,992 winnable and 20,494 dog tiles on 51,152 very-near searchable
-// tiles (40.1%). D6 made natural ruins searchable: 8,392 more very-near tiles, 3,440
-// of them dog tiles. Nothing else in M2 moves these numbers, and the same 8 seeds
-// stay unwinnable.
-test('bundle: sweep numbers are the ones recorded for M2: 1,992 winnable; fresh-trail truth 40.2%', () => {
+// v13: 1,992 of 2,000 winnable; the fresh-trail line true on 40.1% of the tiles that showed it.
+// M2:  1,992; 40.2%.
+// M3:  2,000; 100%. There is one dog tile per seed and the line is printed nowhere else.
+test('bundle: sweep: every seed can be won and the fresh-trail line is always true', () => {
   const now = sweepCore(DIST, SWEEP_SIZE);
   assert.deepEqual({ winnable: now.winnable, dogTiles: now.dogTiles, veryNearWild: now.veryNearWild }, SWEEP_PINS);
-  assert.equal((100 * now.freshTrailTruth).toFixed(1), '40.2');
-  assert.deepEqual(now.unwinnable, sweepCore(LEGACY, SWEEP_SIZE).unwinnable, 'the unwinnable seeds are v13\'s');
+  assert.deepEqual(now.unwinnable, []);
+  assert.equal(now.freshTrailTruth, 1);
+});
+
+// M3 gates. Any seed that fails one fails the suite; the message names the seed.
+test('bundle: sweep gates: a trail on every seed, its dens and threshold in reach, one dog in every state of the clock', () => {
+  const g = sweepGates(DIST, SWEEP_SIZE);
+  assert.deepEqual(g.failures, []);
+  // Pinned with the sweep: the shape of the trails. M3 acceptance asks for 20 tiles or more on 95% of seeds.
+  assert.ok(g.trail.atLeast20 >= 0.95 * SWEEP_SIZE);
+  assert.deepEqual({ atLeast20: g.trail.atLeast20, min: g.trail.length.min, median: g.trail.length.median, max: g.trail.length.max, onRuins: g.trail.thresholdOnRuins, onOpenGround: g.trail.thresholdOnOpenGround, besideATown: g.trail.passesBesideATown },
+    { atLeast20: 1997, min: 19, median: 31, max: 53, onRuins: 1401, onOpenGround: 599, besideATown: 964 });
 });
 
 // M2 acceptance: in every town where smith and guard both roll, both appear. v13: 0 of 2,717.
