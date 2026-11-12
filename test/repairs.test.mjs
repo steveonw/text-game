@@ -303,3 +303,29 @@ test('D10: REST does not skip the clock for the steps it passes', () => {
   }
   assert.equal(checked, 5);
 });
+
+// Stand at the wagon in the merchant's first stop, having talked to him twice, tired enough to be offered a ride.
+// waits: steps to idle inside the town first, so that his timetable can move on without him.
+function atTheWagon(seed, waits = 0) {
+  bootModules(seed);
+  const stop = G.cabbageRoute[0];
+  G.player.x = stop.x; G.player.y = stop.y;     // at step 0 the timetable has him at his first stop
+  say('ENTER');
+  assert.ok(G.local.wagon, 'the wagon is here');
+  for (let i = 0; i < waits; i++) say('WAIT');
+  G.player.fatigue = 3;
+  assert.ok(localTo(1, 4));
+  return stop;
+}
+
+test('D8: the ride is told on the page, not erased as it is written', () => {
+  atTheWagon('ride-1');
+  say('TALK'); say('TALK');
+  const out = say('RIDE');
+  const told = ['You climb onto the wagon.', 'Cabbages shift beneath the weight.', 'The road becomes a rhythm.', 'He complains the whole way.', 'You rest.'];
+  assert.ok(out.includes('The wagon stops.'), 'the ride happened');
+  const page = screenText();
+  assert.deepEqual(page.slice(0, 5), told, 'the five lines of the ride are on the page');
+  assert.deepEqual(page.slice(-2), ['The wagon stops.', 'Right. Here we are.']);
+  assert.ok(!page.includes('> RIDE'), 'the page was cleared first');
+});

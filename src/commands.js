@@ -335,6 +335,9 @@ export function cmdRide(){
   const next = G.cabbageRoute[(idx+1) % G.cabbageRoute.length];
   if (!next){ log("The route is unclear.", "m"); return; }
 
+  // D8: the page is cleared before the ride is told, not after it. In v13 these
+  // five lines were erased in the same tick they were written.
+  clearLogSoft();
   log("You climb onto the wagon.", "m");
   log("Cabbages shift beneath the weight.", "m");
   log("The road becomes a rhythm.", "m");
@@ -346,7 +349,6 @@ export function cmdRide(){
   G.player.fatigue = clamp(G.player.fatigue - TUNE.rideRecovers, 0, 5);
   advanceWorldPressureFrom(before + 1); // D10
 
-  clearLogSoft();
   log("The wagon stops.", "m");
   log(CABBAGE.afterRide[0], "m");
 
