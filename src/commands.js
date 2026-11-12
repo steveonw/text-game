@@ -464,6 +464,10 @@ export function runCommand(raw){
 
 // ---------- Boot ----------
 export function startNewGame(){
+  // D19: a new game always opens on the world map, wherever NEW was typed.
+  G.mode = "WORLD";
+  G.local = null;
+
   G.worldEvents = new Set();
     resetDogHints();
 G.npcMemory = Object.create(null);
