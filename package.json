@@ -9,10 +9,13 @@
     "node": ">=20"
   },
   "scripts": {
+    "build": "node tools/build.mjs",
     "test": "node --test test/*.test.mjs",
-    "sweep": "node tools/sweep.mjs",
-    "bots": "node tools/bot.mjs",
-    "record": "node tools/record-goldens.mjs",
-    "build": "node -e \"console.log('Nothing to build yet. Play legacy/quiet-roads-v13.html; the one-file build arrives in M1.')\""
+    "browser-check": "node tools/build.mjs && node tools/browser-check.mjs",
+    "sweep": "node tools/build.mjs && node tools/sweep.mjs dist/index.html",
+    "bots": "node tools/build.mjs && node tools/bot.mjs dist/index.html",
+    "sweep:legacy": "node tools/sweep.mjs legacy/quiet-roads-v13.html",
+    "bots:legacy": "node tools/bot.mjs legacy/quiet-roads-v13.html",
+    "record": "node tools/record-goldens.mjs"
   }
 }

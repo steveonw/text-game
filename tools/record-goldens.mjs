@@ -21,7 +21,11 @@ import { LEGACY, SWEEP_SIZE, sweepSeed } from './sweep.mjs';
 import { worldSignature } from './harness/golden.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const GOLDEN = path.join(ROOT, 'test', 'golden');
+// node tools/record-goldens.mjs [htmlPath] [outDir]
+// With no arguments it records from the legacy file into test/golden/, as M0 did.
+const TARGET = process.argv[2] ? path.resolve(process.argv[2]) : LEGACY;
+const SOURCE_LABEL = path.relative(ROOT, TARGET).split(path.sep).join('/');
+const GOLDEN = process.argv[3] ? path.resolve(process.argv[3]) : path.join(ROOT, 'test', 'golden');
 const TRANSCRIPTS = path.join(GOLDEN, 'transcripts');
 
 const PLAN_HELPERS = `
@@ -61,7 +65,7 @@ const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
 class Planner {
   constructor(seed) {
     this.seed = seed;
-    this.game = load(LEGACY, { seed });
+    this.game = load(TARGET, { seed });
     this.game.run(HELPERS);
     this.game.run(PLAN_HELPERS);
     this.commands = [];
@@ -468,7 +472,7 @@ function oldestBase32(game, snap) {
   return game.run(`(function(json){ const body = b32enc(new TextEncoder().encode(json)); return body + chk(body); })(${JSON.stringify(JSON.stringify(st))})`);
 }
 function restore(code) {
-  const game = load(LEGACY, { seed: 'codes-host' });
+  const game = load(TARGET, { seed: 'codes-host' });
   const reply = game.cmd('LOAD ' + code).map(([, t]) => t);
   return { reply: reply.slice(1), state: game.get(SNAPSHOT_EXPR) };
 }
@@ -512,7 +516,7 @@ function transcriptJson(t) {
     '{',
     `  "name": ${J(t.name)},`,
     `  "covers": ${J(t.covers)},`,
-    `  "source": "legacy/quiet-roads-v13.html",`,
+    `  "source": ${J(SOURCE_LABEL)},`,
     `  "seed": ${J(t.seed)},`,
     `  "commands": [\n${lines(t.commands)}\n  ],`,
     `  "log": [\n${lines(t.log)}\n  ],`,
@@ -528,7 +532,7 @@ function transcriptJson(t) {
 }
 
 function recordTranscript(name, covers, seed, commands) {
-  const r = play(LEGACY, seed, commands);
+  const r = play(TARGET, seed, commands);
   return { name, covers, seed, commands, log: r.log, finalScreen: r.finalScreen, finalMap: r.finalMap, finalMapHash: r.finalMapHash, finalStatus: r.finalStatus, finalMode: r.finalMode, finalPos: r.finalPos, game: r.game };
 }
 
@@ -584,19 +588,19 @@ function main() {
 
   fs.writeFileSync(path.join(GOLDEN, 'legacy-codes.json'), JSON.stringify({
     note: 'Save codes in every format v13 reads. "restores" is the state v13 holds after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.',
-    source: 'legacy/quiet-roads-v13.html',
+    source: SOURCE_LABEL,
     codes,
   }, null, 1) + '\n');
   console.log(`  ${codes.length} codes: ${[...new Set(codes.map((c) => c.format))].join(', ')}`);
 
   console.log('World hashes');
-  const host = load(LEGACY, { seed: 'hash-host' });
+  const host = load(TARGET, { seed: 'hash-host' });
   const rows = [];
   for (let i = 1; i <= SWEEP_SIZE; i++) rows.push(`  ${J(sweepSeed(i))}: ${J(worldSignature(host, sweepSeed(i)))}`);
   fs.writeFileSync(path.join(GOLDEN, 'world-hashes.json'), [
     '{',
     '  "_note": "Per sweep seed: [hash of the 400 terrain glyphs + towns + capital, start x, start y]. The hash is the first 16 hex digits of a SHA-256. Recorded by tools/record-goldens.mjs.",',
-    '  "_source": "legacy/quiet-roads-v13.html",',
+    `  "_source": ${J(SOURCE_LABEL)},`,
     rows.join(',\n'),
     '}',
     '',

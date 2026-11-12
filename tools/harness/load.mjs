@@ -22,6 +22,13 @@ const ENTITIES = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;
 const decode = (s) => String(s).replace(/&(amp|lt|gt|quot|#39);/g, (m) => ENTITIES[m]);
 const stripTags = (s) => decode(String(s).replace(/<[^>]*>/g, ''));
 
+// v13's top-level state variables and the field of G each became in M1.
+export const V13_STATE_NAMES = {
+  SEED: 'seed', mode: 'mode', local: 'local', steps: 'steps', player: 'player', worldEvents: 'worldEvents', npcMemory: 'npcMemory',
+  recentFragments: 'recentFragments', recentInternal: 'recentInternal', lastInternalStep: 'lastInternalStep', lastPressureStep: 'lastPressureStep',
+  capital: 'capital', towns: 'towns', townSet: 'townSet', cabbageRoute: 'cabbageRoute', DOG_HINT_BITS: 'hintBits', dogHintCount: 'dogHintCount',
+};
+
 export function extractScript(html) {
   const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   if (blocks.length !== 1) throw new Error(`expected exactly one <script> block, found ${blocks.length}`);
@@ -108,6 +115,19 @@ export function load(htmlPath, opts = {}) {
   // Top-level let/const in the game are not properties of the context's global,
   // so state is always read by running code in the same context.
   const run = (code) => vm.runInContext(code, context);
+
+  // From M1 the game keeps its state in one object, G, where v13 had separate
+  // top-level variables. Tools are written against v13's names, so for a G build
+  // those names are installed as accessors onto G. Nothing in the game uses them.
+  const flavor = run('typeof G') === 'object' ? 'modules' : 'legacy';
+  if (flavor === 'modules') {
+    run(`(function(map){
+      for (const name of Object.keys(map)) {
+        const key = map[name];
+        Object.defineProperty(globalThis, name, { get(){ return G[key]; }, set(v){ G[key] = v; }, configurable: true });
+      }
+    })(${JSON.stringify(V13_STATE_NAMES)})`);
+  }
   const get = (expr) => {
     const s = run(`JSON.stringify(${expr})`);
     return s === undefined ? undefined : JSON.parse(s);
@@ -116,6 +136,7 @@ export function load(htmlPath, opts = {}) {
 
   return {
     htmlPath,
+    flavor,
     logs,
     consoleLines,
     run,
