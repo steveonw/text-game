@@ -196,9 +196,16 @@ export function getLocalNPCId(cell, tx, ty){
   return "npc_" + cell + "_" + tx + "_" + ty;
 }
 
+// D3: is anyone standing on the player's cell of the local map?
+export function someoneHere(){
+  return !!(G.local && G.local.npcs && G.local.npcs.some(n => n.x === G.local.px && n.y === G.local.py));
+}
+
 export function cmdTalk(){
   if (G.mode==="END") return;
   if (G.mode==="WORLD"){ log("No one to speak with here.", "m"); return; }
+  // D3: TALK needs someone here. In v13 any cell answered, and an empty field spoke as a Wanderer.
+  if (!someoneHere()){ log("No one to speak with here.", "m"); return; }
 
   const cell = G.local.map[G.local.py][G.local.px];
 
@@ -254,6 +261,8 @@ export function cmdAsk(topic){
     } else log("There is no one to ask.", "m");
     return;
   }
+  // D3: ASK needs someone here too; nothing is remembered and no reputation is earned.
+  if (!someoneHere()){ log("There is no one to ask.", "m"); return; }
   const cell = G.local.map[G.local.py][G.local.px];
 
   const id = getLocalNPCId(cell, G.local.tx, G.local.ty);

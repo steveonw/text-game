@@ -88,6 +88,7 @@ export function generateTown(tx,ty, forceWagon=false){
 
   // Track NPC positions for rendering
   const npcs = [];
+  let survivor = false;
 
   buildings.forEach((b)=>{
     const i = TOWN_BUILDINGS.indexOf(b);
@@ -99,6 +100,12 @@ export function generateTown(tx,ty, forceWagon=false){
       // NPCs present in non-burned buildings
       if (!burned && b !== "r") {
         npcs.push({x, y, type: b});
+      }
+      // D3: one Survivor stands at the first burned building, drawn as a person (p).
+      // In v13 a Survivor could be spoken to only because any cell answered.
+      if (burned && !survivor) {
+        npcs.push({x, y, type:"n"});
+        survivor = true;
       }
     }
   });

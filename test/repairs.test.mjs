@@ -161,3 +161,63 @@ test('D7: the fallen capital is burned inside, like any burned town', () => {
   }
   assert.equal(checked, 60);
 });
+
+test('D3: TALK and ASK need someone on the tile', () => {
+  bootModules('nobody-1');
+  const empty = nearest((x, y) => { if (!['.', 'F'].includes(finalTileAt(x, y))) return false; const w = generateWilderness(x, y); return !w.dog && w.npcs.length === 0; });
+  walkTo(empty.x, empty.y); say('ENTER');
+  assert.deepEqual(say('TALK'), ['> TALK', 'No one to speak with here.']);
+  assert.deepEqual(say('ASK DOG'), ['> ASK DOG', 'There is no one to ask.']);
+  assert.deepEqual(say('ASK ROAD'), ['> ASK ROAD', 'There is no one to ask.']);
+  assert.equal(Object.keys(G.npcMemory).length, 0, 'nobody is remembered');
+  assert.equal(G.player.rep, 0, 'no reputation is earned');
+  // the topic is still checked first
+  assert.deepEqual(say('ASK'), ['> ASK', 'Ask about what?']);
+  assert.deepEqual(say('ASK CABBAGE'), ['> ASK CABBAGE', 'No one understands that word.']);
+  say('EXIT');
+  // on the world map ASK DOG keeps its v13 answer
+  assert.equal(say('ASK DOG')[1], 'You call softly. The wind answers.');
+
+  // a wanderer who is there answers
+  const met = nearest((x, y) => { if (!['.', 'F'].includes(finalTileAt(x, y))) return false; const w = generateWilderness(x, y); return !w.dog && w.npcs.length === 1; });
+  walkTo(met.x, met.y); say('ENTER');
+  assert.deepEqual(say('TALK'), ['> TALK', 'No one to speak with here.'], 'not from across the field');
+  const who = G.local.npcs[0]; localTo(who.x, who.y);
+  assert.match(say('TALK')[1], /^Wanderer \((ROAD|DOG)\):$/);
+  assert.equal(Object.keys(G.npcMemory).length, 1);
+  say('EXIT');
+
+  // in a town: nobody at the crossing unless the townsperson stands there; staff at their buildings
+  const t = nearest((x, y) => { if (!isTownAt(x, y)) return false; const town = generateTown(x, y, false); return town.map[2][2] === 'I' && !town.npcs.some((p) => p.x === 4 && p.y === 4); });
+  walkTo(t.x, t.y); say('ENTER');
+  assert.deepEqual(say('TALK'), ['> TALK', 'No one to speak with here.']);
+  localTo(2, 2);
+  assert.match(say('TALK')[1], /^Innkeeper \((ROAD|DOG)\):$/);
+  assert.match(say('ASK ROAD')[1], /^Innkeeper \(ROAD\):$/);
+});
+
+test('D3: a burned town keeps one Survivor, standing at its first burned building', () => {
+  let withSurvivor = 0;
+  for (let n = 1; n <= 80; n++) {
+    bootModules('sweep-' + n);
+    const town = G.towns.find((t) => !(t.x === G.capital.x && t.y === G.capital.y));
+    G.worldEvents.add('burned_' + keyForXY(town.x, town.y));
+    const map = generateTown(town.x, town.y, false);
+    const onTimbers = map.npcs.filter((p) => map.map[p.y][p.x] === 'r');
+    const timbers = map.map.flat().filter((c) => c === 'r').length;
+    assert.equal(onTimbers.length, timbers > 0 ? 1 : 0, `sweep-${n}: one Survivor when anything burned`);
+    if (!timbers) continue;
+    withSurvivor++;
+    G.player.x = town.x; G.player.y = town.y; say('ENTER');
+    const s = G.local.npcs.find((p) => G.local.map[p.y][p.x] === 'r');
+    localTo(s.x, s.y);
+    assert.match(say('TALK')[1], /^Survivor \((ROAD|DOG)\):$/);
+    assert.ok(mapRows()[s.y] !== undefined);
+    // another burned building, if there is one, is empty
+    for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) {
+      if (G.local.map[y][x] === 'r' && !(x === s.x && y === s.y)) { localTo(x, y); assert.deepEqual(say('TALK'), ['> TALK', 'No one to speak with here.']); }
+    }
+    say('EXIT');
+  }
+  assert.ok(withSurvivor > 60);
+});
