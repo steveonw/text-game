@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The Quiet Roads</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#141824;
+    --text:#e6e6e6;
+    --muted:#a8b0c0;
+    --line:#2a3144;
+  }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    display:flex; min-height:100vh;
+  }
+  .wrap{ margin:auto; width:min(980px, 96vw); display:grid; grid-template-columns:1fr; gap:12px; padding:14px; }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    overflow:hidden;
+  }
+  .top{ display:grid; grid-template-columns: 420px 1fr; gap:12px; }
+  @media (max-width: 860px){ .top{ grid-template-columns: 1fr; } }
+  .map{ padding:12px; border-right:1px solid var(--line); display:flex; flex-direction:column; min-width:0; }
+  @media (max-width: 860px){ .map{ border-right:none; border-bottom:1px solid var(--line);} }
+  .meta{ padding:12px; }
+  .h{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .title{ font-weight:700; letter-spacing:.2px; }
+  .hint{ color:var(--muted); font-size:12px; }
+  #mapOut{ white-space:pre; line-height:1.05; font-size:16px; user-select:none; min-height:22em; overflow-x:auto; overflow-y:hidden; font-family: Menlo, Consolas, Monaco, "Liberation Mono", "Lucida Console", monospace; }
+  .legend{ margin-top:8px; display:flex; flex-wrap:wrap; gap:8px 14px; color:var(--muted); font-size:12px; }
+  .legend span{ white-space:nowrap; }
+  .chip{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{ width:10px; height:10px; border-radius:3px; border:1px solid rgba(255,255,255,.12); display:inline-block; }
+  #log{ padding:12px; height: 340px; overflow:auto; border-top:1px solid var(--line); }
+  .line{ margin:0 0 8px 0; }
+  .line .m{ color:var(--muted); }
+  .cmdrow{ display:flex; gap:10px; padding:12px; border-top:1px solid var(--line); align-items:center; }
+  #cmd{
+    flex:1; background:#0b0d12; color:var(--text);
+    border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; outline:none; font-family:inherit; font-size:14px;
+  }
+  #cmd:focus{ border-color:#3a4560; box-shadow: 0 0 0 3px rgba(58, 69, 96, 0.4); }
+  button{
+    background:#0b0d12; color:var(--text);
+    border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; font-family:inherit; cursor:pointer;
+  }
+  button:hover{ border-color:#3a4560; }
+  button:focus{ outline:none; box-shadow: 0 0 0 3px rgba(58, 69, 96, 0.35); border-color:#3a4560; }
+  .small{ font-size:12px; color:var(--muted); }
+  .mono{ font-family:inherit; }
+  .kbd{
+    display:inline-block; padding:2px 6px; border:1px solid var(--line); border-radius:6px;
+    background:#0b0d12; color:var(--text); font-size:12px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card top">
+      <div class="map">
+        <div class="h">
+          <div class="title">Map</div>
+          <div class="hint"><span id="modeLabel">WORLD</span> • <span id="posLabel"></span></div>
+        </div>
+        <div id="mapOut" role="img" aria-label="Game map showing the world or local area"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="meta">
+        <div class="h">
+          <div class="title">The Quiet Roads</div>
+          <div class="hint">type <span class="kbd">HELP</span></div>
+        </div>
+        <div class="small" id="statusLine"></div>
+        <div class="small" style="margin-top:10px; line-height:1.6">
+          <div><span class="kbd">N S E W</span> move</div>
+          <div><span class="kbd">ENTER</span> town/wild</div>
+          <div><span class="kbd">TALK</span> speak</div>
+          <div><span class="kbd">CALL</span> call dog</div>
+          <div><span class="kbd">ASK DOG</span> ask about</div>
+          <div><span class="kbd">SAVE</span> password</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <div class="cmdrow">
+        <div class="mono">&gt;</div>
+        <input id="cmd" type="text" aria-label="Game command input" autocomplete="off" spellcheck="false" placeholder="Type a command (HELP for list)"/>
+        <button id="btn" type="button" aria-label="Send command">Send</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/*__GAME_SCRIPT__*/
+</script>
+</body>
+</html>
