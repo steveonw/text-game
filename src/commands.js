@@ -8,7 +8,7 @@ import { generateTown, generateWilderness } from './local.js';
 import { getNPC, maybeInternal, sayNPC, setNPC } from './people.js';
 import { clearLogSoft, freshSeed, log, render, renderLegend } from './io.js';
 import { clamp, fnv1a32, noise01 } from './rng.js';
-import { loadPasswordAny, loadPasswordLegacy, savePasswordPacked } from './save.js';
+import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
 import { addDogHint, computeTowns, dogDirectionHint, dogIsNear, dogIsVeryNear, finalTileAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
@@ -426,7 +426,10 @@ export function runCommand(raw){
   const arg = parts.slice(1).join(" ");
 
   if (G.mode==="END"){
-    if (cmd==="LOAD") loadPasswordLegacy(arg);
+    // D1: after an ending NEW and HELP work, and LOAD takes a code in any format.
+    if (cmd==="LOAD") loadPasswordAny(arg);
+    else if (cmd==="NEW") cmdNew(arg);
+    else if (cmd==="HELP") cmdHelp();
     else log("The story is done. (LOAD <password> to continue elsewhere.)", "m");
     return;
   }

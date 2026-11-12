@@ -38,3 +38,37 @@ test('D19: NEW typed inside a town opens the new world on the world map', () => 
   walkTo(w.x, w.y); say('ENTER'); assert.equal(G.mode, 'LOCAL');
   say('NEW third'); assert.equal(G.mode, 'WORLD'); assert.equal(G.local, null);
 });
+
+test('D1: after an ending, NEW starts a game, HELP answers, and LOAD takes the code SAVE printed', () => {
+  bootModules('reunion-2');
+  standOnDog();
+  const code = say('SAVE').at(-1);
+  const saved = { x: G.player.x, y: G.player.y, steps: G.steps, seed: G.seed };
+  assert.ok(say('CALL').some((l) => l.startsWith('Ending: ')));
+  assert.equal(G.mode, 'END');
+
+  // everything else is still refused
+  for (const c of ['LOOK', 'N', 'SAVE', 'TALK', 'WAIT']) assert.deepEqual(say(c), ['> ' + c, STORY_DONE]);
+  assert.equal(G.mode, 'END');
+  // HELP answers
+  assert.ok(say('HELP').some((l) => l.startsWith('Commands: ')));
+  assert.equal(G.mode, 'END');
+  // LOAD of the packed code SAVE just printed
+  assert.deepEqual(say('LOAD ' + code).slice(1), ['The password takes.']);
+  assert.equal(G.mode, 'WORLD');
+  assert.deepEqual({ x: G.player.x, y: G.player.y, steps: G.steps, seed: G.seed }, saved);
+
+  // end the game again, then NEW
+  say('ENTER'); localTo(G.local.dog.x, G.local.dog.y); say('CALL');
+  assert.equal(G.mode, 'END');
+  const out = say('NEW abc');
+  assert.ok(out.includes('World seeded: abc'));
+  assert.equal(G.mode, 'WORLD');
+  assert.equal(G.steps, 0);
+  assert.ok(say('LOOK').length >= 2);
+
+  // a refused code leaves the ending in place
+  bootModules('reunion-2'); standOnDog(); say('CALL');
+  assert.deepEqual(say('LOAD not-a-code').slice(1), ['Invalid password.']);
+  assert.equal(G.mode, 'END');
+});
