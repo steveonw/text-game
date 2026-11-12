@@ -1,7 +1,7 @@
 {
   "name": "03-enter-wilderness",
   "covers": "ENTER wilderness; LOOK at open ground, brush, rock and a wanderer; TALK to the wanderer; REST; walk off the edge to leave.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "wild-1",
   "commands": [
     "LOOK",

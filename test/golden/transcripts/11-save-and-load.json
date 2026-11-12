@@ -1,7 +1,7 @@
 {
   "name": "11-save-and-load",
   "covers": "SAVE prints a code; LOAD restores it; LOAD refuses an empty, a short and a wrong-checksum code.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "save-1",
   "commands": [
     "N",

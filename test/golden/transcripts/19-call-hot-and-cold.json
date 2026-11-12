@@ -1,7 +1,7 @@
 {
   "name": "19-call-hot-and-cold",
   "covers": "CALL and LOOK on tiles with no sign, near sign and a fresh trail; a fresh trail with no dog behind it; CALL at range on a map that holds the dog.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "call-1",
   "commands": [
     "LOOK",

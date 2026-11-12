@@ -1,16 +1,22 @@
-// Records the golden files in test/golden/ from the legacy prototype.
+// Records golden files from a game file.
 //
-//   node tools/record-goldens.mjs
+//   node tools/record-goldens.mjs [htmlPath] [outDir]
+//
+//   node tools/record-goldens.mjs dist/index.html                              the current build -> test/golden/
+//   node tools/record-goldens.mjs legacy/quiet-roads-v13.html test/golden-v13  (v13's frozen set; do not re-record)
 //
 // It writes three things:
-//   test/golden/transcripts/*.json   scripted games: seed + commands -> every logged line and the final map
-//   test/golden/world-hashes.json    terrain, towns, capital and start tile for each sweep seed
-//   test/golden/legacy-codes.json    save codes in every format v13 reads, with the state each restores
+//   <outDir>/transcripts/*.json   scripted games: seed + commands -> every logged line and the final map
+//   <outDir>/world-hashes.json    terrain, towns, capital and start tile for each sweep seed
+//   <outDir>/legacy-codes.json    save codes in every format the game reads, with the state each restores
 //
 // Each transcript is planned on one loaded game (using read-only helpers to find
 // routes and seeds), then replayed from a fresh load with nothing injected. Only
 // the replay is recorded. Seed search is deterministic, so running this again on
-// the same legacy file rewrites identical files.
+// the same file rewrites identical files.
+//
+// The plans below describe the repaired game (M2). The plans that recorded v13's
+// defects are in the history of this file at tag m1.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,9 +27,12 @@ import { LEGACY, SWEEP_SIZE, sweepSeed } from './sweep.mjs';
 import { worldSignature } from './harness/golden.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-// node tools/record-goldens.mjs [htmlPath] [outDir]
-// With no arguments it records from the legacy file into test/golden/, as M0 did.
-const TARGET = process.argv[2] ? path.resolve(process.argv[2]) : LEGACY;
+const DIST = path.join(ROOT, 'dist', 'index.html');
+const TARGET = process.argv[2] ? path.resolve(process.argv[2]) : DIST;
+if (TARGET === LEGACY && !process.argv[3]) {
+  console.error('Refusing to record v13 over test/golden/. These plans describe the repaired game; v13\'s recordings are frozen in test/golden-v13/.');
+  process.exit(1);
+}
 const SOURCE_LABEL = path.relative(ROOT, TARGET).split(path.sep).join('/');
 const GOLDEN = process.argv[3] ? path.resolve(process.argv[3]) : path.join(ROOT, 'test', 'golden');
 const TRANSCRIPTS = path.join(GOLDEN, 'transcripts');
@@ -56,6 +65,9 @@ function __cell(ch){
   return null;
 }
 function __townAt(x,y){ return isTownAt(x,y) ? generateTown(x,y,false) : null; }
+// The dog on plains or in forest, where v13 could place it; and in natural ruins, where only the repaired game can.
+function __openDogTile(x,y){ return __isDogTile(x,y) && !__isNaturalRuin(x,y); }
+function __ruinDogTile(x,y){ return __isDogTile(x,y) && __isNaturalRuin(x,y); }
 `;
 
 class PlanFail extends Error {}
@@ -63,9 +75,10 @@ const fail = (why) => { throw new PlanFail(why); };
 const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
 
 class Planner {
-  constructor(seed) {
+  constructor(seed, opts = {}) {
     this.seed = seed;
-    this.game = load(TARGET, { seed });
+    this.debug = !!opts.debug;
+    this.game = load(TARGET, { seed, debug: this.debug });
     this.game.run(HELPERS);
     this.game.run(PLAN_HELPERS);
     this.commands = [];
@@ -111,15 +124,15 @@ class Planner {
   }
 }
 
-function findSeed(prefix, plan, max = 600) {
+function findSeed(prefix, plan, opts = {}, max = opts.max || 600) {
   for (let i = 1; i <= max; i++) {
-    const p = new Planner(`${prefix}-${i}`);
+    const p = new Planner(`${prefix}-${i}`, opts);
     try { plan(p); return p; } catch (e) { if (!(e instanceof PlanFail)) throw e; }
   }
   throw new Error(`no seed found for "${prefix}" in ${max} tries`);
 }
 
-const DOG_TILE = 'function(x,y){ return __isDogTile(x,y); }';
+const DOG_TILE = 'function(x,y){ return __openDogTile(x,y); }';
 const TOWN_WITH = (cells) => `function(x,y){ const t = __townAt(x,y); return !!t && ${cells.map(([cx, cy, ch]) => `t.map[${cy}][${cx}] === ${JSON.stringify(ch)}`).join(' && ')}; }`;
 const endingOf = (p) => { const l = p.game.logs.find(([, t]) => t.startsWith('Ending: ')); return l ? l[1].slice(8) : null; };
 function goToDogAndCall(p) {
@@ -151,16 +164,19 @@ const PLANS = [
     p.need(p.get('steps') >= 12 && p.get('steps') <= 45, 'walk length');
   }],
 
-  ['02-enter-town', 'ENTER and EXIT a town; LOOK at every building, the street and a townsperson; walls; ENTER while inside; EXIT while outside.', 'town', (p) => {
-    const t = p.find(`function(x,y){ const t = __townAt(x,y); if (!t) return false; const b = t.npcs.filter(function(n){ return "IMSTG".includes(n.type); }).length; return b >= 3 && t.npcs.some(function(n){ return n.type === "n"; }); }`, 20);
+  ['02-enter-town', 'ENTER and EXIT a town with all five buildings; LOOK at each, the smithy in its corner and the guard post at the east end of the street (D2 repaired), the street and a townsperson; walls; ENTER while inside; EXIT while outside.', 'town', (p) => {
+    const t = p.find(`function(x,y){ const t = __townAt(x,y); if (!t || (capital && capital.x === x && capital.y === y)) return false; const b = t.npcs.filter(function(n){ return "IMSTG".includes(n.type); }).length; return b === 5 && t.map[4][7] === "G" && t.map[6][2] === "S" && t.npcs.some(function(n){ return n.type === "n"; }); }`, 12);
     p.walkTo(t.x, t.y);
     p.do('LOOK'); p.do('ENTER'); p.do('ENTER'); p.do('LOOK');
-    for (const [x, y] of [[2, 2], [6, 2], [6, 6], [2, 6]]) { p.localTo(x, y); p.do('LOOK'); }
+    for (const [x, y] of [[2, 2], [6, 2], [6, 6], [2, 6], [7, 4]]) { p.localTo(x, y); p.do('LOOK'); }
+    p.do('TALK');
     const person = p.get('local.npcs.filter(function(n){ return n.type === "n"; })[0]');
     p.localTo(person.x, person.y); p.do('LOOK'); p.do('TALK');
-    p.localTo(1, 1); p.do('LOOK'); p.do('W'); p.do('N');
+    p.localTo(1, 1); p.do('LOOK'); p.do('W'); p.do('N'); p.do('TALK');
     p.do('EXIT'); p.do('EXIT'); p.do('LOOK');
-  }],
+    // a quiet visit: no war, no sickness, and the routes have not stirred
+    p.need(p.get('worldEvents.size') === 0, 'the world moved during the visit');
+  }, { max: 3000 }],
 
   ['03-enter-wilderness', 'ENTER wilderness; LOOK at open ground, brush, rock and a wanderer; TALK to the wanderer; REST; walk off the edge to leave.', 'wild', (p) => {
     const t = p.find(`function(x,y){ if (!__enterableWild(x,y)) return false; const w = generateWilderness(x,y); const cells = w.map.join(); return !w.dog && w.npcs.length === 1 && cells.includes("t") && cells.includes("^"); }`, 12);
@@ -175,23 +191,22 @@ const PLANS = [
     p.do('LOOK');
   }],
 
-  ['04-enter-natural-ruins', 'Defect D6: a natural ruins tile reads "Old stones. A place avoided." and ENTERs as a walled town.', 'ruins', (p) => {
-    const t = p.find('function(x,y){ return __isNaturalRuin(x,y) && generateTown(x,y,false).npcs.length >= 2; }', 12);
+  ['04-enter-natural-ruins', 'A natural ruins tile reads "Old stones. A place avoided." and ENTERs as wilderness, with no walls and no one to speak with (D6 repaired).', 'ruins', (p) => {
+    const t = p.find('function(x,y){ if (!__isNaturalRuin(x,y)) return false; const w = generateWilderness(x,y); return !w.dog && w.npcs.length === 0; }', 12);
     p.walkTo(t.x, t.y);
-    p.do('LOOK'); p.do('ENTER'); p.do('LOOK');
-    const b = p.get('local.npcs.filter(function(n){ return "IMSTG".includes(n.type); })[0]');
-    p.localTo(b.x, b.y); p.do('LOOK'); p.do('TALK');
-    p.do('EXIT');
+    p.do('LOOK'); p.do('ENTER'); p.do('LOOK'); p.do('TALK'); p.do('N'); p.do('LOOK'); p.do('ASK DOG');
+    p.need(p.get('local.kind') === 'WILD', 'ruins did not open as wilderness');
+    p.do('EXIT'); p.do('LOOK');
   }],
 
-  ['05-talk-six-times', 'Defect D4: TALK six times at one inn; replies thin out to a bare name tag.', 'talk', (p) => {
+  ['05-talk-six-times', 'TALK six times at one inn: every reply has an opener, a line and a close (D4 repaired).', 'talk', (p) => {
     const t = p.find(TOWN_WITH([[2, 2, 'I']]), 20);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.localTo(2, 2); p.do('LOOK');
     for (let i = 0; i < 6; i++) p.do('TALK');
     p.do('STATUS');
   }],
 
-  ['06-ask-every-topic', 'ASK with no topic, every known topic, an unknown topic and a repeat; ROUTES refused before the routes stir; ASK on the world map. Defect D5: TOWN, WAR, SICKNESS and WORK draw on ROAD lines.', 'ask', (p) => {
+  ['06-ask-every-topic', 'ASK with no topic, every known topic, an unknown topic and a repeat; ROUTES refused before the routes stir; ASK on the world map. TOWN, WAR, SICKNESS and WORK are answered from their own lines (D5 repaired).', 'ask', (p) => {
     const t = p.find(TOWN_WITH([[6, 2, 'M']]), 20);
     p.walkTo(t.x, t.y);
     p.need(!p.has('routes_stirring'), 'routes already stirring');
@@ -220,7 +235,7 @@ const PLANS = [
     p.walkTo(t.x, t.y); p.do('STATUS'); p.do('ENTER'); p.do('REST'); p.do('STATUS'); p.do('EXIT');
   }],
 
-  ['09-ride', 'The cabbage merchant: two talks, the offer, RIDE to the next town. Defect D8: the ride narration is logged and erased in the same tick (compare log with finalScreen).', 'ride', (p) => {
+  ['09-ride', 'The cabbage merchant: two talks, the offer, RIDE to the next town, and a second ride on from there. The ride is told on the page (D8 repaired).', 'ride', (p) => {
     const route = p.get('cabbageRoute');
     p.need(route.length >= 2, 'route too short');
     let done = false;
@@ -245,7 +260,7 @@ const PLANS = [
     p.need(done, 'no usable stop');
   }],
 
-  ['10-wagon-outstays-merchant', 'Defect D9: the merchant\'s stop ends during the walk to the wagon; the wagon stays drawn, TALK gives generic lines under his name, RIDE is refused.', 'wagon', (p) => {
+  ['10-merchant-stays-with-wagon', 'The merchant\'s stop ends, by his timetable, during the walk to the wagon. He is still there: he answers, offers the ride and gives it, to the stop after this one (D9 repaired).', 'wagon', (p) => {
     const route = p.get('cabbageRoute');
     p.need(route.length >= 2, 'route too short');
     let done = false;
@@ -258,8 +273,13 @@ const PLANS = [
       p.walkTo(town.x, town.y); p.do('ENTER');
       p.need(p.get('!!local.wagon'), 'no wagon');
       p.localTo(1, 4);
-      p.need(!p.get('cabbageIsHereWorld(local.tx, local.ty)') && p.get('local.map[4][1]') === 'w', 'schedule did not move on');
-      p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK DOG'); p.do('RIDE');
+      p.need(!p.get('cabbageIsHereWorld(local.tx, local.ty)') && p.get('local.map[4][1]') === 'w', 'timetable did not move on');
+      p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK DOG');
+      const out = p.do('RIDE');
+      p.need(out.includes('The wagon stops.'), 'ride refused');
+      const next = route[(i + 1) % route.length];
+      p.need(p.get('player.x') === next.x && p.get('player.y') === next.y, 'did not ride to the next stop');
+      p.do('LOOK'); p.do('STATUS');
       done = true;
     }
     p.need(done, 'no usable stop');
@@ -283,7 +303,7 @@ const PLANS = [
   }],
 
   ['13-ending-reunion', 'A full game to "Ending: Reunion": dog found before war, without the hints and reputation Homecoming asks for.', 'reunion', (p) => {
-    const t = p.find(`function(x,y,d){ return d >= 3 && __isDogTile(x,y); }`, 10);
+    const t = p.find(`function(x,y,d){ return d >= 3 && __openDogTile(x,y); }`, 10);
     p.walkTo(t.x, t.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL');
     goToDogAndCall(p);
     p.need(endingOf(p) === 'Reunion', 'wrong ending');
@@ -330,7 +350,7 @@ const PLANS = [
     p.need(endingOf(p) === 'The Long Way Back', 'wrong ending');
   }],
 
-  ['18-talk-to-nobody', 'Defect D3: TALK and ASK on an empty wilderness tile are answered by a Wanderer who is not there, and reputation rises.', 'nobody', (p) => {
+  ['18-talk-to-nobody', 'TALK and ASK on an empty wilderness tile: no one is there to answer, and no reputation is earned (D3 repaired).', 'nobody', (p) => {
     const t = p.find('function(x,y){ if (!__enterableWild(x,y)) return false; const w = generateWilderness(x,y); return !w.dog && w.npcs.length === 0; }', 6);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK DOG'); p.do('STATUS'); p.do('EXIT');
   }],
@@ -344,7 +364,7 @@ const PLANS = [
     p.walkTo(empty.x, empty.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL'); p.do('EXIT');
     const plain = p.find('function(x,y){ return __enterableWild(x,y) && !dogIsNear(x,y); }', 10);
     p.walkTo(plain.x, plain.y); p.do('ENTER'); p.do('CALL'); p.do('EXIT');
-    const d = p.find(`function(x,y){ if (!__isDogTile(x,y)) return false; const g = generateWilderness(x,y).dog; return Math.abs(g.x-4) + Math.abs(g.y-4) >= 4; }`, 14);
+    const d = p.find(`function(x,y){ if (!__openDogTile(x,y)) return false; const g = generateWilderness(x,y).dog; return Math.abs(g.x-4) + Math.abs(g.y-4) >= 4; }`, 14);
     p.walkTo(d.x, d.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('CALL');
     const dog = p.get('local.dog');
     // stop two cells short of the dog
@@ -355,7 +375,7 @@ const PLANS = [
     p.need(p.get('steps') <= 70, 'too long');
   }],
 
-  ['20-fatigue-cap', 'Defect D11: fatigue climbs to its cap of 5 and movement goes on at no cost.', 'tired', (p) => {
+  ['20-fatigue-cap', 'Fatigue climbs to its cap of 5 and movement goes on at no cost (D11, open until M4).', 'tired', (p) => {
     p.do('STATUS');
     const far = p.find('function(x,y,d){ return d === 14; }', 14);
     const path = p.get(`__pathTo(player.x, player.y, ${far.x}, ${far.y})`);
@@ -364,7 +384,7 @@ const PLANS = [
     p.do('STATUS'); p.do('WAIT'); p.do('WAIT'); p.do('STATUS');
   }],
 
-  ['21-debug-and-block', 'Defects D12 and D17: the undocumented DEBUG and BLOCK commands; a blocked tile stops movement and is drawn as #.', 'debug', (p) => {
+  ['21-debug-and-block', 'On a page opened with ?debug=1: the maintenance commands DEBUG and BLOCK; a blocked tile stops movement and is drawn as #. Nothing in play closes a road yet (D12).', 'debug', (p) => {
     p.do('DEBUG');
     p.need(p.get('__enterableWild(player.x, player.y)'), 'start not enterable');
     p.do('BLOCK');
@@ -374,10 +394,12 @@ const PLANS = [
     p.need(p.get('__enterableWild(player.x, player.y)'), 'neighbour not enterable');
     p.do('BLOCK'); p.do('BLOCK');
     p.do('ENTER'); p.do('BLOCK'); p.do('EXIT'); p.do('DEBUG');
-  }],
+  }, { debug: true }],
 
-  ['22-new-and-aliases', 'NEW with a seed; the aliases HI, HELLO, EX and EXT; lower-case input; an unknown word; CLEAR.', 'new', (p) => {
+  ['22-new-and-aliases', 'NEW with a seed; the aliases HI, HELLO, EX and EXT; lower-case input; an unknown word; CLEAR. DEBUG and BLOCK are unknown words on an ordinary page (D17 repaired).', 'new', (p) => {
     p.do('NEW alpha'); p.do('LOOK'); p.do('HI'); p.do('EX'); p.do('EXT'); p.do('xyzzy'); p.do('look'); p.do('n'); p.do('north');
+    p.do('DEBUG'); p.do('BLOCK');
+    p.need(!p.get('Array.from(worldEvents).some(function(e){ return e.startsWith("road_blocked_"); })'), 'a road was blocked');
     p.do('CLEAR'); p.do('LOOK'); p.do('NEW beta'); p.do('STATUS'); p.do('hello');
   }],
 
@@ -389,29 +411,33 @@ const PLANS = [
     p.do('STATUS');
   }],
 
-  ['24-fallen-capital', 'Defect D7: after the capital falls it is drawn as ruins and reads as old stones, yet inside it is an untouched town.', 'capital', (p) => {
+  ['24-fallen-capital', 'After the capital falls it is drawn as ruins, reads as old stones, and is burned inside: timbers where its buildings stood and one Survivor to speak with (D7 repaired).', 'capital', (p) => {
     const fs_ = p.get('__fallStep(400)');
     p.need(fs_ > 0 && fs_ <= 80, 'fall too late');
     p.stir();
     const c = p.get('capital');
     p.walkTo(c.x, c.y, 30); p.do('LOOK');
-    p.need(!p.has('plague_' + c.x + '_' + c.y), 'capital sick');
     p.need(p.waitUntil('worldEvents.has("capital_fallen")', 110), 'capital never fell');
-    p.need(!p.has('plague_' + c.x + '_' + c.y), 'capital sick');
     p.do('LOOK'); p.do('ENTER'); p.do('LOOK');
-    p.need(p.get('local.npcs.filter(function(n){ return "IMSTG".includes(n.type); }).length') >= 3, 'too few buildings');
-    const b = p.get('local.npcs.filter(function(n){ return "IMSTG".includes(n.type); })[0]');
-    p.localTo(b.x, b.y); p.do('LOOK'); p.do('TALK'); p.do('EXIT'); p.do('STATUS');
+    p.need(p.get('local.map.flat().filter(function(c){ return c === "r"; }).length') >= 2, 'too little burned');
+    p.need(!p.get('local.map.flat().some(function(c){ return "IMSTG".includes(c); })'), 'a building stands');
+    const s = p.get('local.npcs.filter(function(n){ return local.map[n.y][n.x] === "r"; })[0]');
+    p.need(s, 'no survivor');
+    p.do('TALK');
+    p.localTo(s.x, s.y); p.do('LOOK'); p.do('TALK'); p.do('ASK DOG'); p.do('EXIT'); p.do('STATUS');
   }],
 
-  ['25-burned-town', 'War burns a town: it is drawn as ruins, its buildings are burned timbers, and a Survivor answers TALK.', 'burned', (p) => {
+  ['25-burned-town', 'War burns a town: it is drawn as ruins, its buildings are burned timbers, and one Survivor stands at the first of them, drawn as a person.', 'burned', (p) => {
     p.need(p.waitUntil('Array.from(worldEvents).some(function(e){ return e.startsWith("burned_"); })', 120), 'nothing burned');
     const key = p.get('Array.from(worldEvents).filter(function(e){ return e.startsWith("burned_"); })[0]');
     const [x, y] = key.slice(7).split('_').map(Number);
     p.walkTo(x, y, 30); p.do('LOOK'); p.do('ENTER'); p.do('LOOK');
-    const r = p.get('__cell("r")');
-    p.need(r, 'no burned building');
-    p.localTo(r.x, r.y); p.do('LOOK'); p.do('TALK'); p.do('ASK DOG'); p.do('EXIT');
+    p.need(p.get('local.map.flat().filter(function(c){ return c === "r"; }).length') >= 2, 'too little burned');
+    const s = p.get('local.npcs.filter(function(n){ return local.map[n.y][n.x] === "r"; })[0]');
+    p.need(s, 'no survivor');
+    const other = p.get(`(function(){ for (let y=0;y<local.size;y++) for (let x=0;x<local.size;x++) if (local.map[y][x] === "r" && !(x === ${s.x} && y === ${s.y})) return {x:x, y:y}; return null; })()`);
+    p.localTo(other.x, other.y); p.do('LOOK'); p.do('TALK');
+    p.localTo(s.x, s.y); p.do('LOOK'); p.do('TALK'); p.do('ASK DOG'); p.do('EXIT');
   }],
 
   ['26-sick-town', 'Sickness reaches a town: it is drawn as !, the market and townsperson are gone, and people add sickness lines.', 'plague', (p) => {
@@ -427,12 +453,20 @@ const PLANS = [
     p.need(p.game.logs.some(([, t]) => t === "People aren't well." || t === 'Best keep distance.'), 'no sickness line spoken');
   }],
 
-  ['27-new-inside-a-town', 'Defect D19, found while recording M0: NEW typed inside a town starts the new world but leaves the old town map on screen.', 'newlocal', (p) => {
+  ['27-new-inside-a-town', 'NEW typed inside a town opens the new world on the world map (D19 repaired).', 'newlocal', (p) => {
     const t = p.find('function(x,y){ return isTownAt(x,y); }', 20);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.do('LOOK');
     p.do('NEW other');
-    p.need(p.get('mode') === 'LOCAL' && !p.get('isTownAt(player.x, player.y)'), 'not stranded');
+    p.need(p.get('mode') === 'WORLD' && p.get('local') === null, 'still inside');
     p.do('LOOK'); p.do('TALK'); p.do('STATUS'); p.do('EXIT'); p.do('LOOK');
+  }],
+
+  ['28-dog-in-the-old-stones', 'The trail leads into natural ruins: the tile reads as old stones with a fresh trail, opens as wilderness, and the dog is found there. v13 could not hide the dog in ruins, because ruins opened as an empty town (D6 repaired).', 'stones', (p) => {
+    const t = p.find('function(x,y,d){ return d >= 2 && __ruinDogTile(x,y); }', 12);
+    p.walkTo(t.x, t.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK');
+    p.need(p.get('local.kind') === 'WILD', 'ruins did not open as wilderness');
+    goToDogAndCall(p);
+    p.need(endingOf(p) === 'Reunion', 'wrong ending');
   }],
 ];
 
@@ -518,6 +552,7 @@ function transcriptJson(t) {
     `  "covers": ${J(t.covers)},`,
     `  "source": ${J(SOURCE_LABEL)},`,
     `  "seed": ${J(t.seed)},`,
+    ...(t.debug ? ['  "debug": true,'] : []),
     `  "commands": [\n${lines(t.commands)}\n  ],`,
     `  "log": [\n${lines(t.log)}\n  ],`,
     `  "finalScreen": [\n${lines(t.finalScreen)}\n  ],`,
@@ -531,9 +566,9 @@ function transcriptJson(t) {
   ].join('\n');
 }
 
-function recordTranscript(name, covers, seed, commands) {
-  const r = play(TARGET, seed, commands);
-  return { name, covers, seed, commands, log: r.log, finalScreen: r.finalScreen, finalMap: r.finalMap, finalMapHash: r.finalMapHash, finalStatus: r.finalStatus, finalMode: r.finalMode, finalPos: r.finalPos, game: r.game };
+function recordTranscript(name, covers, seed, commands, debug = false) {
+  const r = play(TARGET, seed, commands, { debug });
+  return { name, covers, seed, debug, commands, log: r.log, finalScreen: r.finalScreen, finalMap: r.finalMap, finalMapHash: r.finalMapHash, finalStatus: r.finalStatus, finalMode: r.finalMode, finalPos: r.finalPos, game: r.game };
 }
 
 function main() {
@@ -548,10 +583,10 @@ function main() {
   };
 
   console.log('Transcripts');
-  for (const [name, covers, prefix, plan] of PLANS) {
-    const p = findSeed(prefix, plan);
+  for (const [name, covers, prefix, plan, opts] of PLANS) {
+    const p = findSeed(prefix, plan, opts || {});
     harvested[name] = p;
-    const t = recordTranscript(name, covers, p.seed, p.commands);
+    const t = recordTranscript(name, covers, p.seed, p.commands, p.debug);
     // the replay must land exactly where the plan did
     if (J(t.game.get(SNAPSHOT_EXPR)) !== J(p.snapshot())) throw new Error(`replay of ${name} diverged from its plan`);
     if (J(t.log) !== J(p.game.logs)) throw new Error(`replay of ${name} logged different lines`);
@@ -571,23 +606,36 @@ function main() {
   {
     const name = '17-after-an-ending';
     const p = findSeed('after', (q) => {
-      const t = q.find('function(x,y,d){ return d >= 1 && __isDogTile(x,y); }', 6);
+      const t = q.find('function(x,y,d){ return d >= 1 && __openDogTile(x,y); }', 6);
       q.walkTo(t.x, t.y); q.do('ENTER');
       const dog = q.get('local.dog'); q.localTo(dog.x, dog.y);
       const code = q.do('SAVE').at(-1);
       q.do('CALL');
       q.need(endingOf(q) === 'Reunion', 'wrong ending');
-      for (const c of ['LOOK', 'NEW abc', 'HELP', 'SAVE', `LOAD ${code}`]) q.do(c);
+      for (const c of ['LOOK', 'N', 'SAVE', 'HELP']) q.do(c);
       q.need(q.get('mode') === 'END', 'left the ending');
-      const out = q.do(`LOAD ${byFormat('base32-v2')}`);
+      // LOAD takes the code SAVE printed a moment before the ending...
+      let out = q.do(`LOAD ${code}`);
+      q.need(out.includes('The password takes.') && q.get('mode') === 'WORLD', 'own code refused');
+      q.do('LOOK'); q.do('STATUS');
+      q.do('ENTER'); q.localTo(dog.x, dog.y); q.do('CALL');
+      q.need(endingOf(q) === 'Reunion' && q.get('mode') === 'END', 'no second ending');
+      // ...an old base32 code...
+      out = q.do(`LOAD ${byFormat('base32-v2')}`);
       q.need(out.includes('The password takes.') && q.get('mode') === 'WORLD', 'base32 refused');
+      q.do('STATUS');
+      // ...and NEW starts again, as the ending says it will.
+      q.do(`LOAD ${code}`); q.do('ENTER'); q.localTo(dog.x, dog.y); q.do('CALL');
+      q.need(q.get('mode') === 'END', 'no third ending');
+      q.do('NEW abc');
+      q.need(q.get('mode') === 'WORLD' && q.get('local') === null && q.get('steps') === 0, 'NEW did not start again');
       q.do('LOOK'); q.do('STATUS');
     });
-    write(recordTranscript(name, 'Defect D1: after an ending NEW is refused although the screen offers it, and LOAD refuses the code SAVE just printed; only an old base32 code gets out.', p.seed, p.commands));
+    write(recordTranscript(name, 'After an ending: other commands are refused, HELP answers, LOAD takes the code SAVE just printed and an old base32 code, and NEW starts again (D1 repaired).', p.seed, p.commands));
   }
 
   fs.writeFileSync(path.join(GOLDEN, 'legacy-codes.json'), JSON.stringify({
-    note: 'Save codes in every format v13 reads. "restores" is the state v13 holds after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.',
+    note: 'Save codes in every format the game reads. "restores" is the state held after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.',
     source: SOURCE_LABEL,
     codes,
   }, null, 1) + '\n');

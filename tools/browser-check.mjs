@@ -9,8 +9,10 @@
 // also fails on any uncaught error, and on any request other than the page.
 //
 // Needs Node 22 or later (for the built-in WebSocket) and Chrome or Chromium on
-// the path, or CHROME_PATH set. With no arguments it checks dist/index.html and
-// the legacy file. No dependencies.
+// the path, or CHROME_PATH set. With no arguments it checks dist/index.html
+// against test/golden/ and the legacy file against test/golden-v13/. A file
+// named on the command line is checked against test/golden/, unless it is the
+// legacy file. A transcript marked "debug" is opened with ?debug=1. No dependencies.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -18,7 +20,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ROOT, LEGACY, readTranscripts } from './harness/golden.mjs';
+import { ROOT, LEGACY, GOLDEN, GOLDEN_V13, readTranscripts } from './harness/golden.mjs';
 
 function findChrome() {
   const names = [process.env.CHROME_PATH, 'google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'].filter(Boolean);
@@ -101,7 +103,7 @@ export async function checkFile(cdp, htmlPath, transcripts) {
   const base = pathToFileURL(htmlPath).href;
   let matched = 0; const mismatches = [];
   for (const g of transcripts) {
-    const url = `${base}?seed=${encodeURIComponent(g.seed)}`;
+    const url = `${base}?seed=${encodeURIComponent(g.seed)}${g.debug ? '&debug=1' : ''}`;
     const loaded = cdp.once('Page.loadEventFired', sessionId);
     await cdp.send('Page.navigate', { url }, sessionId);
     await loaded;
@@ -130,7 +132,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const files = process.argv.slice(2).map((f) => path.resolve(f));
   if (!files.length) files.push(path.join(ROOT, 'dist', 'index.html'), LEGACY);
   for (const f of files) if (!fs.existsSync(f)) { console.error(`${path.relative(ROOT, f)} does not exist. Run "npm run build" first.`); process.exit(2); }
-  const transcripts = readTranscripts();
+  const goldenFor = (f) => (f === LEGACY ? GOLDEN_V13 : GOLDEN);
   const browser = await launch(chrome);
   let failed = false;
   try {
@@ -138,10 +140,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const version = await cdp.send('Browser.getVersion');
     console.log(`Browser: ${version.product}`);
     for (const f of files) {
-      const r = await checkFile(cdp, f, transcripts);
+      const golden = goldenFor(f);
+      const r = await checkFile(cdp, f, readTranscripts(golden));
       const ok = r.matched === r.transcripts && !r.problems.length && !r.strays.length;
       failed = failed || !ok;
-      console.log(`${ok ? 'ok  ' : 'FAIL'} ${r.file}: ${r.matched} of ${r.transcripts} transcripts match on the page; ${r.problems.length} errors; ${r.strays.length} requests beyond the page itself`);
+      console.log(`${ok ? 'ok  ' : 'FAIL'} ${r.file}: ${r.matched} of ${r.transcripts} transcripts in ${path.relative(ROOT, golden)} match on the page; ${r.problems.length} errors; ${r.strays.length} requests beyond the page itself`);
       for (const m of r.mismatches) console.log('     differs  ' + m);
       for (const p of [...new Set(r.problems)]) console.log('     error    ' + p);
       for (const s of r.strays) console.log('     request  ' + s);

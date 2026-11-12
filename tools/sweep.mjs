@@ -7,11 +7,14 @@
 // in docs/SPEC.md section 3.
 //
 // Definitions
-//   dog tile          a plains or forest tile where dogIsVeryNear(x, y) holds and
+//   searchable tile   a tile where ENTER opens wilderness. In v13: plains and forest.
+//                     From M2 (D6): natural ruins too. The game answers this itself
+//                     from M2 on, through enterKind().
+//   dog tile          a searchable tile where dogIsVeryNear(x, y) holds and
 //                     generateWilderness(x, y).dog is not null
 //   winnable          some dog tile can be reached from the start over tiles that
 //                     are not water, mountain or blocked
-//   fresh-trail truth dog tiles / very-near plains and forest tiles, summed over seeds
+//   fresh-trail truth dog tiles / very-near searchable tiles, summed over seeds
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,16 +33,18 @@ function __measure(seedStr, full){
   const dist = __bfsFrom(player.x, player.y).dist;
   const out = { nTowns: towns.length, startX: player.x, startY: player.y };
   let reach = 0, nearReach = 0, veryNearWild = 0, dogTiles = 0, dogTilesReach = 0, bestDog = -1, ruins = 0, ecc = 0, ruinFar = -1;
+  let ruinsSearchable = 0, ruinsVeryNear = 0, ruinDogTiles = 0;
   const dogs = [];
   for (let y=0;y<N;y++) for (let x=0;x<N;x++){
     const d = dist[y*N+x], r = d >= 0;
     if (r){ reach++; if (d > ecc) ecc = d; }
-    if (__isNaturalRuin(x,y)){ ruins++; if (r && d > ruinFar) ruinFar = d; }
+    const ruin = __isNaturalRuin(x,y);
+    if (ruin){ ruins++; if (r && d > ruinFar) ruinFar = d; if (__enterableWild(x,y)) ruinsSearchable++; }
     if (r && dogIsNear(x,y)) nearReach++;
     if (dogIsVeryNear(x,y) && __enterableWild(x,y)){
-      veryNearWild++;
+      veryNearWild++; if (ruin) ruinsVeryNear++;
       if (generateWilderness(x,y).dog){
-        dogTiles++;
+        dogTiles++; if (ruin) ruinDogTiles++;
         if (r){ dogTilesReach++; dogs.push({x:x,y:y}); if (bestDog < 0 || d < bestDog) bestDog = d; }
       }
     }
@@ -47,10 +52,11 @@ function __measure(seedStr, full){
   out.reach = reach; out.nearReach = nearReach; out.veryNearWild = veryNearWild;
   out.dogTiles = dogTiles; out.dogTilesReach = dogTilesReach; out.bestDog = bestDog;
   out.ruins = ruins; out.ecc = ecc; out.ruinFar = ruinFar;
+  out.ruinsSearchable = ruinsSearchable; out.ruinsVeryNear = ruinsVeryNear; out.ruinDogTiles = ruinDogTiles;
   if (!full) return JSON.stringify(out);
 
   // towns: reachability, nearest, and which buildings are drawn
-  let townsReach = 0, nearestTown = -1, bothRolled = 0, smithShownWhenBoth = 0;
+  let townsReach = 0, nearestTown = -1, bothRolled = 0, smithShownWhenBoth = 0, bothShownWhenBoth = 0, guardAtStreetEnd = 0;
   for (const t of towns){
     const d = dist[t.y*N+t.x];
     if (d >= 0){ townsReach++; if (nearestTown < 0 || d < nearestTown) nearestTown = d; }
@@ -58,10 +64,14 @@ function __measure(seedStr, full){
     if (rolled.includes("S") && rolled.includes("G")){
       bothRolled++;
       const m = generateTown(t.x, t.y, false).map;
-      if (m.some(function(row){ return row.includes("S"); })) smithShownWhenBoth++;
+      const cells = m.join("");
+      if (cells.includes("S")) smithShownWhenBoth++;
+      if (cells.includes("S") && cells.includes("G")) bothShownWhenBoth++;
+      if (m[4][7] === "G") guardAtStreetEnd++;
     }
   }
   out.townsReach = townsReach; out.nearestTown = nearestTown; out.bothRolled = bothRolled; out.smithShownWhenBoth = smithShownWhenBoth;
+  out.bothShownWhenBoth = bothShownWhenBoth; out.guardAtStreetEnd = guardAtStreetEnd;
 
   // gesture: does ASK DOG's direction lead toward the nearest reachable dog tile?
   // Sampled at steps 0..19 because the gesture's mislead roll is keyed on the step count.
@@ -152,7 +162,8 @@ export function sweepFull(htmlPath = LEGACY, n = SWEEP_SIZE) {
     seedsWithATownNotWalkable: rows.filter((r) => r.townsReach < r.nTowns).length,
     naturalRuinsPerSeed: { mean: Number(mean(col('ruins')).toFixed(1)) },
     startToNearestTown: { median: quantile(col('nearestTown').filter((x) => x >= 0), 0.5) },
-    smithAndGuardBothRolled: { towns: sum('bothRolled'), smithDrawn: sum('smithShownWhenBoth') },
+    smithAndGuardBothRolled: { towns: sum('bothRolled'), smithDrawn: sum('smithShownWhenBoth'), bothDrawn: sum('bothShownWhenBoth'), guardAtStreetEnd: sum('guardAtStreetEnd') },
+    naturalRuins: { tiles: sum('ruins'), searchable: sum('ruinsSearchable'), veryNear: sum('ruinsVeryNear'), dogTiles: sum('ruinDogTiles') },
     farthestWalkableTile: { p05: quantile(col('ecc'), 0.05), median: quantile(col('ecc'), 0.5) },
     seedsWithNaturalRuin20StepsAway: rows.filter((r) => r.ruinFar >= 20).length,
     saveCodeLengthAtStep0: { min: quantile(col('saveLen'), 0), max: quantile(col('saveLen'), 0.9999) },

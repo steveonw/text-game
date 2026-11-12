@@ -1,7 +1,7 @@
 {
   "name": "09-ride",
-  "covers": "The cabbage merchant: two talks, the offer, RIDE to the next town. Defect D8: the ride narration is logged and erased in the same tick (compare log with finalScreen).",
-  "source": "legacy/quiet-roads-v13.html",
+  "covers": "The cabbage merchant: two talks, the offer, RIDE to the next town, and a second ride on from there. The ride is told on the page (D8 repaired).",
+  "source": "dist/index.html",
   "seed": "ride-1",
   "commands": [
     "S",
@@ -109,21 +109,26 @@
     ["m","Right. Here we are."]
   ],
   "finalScreen": [
+    ["m","You climb onto the wagon."],
+    ["m","Cabbages shift beneath the weight."],
+    ["m","The road becomes a rhythm."],
+    ["m","He complains the whole way."],
+    ["m","You rest."],
     ["m","The wagon stops."],
     ["m","Right. Here we are."]
   ],
   "finalMap": [
     "#########",
     "#...|...#",
-    "#.I.|.S.#",
+    "#.I.|...#",
     "#...|...#",
     "#w||@|||#",
     "#...|...#",
-    "#.T.|.G.#",
+    "#.S.|.T.#",
     "#...|...#",
     "#########"
   ],
-  "finalMapHash": "391fc094c77f6e75",
+  "finalMapHash": "dba11d97048e7fc9",
   "finalStatus": "Fatigue: tired • Roads: unsettled • Steps: 22",
   "finalMode": "LOCAL",
   "finalPos": "TOWN @ (16,10) • seed -1944689515"

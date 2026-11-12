@@ -1,7 +1,7 @@
 {
   "name": "08-wait-and-rest",
   "covers": "WAIT; REST refused on the world map; REST in the wild and in a town; fatigue words in STATUS.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "rest-1",
   "commands": [
     "WAIT",

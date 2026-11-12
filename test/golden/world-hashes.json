@@ -1,6 +1,6 @@
 {
   "_note": "Per sweep seed: [hash of the 400 terrain glyphs + towns + capital, start x, start y]. The hash is the first 16 hex digits of a SHA-256. Recorded by tools/record-goldens.mjs.",
-  "_source": "legacy/quiet-roads-v13.html",
+  "_source": "dist/index.html",
   "sweep-1": ["69a02464313bdc59",9,9],
   "sweep-2": ["642e201adc333258",11,12],
   "sweep-3": ["0266b525eafe0b47",5,6],

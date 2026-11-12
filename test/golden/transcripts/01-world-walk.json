@@ -1,7 +1,7 @@
 {
   "name": "01-world-walk",
   "covers": "Opening text; LOOK, STATUS, HELP; walking; bumping into water, mountains and the map edge; full-word directions.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "walk-1",
   "commands": [
     "LOOK",

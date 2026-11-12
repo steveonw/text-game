@@ -1,6 +1,6 @@
 {
- "note": "Save codes in every format v13 reads. \"restores\" is the state v13 holds after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.",
- "source": "legacy/quiet-roads-v13.html",
+ "note": "Save codes in every format the game reads. \"restores\" is the state held after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.",
+ "source": "dist/index.html",
  "codes": [
   {
    "label": "a new game at step 0",
@@ -26,36 +26,32 @@
   {
    "label": "end of transcript 02-enter-town",
    "format": "packed-v4",
-   "code": "BNa-zcAGAAAFACsZMgQAQAAABABAAAAEAIAAAAgAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjXeAQAAAQEAAAEVADgi",
+   "code": "BMOLjIsPExMFACIQMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAgIFExMBFQABExMBFQChzw",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": 873050027,
+    "seed": -2024899298,
     "mode": "WORLD",
-    "x": 0,
-    "y": 0,
+    "x": 19,
+    "y": 19,
     "fatigue": 5,
     "rep": 0,
-    "steps": 43,
-    "events": [
-     "plague_13_2",
-     "plague_2_11",
-     "routes_stirring"
-    ],
-    "dogHintCount": 8,
+    "steps": 34,
+    "events": [],
+    "dogHintCount": 2,
     "hintTiles": [
-     2,
-     22,
-     42,
-     62,
-     82,
-     103,
-     123,
-     205
+     398,
+     399
     ],
     "npc": {
-     "npc_ambient_TOWN_0_0": {
+     "npc_G_19_19": {
+      "familiarity": 1,
+      "trust": 0,
+      "hostility": 1,
+      "flags": []
+     },
+     "npc_ambient_TOWN_19_19": {
       "familiarity": 1,
       "trust": 0,
       "hostility": 1,
@@ -293,7 +289,7 @@
   {
    "label": "end of transcript 24-fallen-capital",
    "format": "packed-v4",
-   "code": "BNmsvdQFDw0EAEIfMgAAAAAAAAAAAAAAnAAAAAAAAAAAAAAAAAAAgAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIBDw0BFQBwdg",
+   "code": "BNmsvdQFDw0EAUIfMgAAAAAAAAAAAAAAnAAAAAAAAAAAAAAAAAAAgAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIGDw0CFQHzjw",
    "reply": [
     "The password takes."
    ],
@@ -303,7 +299,7 @@
     "x": 15,
     "y": 13,
     "fatigue": 4,
-    "rep": 0,
+    "rep": 1,
     "steps": 66,
     "events": [
      "capital_fallen",
@@ -320,11 +316,13 @@
      235
     ],
     "npc": {
-     "npc_I_15_13": {
-      "familiarity": 1,
+     "npc_r_15_13": {
+      "familiarity": 2,
       "trust": 0,
       "hostility": 1,
-      "flags": []
+      "flags": [
+       "asked_dog"
+      ]
      }
     }
    }
@@ -332,7 +330,7 @@
   {
    "label": "end of transcript 25-burned-town",
    "format": "packed-v4",
-   "code": "BKu1zr8BCRMFAV4fMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgCgACAAAAAACAAAAAAGFAwABAgYJEwIVAaQ3",
+   "code": "BKu1zr8BCRMFAWQfMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgCgACAAAAAACAAAAAAGFAwABAgYJEwIVAZ1h",
    "reply": [
     "The password takes."
    ],
@@ -343,7 +341,7 @@
     "y": 19,
     "fatigue": 5,
     "rep": 1,
-    "steps": 94,
+    "steps": 100,
     "events": [
      "burned_9_19",
      "capital_fallen",

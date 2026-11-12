@@ -1,7 +1,7 @@
 {
   "name": "23-long-clock",
   "covers": "The whole clock by waiting: routes stir, sickness spreads, war starts, a town burns, the capital falls. The final map shows the damage.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "clock-1",
   "commands": [
     "N",

@@ -1,8 +1,9 @@
 {
   "name": "21-debug-and-block",
-  "covers": "Defects D12 and D17: the undocumented DEBUG and BLOCK commands; a blocked tile stops movement and is drawn as #.",
-  "source": "legacy/quiet-roads-v13.html",
+  "covers": "On a page opened with ?debug=1: the maintenance commands DEBUG and BLOCK; a blocked tile stops movement and is drawn as #. Nothing in play closes a road yet (D12).",
+  "source": "dist/index.html",
   "seed": "debug-1",
+  "debug": true,
   "commands": [
     "DEBUG",
     "BLOCK",

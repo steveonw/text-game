@@ -1,7 +1,7 @@
 {
   "name": "13-ending-reunion",
   "covers": "A full game to \"Ending: Reunion\": dog found before war, without the hints and reputation Homecoming asks for.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "reunion-2",
   "commands": [
     "W",

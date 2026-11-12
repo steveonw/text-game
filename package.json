@@ -16,6 +16,6 @@
     "bots": "node tools/build.mjs && node tools/bot.mjs dist/index.html",
     "sweep:legacy": "node tools/sweep.mjs legacy/quiet-roads-v13.html",
     "bots:legacy": "node tools/bot.mjs legacy/quiet-roads-v13.html",
-    "record": "node tools/record-goldens.mjs"
+    "record": "node tools/build.mjs && node tools/record-goldens.mjs dist/index.html"
   }
 }
