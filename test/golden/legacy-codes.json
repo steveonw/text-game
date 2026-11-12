@@ -1,0 +1,650 @@
+{
+ "note": "Save codes in every format v13 reads. \"restores\" is the state v13 holds after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.",
+ "source": "legacy/quiet-roads-v13.html",
+ "codes": [
+  {
+   "label": "a new game at step 0",
+   "format": "packed-v4",
+   "code": "BLiw_rUPDw8AAAAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIKk",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 2069875740,
+    "mode": "WORLD",
+    "x": 15,
+    "y": 15,
+    "fatigue": 0,
+    "rep": 0,
+    "steps": 0,
+    "events": [],
+    "dogHintCount": 0,
+    "hintTiles": [],
+    "npc": {}
+   }
+  },
+  {
+   "label": "end of transcript 02-enter-town",
+   "format": "packed-v4",
+   "code": "BNa-zcAGAAAFACsZMgQAQAAABABAAAAEAIAAAAgAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjXeAQAAAQEAAAEVADgi",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 873050027,
+    "mode": "WORLD",
+    "x": 0,
+    "y": 0,
+    "fatigue": 5,
+    "rep": 0,
+    "steps": 43,
+    "events": [
+     "plague_13_2",
+     "plague_2_11",
+     "routes_stirring"
+    ],
+    "dogHintCount": 8,
+    "hintTiles": [
+     2,
+     22,
+     42,
+     62,
+     82,
+     103,
+     123,
+     205
+    ],
+    "npc": {
+     "npc_ambient_TOWN_0_0": {
+      "familiarity": 1,
+      "trust": 0,
+      "hostility": 1,
+      "flags": []
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 05-talk-six-times",
+   "format": "packed-v4",
+   "code": "BKq1pZAGChMFBQgQMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAEAAAAAAAAAQIBChMGVwAp6w",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 822390101,
+    "mode": "WORLD",
+    "x": 10,
+    "y": 19,
+    "fatigue": 5,
+    "rep": 5,
+    "steps": 8,
+    "events": [],
+    "dogHintCount": 2,
+    "hintTiles": [
+     350,
+     370
+    ],
+    "npc": {
+     "npc_I_10_19": {
+      "familiarity": 6,
+      "trust": 2,
+      "hostility": 5,
+      "flags": []
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 06-ask-every-topic",
+   "format": "packed-v4",
+   "code": "BJqPp98NBgMFBQcAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQICBgMHGXdD7w",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 1844765645,
+    "mode": "WORLD",
+    "x": 6,
+    "y": 3,
+    "fatigue": 5,
+    "rep": 5,
+    "steps": 7,
+    "events": [],
+    "dogHintCount": 0,
+    "hintTiles": [],
+    "npc": {
+     "npc_M_6_3": {
+      "familiarity": 7,
+      "trust": 4,
+      "hostility": 1,
+      "flags": [
+       "asked_dog",
+       "asked_road",
+       "asked_sickness",
+       "asked_town",
+       "asked_war",
+       "asked_work"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 07-ask-routes-and-gesture",
+   "format": "packed-v4",
+   "code": "BNrVou8ECgQFBAwZMgAAAAAAAAAAAAAAAAAAAAAIAIAAAAgAgAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASEAAAECBAoEBCYJeX8",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 653546861,
+    "mode": "WORLD",
+    "x": 10,
+    "y": 4,
+    "fatigue": 5,
+    "rep": 4,
+    "steps": 12,
+    "events": [
+     "plague_13_1",
+     "routes_stirring"
+    ],
+    "dogHintCount": 5,
+    "hintTiles": [
+     131,
+     151,
+     171,
+     191,
+     211
+    ],
+    "npc": {
+     "npc_T_10_4": {
+      "familiarity": 4,
+      "trust": 1,
+      "hostility": 2,
+      "flags": [
+       "asked_dog",
+       "asked_routes"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 09-ride",
+   "format": "packed-v4",
+   "code": "BNXtzL4OEAoCAxYZMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2AAAAAAAAAdgBAAABAAMFAN0I",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -1944689515,
+    "mode": "WORLD",
+    "x": 16,
+    "y": 10,
+    "fatigue": 2,
+    "rep": 3,
+    "steps": 22,
+    "events": [
+     "plague_16_10",
+     "routes_stirring"
+    ],
+    "dogHintCount": 4,
+    "hintTiles": [
+     345,
+     346,
+     348,
+     349
+    ],
+    "npc": {
+     "npc_cabbage_merchant": {
+      "familiarity": 3,
+      "trust": 0,
+      "hostility": 0,
+      "flags": []
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 20-fatigue-cap",
+   "format": "packed-v4",
+   "code": "BMmr7ZgEAwQDABAZMgAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHhv",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -562932453,
+    "mode": "WORLD",
+    "x": 3,
+    "y": 4,
+    "fatigue": 3,
+    "rep": 0,
+    "steps": 16,
+    "events": [
+     "routes_stirring"
+    ],
+    "dogHintCount": 4,
+    "hintTiles": [
+     84,
+     85,
+     86,
+     87
+    ],
+    "npc": {}
+   }
+  },
+  {
+   "label": "end of transcript 21-debug-and-block",
+   "format": "packed-v4",
+   "code": "BPSZvTEREAEAAQAyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHlAgCvWQ",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 51881594,
+    "mode": "WORLD",
+    "x": 17,
+    "y": 16,
+    "fatigue": 1,
+    "rep": 0,
+    "steps": 1,
+    "events": [
+     "road_blocked_17_17"
+    ],
+    "dogHintCount": 0,
+    "hintTiles": [],
+    "npc": {}
+   }
+  },
+  {
+   "label": "end of transcript 23-long-clock",
+   "format": "packed-v4",
+   "code": "BJnB0YcEBgIAAKABHzIAABAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANd0wGvAgHTAQAArgY",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -544878669,
+    "mode": "WORLD",
+    "x": 6,
+    "y": 2,
+    "fatigue": 0,
+    "rep": 0,
+    "steps": 160,
+    "events": [
+     "burned_11_10",
+     "capital_fallen",
+     "plague_11_10",
+     "plague_13_4",
+     "plague_3_15",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 3,
+    "hintTiles": [
+     20,
+     45,
+     46
+    ],
+    "npc": {}
+   }
+  },
+  {
+   "label": "end of transcript 24-fallen-capital",
+   "format": "packed-v4",
+   "code": "BNmsvdQFDw0EAEIfMgAAAAAAAAAAAAAAnAAAAAAAAAAAAAAAAAAAgAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIBDw0BFQBwdg",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -759671597,
+    "mode": "WORLD",
+    "x": 15,
+    "y": 13,
+    "fatigue": 4,
+    "rep": 0,
+    "steps": 66,
+    "events": [
+     "capital_fallen",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 6,
+    "hintTiles": [
+     90,
+     91,
+     92,
+     95,
+     215,
+     235
+    ],
+    "npc": {
+     "npc_I_15_13": {
+      "familiarity": 1,
+      "trust": 0,
+      "hostility": 1,
+      "flags": []
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 25-burned-town",
+   "format": "packed-v4",
+   "code": "BKu1zr8BCRMFAV4fMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgCgACAAAAAACAAAAAAGFAwABAgYJEwIVAaQ3",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -200920406,
+    "mode": "WORLD",
+    "x": 9,
+    "y": 19,
+    "fatigue": 5,
+    "rep": 1,
+    "steps": 94,
+    "events": [
+     "burned_9_19",
+     "capital_fallen",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 5,
+    "hintTiles": [
+     311,
+     315,
+     317,
+     331,
+     369
+    ],
+    "npc": {
+     "npc_r_9_19": {
+      "familiarity": 2,
+      "trust": 0,
+      "hostility": 1,
+      "flags": [
+       "asked_dog"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 26-sick-town",
+   "format": "packed-v4",
+   "code": "BMPfwckIAgcFAxsZMiAAAAAAAAIAIAAAAgAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY4BAAABAgECBwQlIV_N",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -1150826466,
+    "mode": "WORLD",
+    "x": 2,
+    "y": 7,
+    "fatigue": 5,
+    "rep": 3,
+    "steps": 27,
+    "events": [
+     "plague_2_7",
+     "routes_stirring"
+    ],
+    "dogHintCount": 8,
+    "hintTiles": [
+     5,
+     49,
+     69,
+     89,
+     144,
+     145,
+     146,
+     147
+    ],
+    "npc": {
+     "npc_I_2_7": {
+      "familiarity": 4,
+      "trust": 0,
+      "hostility": 2,
+      "flags": [
+       "asked_dog",
+       "asked_sickness"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 07-ask-routes-and-gesture",
+   "format": "base32-v2",
+   "code": "RNTHNJT4GJYCE63CHJ5DLN3XGS5DSPTTFSTHSJT4GE2C2JV3EJ7DJMBCN2TDWPKNEK3CEQTWFSTHG7BCHJ2VEMBCJ2TDWNKNEK2CEQU5GN3X4MBCNJTDWY47FSTGYJT4MPQU2JVQEJ7FYY3CLS2VAMTWEJYDJMBTFS3C2QL7MX8SF",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 653546861,
+    "mode": "WORLD",
+    "x": 10,
+    "y": 4,
+    "fatigue": 5,
+    "rep": 4,
+    "steps": 12,
+    "events": [
+     "plague_13_1",
+     "routes_stirring"
+    ],
+    "dogHintCount": 0,
+    "hintTiles": [],
+    "npc": {
+     "npc_T_10_4": {
+      "familiarity": 4,
+      "trust": 1,
+      "hostility": 2,
+      "flags": [
+       "asked_dog",
+       "asked_routes"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 23-long-clock",
+   "format": "base32-v2",
+   "code": "RNTHNJT4GJYCE63CHJYVLPBWHA5VSPTYHEYCE8BCHJ5C2JV3EJ7DEMBCN2TDWNBNEK3CEQTSFSTHG7BCHJ2VNNBNEKDCEQTZFSTHAJT4MN6VGMBUGE2U2N3SGPQU2JVCEJ7FYNTTGFQU2JVMEJ7FYZKNEKZCEQU5MX8SA",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -544878669,
+    "mode": "WORLD",
+    "x": 6,
+    "y": 2,
+    "fatigue": 0,
+    "rep": 0,
+    "steps": 160,
+    "events": [
+     "burned_11_10",
+     "capital_fallen",
+     "plague_11_10",
+     "plague_13_4",
+     "plague_3_15",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 0,
+    "hintTiles": [],
+    "npc": {}
+   }
+  },
+  {
+   "label": "end of transcript 26-sick-town",
+   "format": "base32-v2",
+   "code": "RNTHNJT4GJYCE63CHJYVCNKXGA6DEPTWG25C2JV2EJ7DEMBCRETDWP3NEKVCEQTXFSTHEJT4GNYCE65WEJ7DEP3NEKDCEQTTFSTHAJT4MN2VJNU7FSTGEJT4MPQU2JVMEJ7FYZKNEKZCEQU5MNTEUNTQG6TC2PBNGAYDEMBVGPQX49JG",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -1150826466,
+    "mode": "WORLD",
+    "x": 2,
+    "y": 7,
+    "fatigue": 5,
+    "rep": 3,
+    "steps": 27,
+    "events": [
+     "plague_2_7",
+     "routes_stirring"
+    ],
+    "dogHintCount": 0,
+    "hintTiles": [],
+    "npc": {
+     "npc_I_2_7": {
+      "familiarity": 4,
+      "trust": 0,
+      "hostility": 2,
+      "flags": [
+       "asked_dog",
+       "asked_sickness"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 07-ask-routes-and-gesture, rebuilt as packed version 3",
+   "format": "packed-v3",
+   "code": "A9rVou8ECgQFBAwZASEAAAECBAoEBCYJGmA",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 653546861,
+    "mode": "WORLD",
+    "x": 10,
+    "y": 4,
+    "fatigue": 5,
+    "rep": 4,
+    "steps": 12,
+    "events": [
+     "plague_13_1",
+     "routes_stirring"
+    ],
+    "dogHintCount": 3,
+    "hintTiles": [],
+    "npc": {
+     "npc_T_10_4": {
+      "familiarity": 4,
+      "trust": 1,
+      "hostility": 2,
+      "flags": [
+       "asked_dog",
+       "asked_routes"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 07-ask-routes-and-gesture, rebuilt in the oldest base32 form",
+   "format": "base32-oldest",
+   "code": "RNTHGJT4G24VGPKWG26DNNKNEK6CEQTTGAYCE8KCHJ4C2JVGEJ7DLMBCQJTDWPBNEK3ZJJT4GE3C2JVFEJ7FYJVSPTSYQ7MFM62VGZ3TEJYCE6VRQX4GL649QP4GU6VUPFZGQJTNEKUG835JPFZHJZ3TGFRVNJTNEKUG835JPFZHJZ3TGFRVQJTNEKUG835JPFZHJZ3TGFRVSJTNEKUG835JPFZHJZ3TGFRVUJTNEKUG835JPFZHJZ3TGFRVCNBCMWYCE5TCHK7UE5VSNPRXJZ3TGBRVJJT4RNTGN2MPPFYGU2MUPF4HUJT4GSYCE7DUQX3ZJJT4GEYCE4DRQP4GU5DKQT6UEQTUFSTGN5DBN73UEQU5EKSZG45FNTRYJ55HEJYCE2MVPPUYJZ5UP74ZJ3MVEKQZ49M75",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": 653546861,
+    "mode": "WORLD",
+    "x": 10,
+    "y": 4,
+    "fatigue": 5,
+    "rep": 4,
+    "steps": 12,
+    "events": [
+     "plague_13_1",
+     "routes_stirring"
+    ],
+    "dogHintCount": 5,
+    "hintTiles": [
+     131,
+     151,
+     171,
+     191,
+     211
+    ],
+    "npc": {
+     "npc_T_10_4": {
+      "familiarity": 4,
+      "trust": 1,
+      "hostility": 2,
+      "flags": [
+       "asked_dog",
+       "asked_routes"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "label": "end of transcript 23-long-clock, rebuilt as packed version 3",
+   "format": "packed-v3",
+   "code": "A5nB0YcEBgIAAKABHwNd0wGvAgHTAQAABZk",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -544878669,
+    "mode": "WORLD",
+    "x": 6,
+    "y": 2,
+    "fatigue": 0,
+    "rep": 0,
+    "steps": 160,
+    "events": [
+     "burned_11_10",
+     "capital_fallen",
+     "plague_11_10",
+     "plague_13_4",
+     "plague_3_15",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 3,
+    "hintTiles": [],
+    "npc": {}
+   }
+  },
+  {
+   "label": "end of transcript 23-long-clock, rebuilt in the oldest base32 form",
+   "format": "base32-oldest",
+   "code": "RNTHGJT4FW4VJPB2G66DNPT3FSTHSJT4G2YCE8KCHJ3C2JVGEJ7DAMBCQJTDWNBNEK3ZJJT4GE5DAMBCNWTDWY3CNK4ZE5VFNTRVCNL9GE2CEMBCNPSZA4MWNFYF83VBPTYGL5TCFSTHA5DBN74YLZ3TGFRVCNBCFSTHA5DBN74YLZ3TGPRVJJTNEK2G22MHQXUX8N49GE4UEMBCQKZZL7DFQPRZG7DKQK3GU5VHEJYCE75BQKRY85U9QKZYC3DVEJYCE3DRN7WGU5VWM62F8NKCFSTGJ55HPBWY67C9GXRVEJTNEKUG835JPFZHJZ3YM63CEZKNEKZCEQV5RX8SN",
+   "reply": [
+    "The password takes."
+   ],
+   "restores": {
+    "seed": -544878669,
+    "mode": "WORLD",
+    "x": 6,
+    "y": 2,
+    "fatigue": 0,
+    "rep": 0,
+    "steps": 160,
+    "events": [
+     "burned_11_10",
+     "capital_fallen",
+     "plague_11_10",
+     "plague_13_4",
+     "plague_3_15",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 3,
+    "hintTiles": [
+     20,
+     45,
+     46
+    ],
+    "npc": {}
+   }
+  }
+ ]
+}

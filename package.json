@@ -1,0 +1,18 @@
+{
+  "name": "the-quiet-roads",
+  "version": "0.13.0",
+  "description": "The Quiet Roads: a single-file browser text game. Find your dog before the roads change.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "sweep": "node tools/sweep.mjs",
+    "bots": "node tools/bot.mjs",
+    "record": "node tools/record-goldens.mjs",
+    "build": "node -e \"console.log('Nothing to build yet. Play legacy/quiet-roads-v13.html; the one-file build arrives in M1.')\""
+  }
+}

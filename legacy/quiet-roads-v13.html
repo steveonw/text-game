@@ -1,0 +1,2185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>The Quiet Roads</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#141824;
+    --text:#e6e6e6;
+    --muted:#a8b0c0;
+    --line:#2a3144;
+  }
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    display:flex; min-height:100vh;
+  }
+  .wrap{ margin:auto; width:min(980px, 96vw); display:grid; grid-template-columns:1fr; gap:12px; padding:14px; }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    overflow:hidden;
+  }
+  .top{ display:grid; grid-template-columns: 420px 1fr; gap:12px; }
+  @media (max-width: 860px){ .top{ grid-template-columns: 1fr; } }
+  .map{ padding:12px; border-right:1px solid var(--line); display:flex; flex-direction:column; min-width:0; }
+  @media (max-width: 860px){ .map{ border-right:none; border-bottom:1px solid var(--line);} }
+  .meta{ padding:12px; }
+  .h{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .title{ font-weight:700; letter-spacing:.2px; }
+  .hint{ color:var(--muted); font-size:12px; }
+  #mapOut{ white-space:pre; line-height:1.05; font-size:16px; user-select:none; min-height:22em; overflow-x:auto; overflow-y:hidden; font-family: Menlo, Consolas, Monaco, "Liberation Mono", "Lucida Console", monospace; }
+  .legend{ margin-top:8px; display:flex; flex-wrap:wrap; gap:8px 14px; color:var(--muted); font-size:12px; }
+  .legend span{ white-space:nowrap; }
+  .chip{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{ width:10px; height:10px; border-radius:3px; border:1px solid rgba(255,255,255,.12); display:inline-block; }
+  #log{ padding:12px; height: 340px; overflow:auto; border-top:1px solid var(--line); }
+  .line{ margin:0 0 8px 0; }
+  .line .m{ color:var(--muted); }
+  .cmdrow{ display:flex; gap:10px; padding:12px; border-top:1px solid var(--line); align-items:center; }
+  #cmd{
+    flex:1; background:#0b0d12; color:var(--text);
+    border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; outline:none; font-family:inherit; font-size:14px;
+  }
+  #cmd:focus{ border-color:#3a4560; box-shadow: 0 0 0 3px rgba(58, 69, 96, 0.4); }
+  button{
+    background:#0b0d12; color:var(--text);
+    border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; font-family:inherit; cursor:pointer;
+  }
+  button:hover{ border-color:#3a4560; }
+  button:focus{ outline:none; box-shadow: 0 0 0 3px rgba(58, 69, 96, 0.35); border-color:#3a4560; }
+  .small{ font-size:12px; color:var(--muted); }
+  .mono{ font-family:inherit; }
+  .kbd{
+    display:inline-block; padding:2px 6px; border:1px solid var(--line); border-radius:6px;
+    background:#0b0d12; color:var(--text); font-size:12px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card top">
+      <div class="map">
+        <div class="h">
+          <div class="title">Map</div>
+          <div class="hint"><span id="modeLabel">WORLD</span> • <span id="posLabel"></span></div>
+        </div>
+        <div id="mapOut" role="img" aria-label="Game map showing the world or local area"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="meta">
+        <div class="h">
+          <div class="title">The Quiet Roads</div>
+          <div class="hint">type <span class="kbd">HELP</span></div>
+        </div>
+        <div class="small" id="statusLine"></div>
+        <div class="small" style="margin-top:10px; line-height:1.6">
+          <div><span class="kbd">N S E W</span> move</div>
+          <div><span class="kbd">ENTER</span> town/wild</div>
+          <div><span class="kbd">TALK</span> speak</div>
+          <div><span class="kbd">CALL</span> call dog</div>
+          <div><span class="kbd">ASK DOG</span> ask about</div>
+          <div><span class="kbd">SAVE</span> password</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <div class="cmdrow">
+        <div class="mono">&gt;</div>
+        <input id="cmd" type="text" aria-label="Game command input" autocomplete="off" spellcheck="false" placeholder="Type a command (HELP for list)"/>
+        <button id="btn" type="button" aria-label="Send command">Send</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* =========================================================
+   The Quiet Roads — Prototype (fixed)
+   Single-file, deterministic, no dependencies.
+   ========================================================= */
+
+// ---------- Palette (LOCKED) ----------
+const COLORS = {
+  "@":"#EAEAEA",".":"#6F7F6A","F":"#4E6B5A","~":"#4A6C8C","^":"#7A7A7A",
+  "T":"#9C8F7A","C":"#B1A58B","R":"#6A625A","#":"#5C5C5C","!":"#8C7A6B",
+  "|":"#7D6F5E","+":"#7D6F5E","I":"#8F846A","M":"#8F7E6A","S":"#7F7A6F",
+  "G":"#7A7268","r":"#6A645E","t":"#556B5F","d":"#CFCFCF","w":"#8A6F5A","?":"#9A9A9A",
+  "p":"#C9B896","n":"#A89880",
+};
+
+const WORLD_SIZE = 20;
+
+// --- Dog hint tracking (bounded, no memory leak) ---
+// We used to store "doghint_x_y" strings inside worldEvents, which grows forever.
+// Now we store a fixed bitset (WORLD_SIZE*WORLD_SIZE bits) and a counter.
+const DOG_HINT_BITS = new Uint8Array(((WORLD_SIZE*WORLD_SIZE) + 7) >> 3);
+let dogHintCount = 0;
+
+function resetDogHints(){
+  DOG_HINT_BITS.fill(0);
+  dogHintCount = 0;
+}
+function dogHintIndex(x,y){ return (y*WORLD_SIZE + x) | 0; }
+function hasDogHint(x,y){
+  const i = dogHintIndex(x,y);
+  const b = i >> 3, bit = i & 7;
+  return (DOG_HINT_BITS[b] & (1<<bit)) !== 0;
+}
+function addDogHint(x,y){
+  const i = dogHintIndex(x,y);
+  const b = i >> 3, bit = i & 7;
+  const mask = (1<<bit);
+  if (DOG_HINT_BITS[b] & mask) return false;
+  DOG_HINT_BITS[b] |= mask;
+  dogHintCount++;
+  return true;
+}
+
+const LOCAL_SIZE = 9;
+
+// ---------- Seed ----------
+function fnv1a32(str){
+  let h = 0x811c9dc5;
+  for (let i=0;i<str.length;i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h|0;
+}
+function initialSeed(){
+  const p = new URLSearchParams(location.search);
+  const s = p.get("seed");
+  if (s) return fnv1a32(s);
+  return (Date.now() ^ (Math.random()*1e9|0)) | 0;
+}
+let SEED = initialSeed();
+
+// ---------- State ----------
+let mode = "WORLD"; // WORLD | LOCAL | END
+let local = null;
+let steps = 0;
+let player = { x: 10, y: 10, fatigue: 0, rep: 0 };
+
+let worldEvents = new Set();
+let npcMemory = Object.create(null);
+let recentFragments = [];
+let recentInternal = [];
+let lastInternalStep = -999;
+let lastPressureStep = -999;
+
+let capital = null;
+let towns = [];
+let townSet = new Set();
+let cabbageRoute = [];
+
+// ---------- Helpers ----------
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function mix32(n){
+  n |= 0;
+  n ^= n >>> 16;
+  n = Math.imul(n, 0x7feb352d);
+  n ^= n >>> 15;
+  n = Math.imul(n, 0x846ca68b);
+  n ^= n >>> 16;
+  return n | 0;
+}
+function noise01(x,y,seed){
+  let n = (Math.imul(x|0, 374761393) + Math.imul(y|0, 668265263) + Math.imul(seed|0, 1442695041)) | 0;
+  n = mix32(n);
+  return (n>>>0) / 4294967296;
+}
+function nCentered(x,y,seed){ return noise01(x,y,seed) - 0.5; }
+function keyForXY(x,y){ return x + "_" + y; }
+function isTownAt(x,y){ return townSet.has(keyForXY(x,y)); }
+function profileAt(x,y){
+  const e = elevation(x,y);
+  const m = moisture(x,y);
+  const c = civ(x,y);
+  const d = danger(x,y);
+  const eN = clamp((e + 1.6) / 3.2, 0, 1);
+  const mN = clamp((m + 1.6) / 3.2, 0, 1);
+  const cN = clamp((c + 1.6) / 3.2, 0, 1);
+  const dN = clamp(d / 3.0, 0, 1);
+  const town = isTownAt(x,y);
+  const capDist = capital ? (Math.abs(capital.x-x)+Math.abs(capital.y-y)) : 999;
+  const capProx = clamp(1 - capDist / (WORLD_SIZE*0.9), 0, 1);
+  return {eN,mN,cN,dN,town,capProx};
+}
+
+// ---------- Terrain curves ----------
+function elevation(x,y){
+  const s = SEED * 0.0001;
+  return Math.sin((x + s*40)*0.35) + Math.cos((y - s*30)*0.25) + nCentered(x,y,SEED)*0.7;
+}
+function moisture(x,y){
+  const s = SEED * 0.0001;
+  return Math.cos((x + s*25)*0.18) - Math.sin((y + s*33)*0.22) + nCentered(x+99,y-77,SEED)*0.7;
+}
+function civ(x,y){
+  const s = SEED * 0.0001;
+  return Math.sin((x+y + s*50)*0.12) + nCentered(x-31,y+55,SEED)*0.6;
+}
+function danger(x,y){
+  const s = SEED * 0.0001;
+  return Math.abs(Math.sin((x - s*30)*0.27) + Math.cos((y + s*28)*0.19)) + noise01(x+10,y+10,SEED);
+}
+
+function tileAt(x,y){
+  // Terrain only (towns are placed separately via townSet).
+  const e = elevation(x,y);
+  const m = moisture(x,y);
+  const c = civ(x,y);
+  const d = danger(x,y);
+
+  if (e < -0.85) return "~";
+  if (e > 1.05) return "^";
+  if (m > 0.75 && e < 0.85) return "F";
+  if (d > 1.55 && c < 0.15 && e < 0.9) return "R";
+  return ".";
+}
+
+function finalTileAt(x,y){
+  const base = isTownAt(x,y) ? "T" : tileAt(x,y);
+  const k = keyForXY(x,y);
+
+  // Capital precedence (so plague can show on the capital)
+  if (capital && x===capital.x && y===capital.y){
+    if (worldEvents.has("capital_fallen")) return "R";
+    if (worldEvents.has("plague_"+k)) return "!";
+    return "C";
+  }
+
+  if (worldEvents.has("road_blocked_"+k)) return "#";
+  if (base==="T" && worldEvents.has("plague_"+k)) return "!";
+  if (base==="T" && worldEvents.has("burned_"+k)) return "R";
+  return base;
+}
+
+// ---------- Dog signal ----------
+function dogSignal(x,y){
+  const a = noise01(x*3, y*3, SEED ^ 0x0A11CE);
+  const b = noise01(x+17, y-11, SEED ^ 0x0D06D);
+  const c = Math.abs(Math.sin((x+y+SEED*0.001)*0.23));
+  return (a*0.55 + b*0.30 + c*0.35);
+}
+function dogIsNear(x,y){ return dogSignal(x,y) > 0.78 && finalTileAt(x,y) !== "~"; }
+function dogIsVeryNear(x,y){ return dogSignal(x,y) > 0.90 && finalTileAt(x,y) !== "~"; }
+
+// ---------- Towns + capital ----------
+function computeTowns(){
+  towns = [];
+  townSet = new Set();
+
+  // Candidate selection: pick a small number of well-spaced towns.
+  const candidates = [];
+  for (let y=0; y<WORLD_SIZE; y++){
+    for (let x=0; x<WORLD_SIZE; x++){
+      const t = tileAt(x,y);
+      if (t==="~" || t==="^" || t==="R") continue; // no towns in water/mountains/ruins
+      // Score uses the same "graphs" but is tuned to avoid dense clusters.
+      const score =
+        civ(x,y) * 1.00
+        + (0.15 - Math.abs(elevation(x,y))*0.05)
+        + (noise01(x,y,SEED^1234) * 0.20)
+        - (t==="F" ? 0.06 : 0.0); // slight preference for open land
+      candidates.push({x,y,score});
+    }
+  }
+  candidates.sort((a,b)=> b.score - a.score);
+
+  const MAX_TOWNS = 4;
+  const MIN_DIST = 6; // Manhattan distance
+
+  for (const c of candidates){
+    if (towns.length >= MAX_TOWNS) break;
+    if (c.score < 0.62 && towns.length >= 2) break; // stop once quality drops
+    let ok = true;
+    for (const t of towns){
+      const dist = Math.abs(t.x - c.x) + Math.abs(t.y - c.y);
+      if (dist < MIN_DIST){ ok = false; break; }
+    }
+    if (!ok) continue;
+    towns.push({x:c.x, y:c.y, score:c.score});
+    townSet.add(keyForXY(c.x,c.y));
+  }
+
+  // Ensure at least one town.
+  if (towns.length===0){
+    const best = candidates[0] || {x:10,y:10,score:0};
+    towns.push(best);
+    townSet.add(keyForXY(best.x,best.y));
+  }
+
+  // Choose capital as best-scoring town.
+  let best = towns[0];
+  for (const t of towns) if (t.score > best.score) best = t;
+  capital = {x: best.x, y: best.y};
+
+  // Strip score from public list for cleanliness.
+  towns = towns.map(t=>({x:t.x,y:t.y}));
+}
+
+function dogDirectionHint(x,y){
+  // Returns a vague cardinal hint based on the local gradient of the dog signal.
+  // Intentionally fuzzy: doesn't point exactly to the max, just the strongest neighbor direction.
+  const cx = clamp(x|0, 0, WORLD_SIZE-1);
+  const cy = clamp(y|0, 0, WORLD_SIZE-1);
+
+  function sig(xx,yy){
+    xx = clamp(xx|0, 0, WORLD_SIZE-1);
+    yy = clamp(yy|0, 0, WORLD_SIZE-1);
+    // Avoid water/mountains for hinting (feels wrong to "sniff" across impassable).
+    if (finalTileAt(xx,yy)==="~" || finalTileAt(xx,yy)==="^") return -1;
+    return dogSignal(xx,yy);
+  }
+
+  const c = sig(cx,cy);
+  const n = sig(cx,cy-1);
+  const s = sig(cx,cy+1);
+  const w = sig(cx-1,cy);
+  const e = sig(cx+1,cy);
+
+  const opts = [
+    {d:"north", v:n},
+    {d:"south", v:s},
+    {d:"west",  v:w},
+    {d:"east",  v:e},
+  ].filter(o=>o.v >= 0);
+
+  if (!opts.length) return null;
+  opts.sort((a,b)=>b.v-a.v);
+  const best = opts[0];
+
+  // If the gradient is weak, don't claim direction.
+  // (Also helps keep the hint from feeling too "GPS".)
+  if (c >= 0 && best.v - c < 0.02) return null;
+  if (best.v < 0.55) return null;
+
+  // Rarely mislead a little to keep it mystical.
+  if (noise01(steps, (cx<<8)^cy, SEED^0xD066) < 0.12 && opts.length>1) return opts[1].d;
+
+  return best.d;
+}
+
+
+function initCabbageRoute(){
+  cabbageRoute = [];
+  const t = towns.slice();
+  if (!t.length) return;
+  t.sort((a,b)=>{
+    const ha = mix32(fnv1a32(a.x+","+a.y+","+SEED));
+    const hb = mix32(fnv1a32(b.x+","+b.y+","+SEED));
+    return (ha>>>0) - (hb>>>0);
+  });
+  if (t.length<=3){
+    cabbageRoute = t;
+  } else {
+    cabbageRoute = [t[0], t[Math.floor(t.length/2)], t[t.length-1]];
+  }
+}
+
+function cabbageIndex(){
+  if (!cabbageRoute.length) return 0;
+  return Math.floor(steps/7) % cabbageRoute.length;
+}
+function cabbageTown(){
+  if (!cabbageRoute.length) return null;
+  return cabbageRoute[cabbageIndex()];
+}
+function cabbageIsHereWorld(x,y){
+  const ct = cabbageTown();
+  return !!(ct && ct.x===x && ct.y===y);
+}
+
+// ---------- Local map gen ----------
+function generateWilderness(tx,ty){
+  const size = LOCAL_SIZE;
+  const map = Array.from({length:size}, ()=>Array(size).fill("."));
+  for (let y=0;y<size;y++){
+    for (let x=0;x<size;x++){
+      const r = noise01(tx*31 + x, ty*31 + y, SEED ^ 0x0A11D);
+      map[y][x] = (r>0.82) ? "t" : (r>0.66 ? "^" : ".");
+    }
+  }
+  // simple smoothing
+  const copy = map.map(r=>r.slice());
+  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+  for (let y=1;y<size-1;y++){
+    for (let x=1;x<size-1;x++){
+      let trees=0, rocks=0;
+      for (const [dx,dy] of dirs){
+        const v = copy[y+dy][x+dx];
+        if (v==="t") trees++;
+        if (v==="^") rocks++;
+      }
+      if (trees>=3) map[y][x]="t";
+      else if (rocks>=3) map[y][x]="^";
+    }
+  }
+  
+  const npcs = [];
+  
+  // Occasional wanderer in wilderness
+  if (noise01(tx*13, ty*13, SEED ^ 0xEAD1) > 0.7){
+    let wx, wy, tries = 0;
+    do {
+      wx = 1 + ((mix32(fnv1a32("wand"+tx+","+ty+","+tries+","+SEED))>>>0)%(size-2));
+      wy = 1 + ((mix32(fnv1a32("wand2"+tx+","+ty+","+tries+","+SEED))>>>0)%(size-2));
+      tries++;
+    } while (map[wy][wx] !== "." && tries < 10);
+    if (map[wy][wx] === ".") {
+      npcs.push({x:wx, y:wy, type:"n"});
+    }
+  }
+  
+  let dog = null;
+  if (dogIsVeryNear(tx,ty) && noise01(tx,ty,SEED^0x0D06) > 0.6){
+    const hx = (mix32(fnv1a32("dog"+tx+","+ty+","+SEED))>>>0)%(size-2);
+    const hy = (mix32(fnv1a32("dog2"+tx+","+ty+","+SEED))>>>0)%(size-2);
+    dog = {x:1+hx, y:1+hy};
+  }
+  return { kind:"WILD", tx, ty, size, map, px:4, py:4, dog, npcs };
+}
+
+function generateTown(tx,ty, forceWagon=false){
+  const size = LOCAL_SIZE;
+  const map = Array.from({length:size}, ()=>Array(size).fill("."));
+  for (let i=0;i<size;i++){
+    map[0][i]="#"; map[size-1][i]="#";
+    map[i][0]="#"; map[i][size-1]="#";
+  }
+  for (let i=1;i<size-1;i++){
+    map[4][i]="|";
+    map[i][4]="|";
+  }
+  map[4][4]="+";
+
+  const k = keyForXY(tx,ty);
+  const plagued = worldEvents.has("plague_"+k);
+  const burned = worldEvents.has("burned_"+k);
+
+  let buildings = ["I","M","S","T","G"];
+  if (plagued) buildings = buildings.filter(b=>b!=="M");
+  if (burned) buildings = buildings.filter(b=>b!=="I");
+
+  // Track NPC positions for rendering
+  const npcs = [];
+
+  buildings.forEach((b,i)=>{
+    const r = noise01(tx*10+i, ty*10+i, SEED ^ 0x0B11D);
+    if (r > 0.38){
+      const x = (i%2===0)?2:6;
+      const y = (i<2)?2:6;
+      map[y][x] = burned ? "r" : b;
+      // NPCs present in non-burned buildings
+      if (!burned && b !== "r") {
+        npcs.push({x, y, type: b});
+      }
+    }
+  });
+
+  // Add ambient townsperson on a street tile sometimes
+  if (noise01(tx*7, ty*7, SEED ^ 0xABCD) > 0.5 && !plagued){
+    const spots = [[3,4],[5,4],[4,3],[4,5]];
+    const spot = spots[Math.floor(noise01(tx,ty,SEED^0x1234)*spots.length)];
+    npcs.push({x:spot[0], y:spot[1], type:"n"}); // n = townsperson
+  }
+
+  const wagon = (forceWagon || cabbageIsHereWorld(tx,ty)) ? {x:1,y:4} : null;
+  if (wagon && map[wagon.y][wagon.x] !== "#") {
+    map[wagon.y][wagon.x] = "w";
+    npcs.push({x:wagon.x, y:wagon.y, type:"w"});
+  }
+
+  return { kind:"TOWN", tx, ty, size, map, px:4, py:4, wagon, wagonForced: !!forceWagon, npcs };
+}
+
+// ---------- Vectors ----------
+function V(w=0,f=0,a=0,fa=0,i=0){ return [w,f,a,fa,i]; }
+function vAdd(a,b){ return a.map((x,idx)=>x+b[idx]); }
+function vScale(a,s){ return a.map(x=>x*s); }
+function vDist(a,b){ let d=0; for (let i=0;i<a.length;i++) d += Math.abs(a[i]-b[i]); return d; }
+
+// ---------- Dialogue pools ----------
+const BUILDING_POOLS = {
+  "I": {
+    openers: [{t:"Sit, if you like.", v:V(0.7,0.1,0.1,0.2,0.1)},{t:"You look road-worn.", v:V(0.5,0.2,0.0,0.4,0.2)},{t:"Ale or answers?", v:V(0.6,0.1,0.0,0.2,0.1)}],
+    dog: [{t:"That dog? Always underfoot.", v:V(0.5,0.2,0.0,0.1,0.2)},{t:"Left before dawn.", v:V(0.3,0.3,0.0,0.1,0.3)},{t:"Wouldn't sleep inside.", v:V(0.2,0.4,0.0,0.1,0.3)}],
+    road: [{t:"Roads aren't quiet lately.", v:V(0.2,0.5,0.0,0.2,0.4)},{t:"People don't linger.", v:V(0.2,0.4,0.0,0.1,0.3)}],
+    routes:[{t:"Some paths aren't drawn anymore.", v:V(0.1,0.4,0.0,0.1,0.6)},{t:"Travelers come from odd directions.", v:V(0.1,0.5,0.0,0.2,0.7)}],
+    close: [{t:"Best keep moving.", v:V(0.1,0.4,0.0,0.2,0.4)},{t:"Don't stay out late.", v:V(0.2,0.4,0.1,0.2,0.3)}],
+  },
+  "M": {
+    openers:[{t:"Buy or move.", v:V(0.1,0.2,0.5,0.1,0.1)},{t:"What do you need?", v:V(0.2,0.2,0.3,0.1,0.1)},{t:"Prices are fair. Today.", v:V(0.0,0.3,0.3,0.1,0.2)}],
+    dog:[{t:"Chased carts. Watched everything.", v:V(0.1,0.3,0.2,0.1,0.2)},{t:"Didn't look lost.", v:V(0.1,0.3,0.2,0.1,0.2)}],
+    road:[{t:"Supply's thin. Routes don't hold.", v:V(0.0,0.4,0.3,0.1,0.5)},{t:"Caravans stopped coming.", v:V(0.0,0.5,0.3,0.1,0.5)}],
+    routes:[{t:"Maps say one thing. Goods say another.", v:V(0.0,0.5,0.2,0.1,0.7)}],
+    close:[{t:"I've said enough.", v:V(0.0,0.2,0.4,0.1,0.2)}],
+  },
+  "S": {
+    openers:[{t:"What’s broken?", v:V(0.1,0.1,0.4,0.1,0.1)},{t:"Make it quick.", v:V(0.0,0.2,0.5,0.1,0.2)},{t:"I don't chat.", v:V(0.0,0.2,0.6,0.1,0.1)}],
+    dog:[{t:"Kept away from the fire.", v:V(0.1,0.2,0.3,0.1,0.2)},{t:"Growled at old stones.", v:V(0.0,0.4,0.3,0.1,0.6)}],
+    road:[{t:"Too much fixing lately.", v:V(0.0,0.4,0.3,0.1,0.4)},{t:"Steel chips wrong.", v:V(0.0,0.5,0.3,0.1,0.6)}],
+    routes:[{t:"Metal feels stressed. Ground too.", v:V(0.0,0.5,0.2,0.1,0.7)}],
+    close:[{t:"Leave me to work.", v:V(0.0,0.2,0.5,0.1,0.1)}],
+  },
+  "T": {
+    openers:[{t:"Speak softly.", v:V(0.4,0.2,0.2,0.1,0.1)},{t:"What burdens you?", v:V(0.5,0.2,0.1,0.1,0.1)},{t:"All things pass.", v:V(0.4,0.2,0.0,0.1,0.2)}],
+    dog:[{t:"Animals are attentive.", v:V(0.4,0.3,0.1,0.1,0.3)},{t:"It lingered at the threshold.", v:V(0.2,0.4,0.1,0.1,0.5)}],
+    road:[{t:"Not all silence is peace.", v:V(0.3,0.4,0.1,0.1,0.6)}],
+    routes:[{t:"Some ways were closed deliberately.", v:V(0.2,0.4,0.2,0.1,0.8)},{t:"The old bindings weaken.", v:V(0.1,0.5,0.2,0.1,0.9)}],
+    close:[{t:"Go gently.", v:V(0.4,0.2,0.0,0.1,0.1)}],
+  },
+  "G": {
+    openers:[{t:"State your business.", v:V(0.0,0.2,0.8,0.1,0.1)},{t:"Move along.", v:V(0.0,0.3,0.7,0.1,0.2)},{t:"No loitering.", v:V(0.0,0.3,0.7,0.1,0.2)}],
+    dog:[{t:"Ran past the gate.", v:V(0.0,0.2,0.7,0.1,0.2)},{t:"Didn't obey.", v:V(0.0,0.3,0.7,0.1,0.3)}],
+    road:[{t:"Routes are closed. For your safety.", v:V(0.0,0.4,0.8,0.1,0.4)}],
+    routes:[{t:"Orders don't fit anymore.", v:V(0.0,0.5,0.6,0.1,0.7)}],
+    close:[{t:"That's all.", v:V(0.0,0.2,0.8,0.1,0.1)}],
+  },
+  ".": {
+    openers:[{t:"Yes?", v:V(0.2,0.2,0.1,0.1,0.1)},{t:"Oh.", v:V(0.1,0.2,0.0,0.1,0.1)},{t:"Can I help?", v:V(0.3,0.2,0.0,0.1,0.1)}],
+    dog:[{t:"It ran like it knew.", v:V(0.2,0.3,0.0,0.1,0.3)},{t:"Didn't bark much.", v:V(0.2,0.2,0.0,0.1,0.2)}],
+    road:[{t:"Things feel off.", v:V(0.1,0.4,0.0,0.1,0.3)}],
+    routes:[{t:"Some paths don't feel right.", v:V(0.1,0.4,0.0,0.1,0.6)}],
+    close:[{t:"Safe travels.", v:V(0.3,0.2,0.0,0.1,0.1)}],
+  }
+};
+
+const EVENT_OVERLAYS = {
+  plague: { inject:[{t:"People aren't well.", v:V(0.1,0.6,0.0,0.1,0.4)},{t:"Best keep distance.", v:V(0.1,0.5,0.2,0.1,0.4)}], instabilityBias:0.3 },
+  routes: { inject:[{t:"Paths overlap.", v:V(0.1,0.5,0.0,0.1,0.8)},{t:"Directions feel unreliable.", v:V(0.1,0.5,0.0,0.1,0.7)}], instabilityBias:0.4 },
+  war:    { inject:[{t:"Keep your head down.", v:V(0.0,0.5,0.4,0.1,0.4)}], instabilityBias:0.3 }
+};
+
+// Cabbage merchant
+const CABBAGE = {
+  id:"npc_cabbage_merchant",
+  openers:["Don't step there— oh. Too late.","Mind the cabbages.","They bruise easily. Like me."],
+  complaint:["A boy knocked the whole stand over.","Just ran straight through it. Cabbages everywhere.","Same boy. Different town.","I don't know how he keeps finding me.","I set it up anyway. What else would I do?","People expect cabbages."],
+  rideOffer:["I'm heading on.","You can ride, if you don't mind the smell.","Cabbages keep you steady."],
+  afterRide:["Right. Here we are.","New place. Same problem.","I'll set up here. Watch for the boy."]
+};
+
+function pruneNPCMemory(){
+  const keys = Object.keys(npcMemory);
+  const MAX = 140;
+  if (keys.length <= MAX) return;
+
+  // Keep the NPCs that matter: familiarity first, then recency.
+  const scored = keys.map(k=>{
+    const n = npcMemory[k]||{};
+    const fam = (n.familiarity|0);
+    const rec = (n.lastSeen|0);
+    // lower score = more likely to be pruned
+    const score = fam*10 + Math.max(0, 5000 - Math.abs((steps|0) - rec));
+    return {k, fam, rec, score};
+  });
+  scored.sort((a,b)=>{
+    if (a.fam !== b.fam) return a.fam - b.fam;
+    if (a.rec !== b.rec) return a.rec - b.rec;
+    return a.score - b.score;
+  });
+
+  const drop = keys.length - MAX;
+  for (let i=0;i<drop;i++){
+    delete npcMemory[scored[i].k];
+  }
+}
+
+function getNPC(id){
+  const st = npcMemory[id];
+  if (st && typeof st === "object") return st;
+  return {trust:0, hostility:0, familiarity:0, flags:[], lastSeen: steps|0};
+}
+function setNPC(id, st){
+  if (!st || typeof st !== "object") st = {};
+  st.trust = clamp(st.trust|0, -5, 5);
+  st.hostility = clamp(st.hostility|0, 0, 5);
+  st.familiarity = clamp(st.familiarity|0, 0, 99);
+  st.flags = Array.isArray(st.flags) ? st.flags.filter(f=>typeof f==="string").slice(0, 24) : [];
+  st.lastSeen = steps|0;
+  npcMemory[id] = st;
+  pruneNPCMemory();
+}
+
+function buildContextVector(building, x, y, npc){
+  const fat = clamp(player.fatigue/5, 0, 1);
+  const p = profileAt(x,y);
+
+  // World pressure / instability baseline
+  const instBase = worldEvents.has("routes_stirring") ? 0.45 : 0.12;
+  const inst = clamp(instBase + p.dN*0.25 + (worldEvents.has("capital_fallen") ? 0.18 : 0.0), 0, 1);
+
+  // NPC memory (very small influence, but it makes persistence *real*)
+  const trust = npc ? clamp((npc.trust||0)/5, -1, 1) : 0;
+  const hostility = npc ? clamp((npc.hostility||0)/5, 0, 1) : 0;
+
+  // Warmth comes from civ + trust, drops in wild/high danger
+  let warmth = 0.10 + p.cN*0.55 + trust*0.18 - p.dN*0.18 - hostility*0.10;
+  if (mode==="LOCAL" && local && local.kind==="WILD") warmth -= 0.08;
+  warmth = clamp(warmth, 0, 1);
+
+  // Fear comes from danger + instability + sickness nearby
+  const k = keyForXY(x,y);
+  const sickHere = worldEvents.has("plague_"+k) ? 0.25 : 0.0;
+  const fear = clamp(0.12 + p.dN*0.58 + inst*0.18 + sickHere + hostility*0.12, 0, 1);
+
+  // Authority comes from building type + capital proximity + (slightly) low trust
+  let auth = 0.10 + (building==="G" ? 0.55 : 0.0) + p.capProx*0.18 + (p.town ? 0.12 : 0.0) - trust*0.06;
+  auth = clamp(auth, 0, 1);
+
+  return V(warmth, fear, auth, fat, inst);
+}
+
+
+const TOPIC_FALLBACKS = {
+  town: [
+    {t:"It's smaller than it used to be.", v:V(0.2,0.3,0.0,0.2,0.2)},
+    {t:"People here survive by habit.", v:V(0.1,0.4,0.0,0.2,0.3)},
+    {t:"Every town has its quiet corners.", v:V(0.3,0.2,0.0,0.2,0.2)}
+  ],
+  war: [
+    {t:"War arrives before the banners.", v:V(0.0,0.6,0.4,0.2,0.4)},
+    {t:"Nobody wins on the road.", v:V(0.0,0.6,0.3,0.2,0.3)}
+  ],
+  sickness: [
+    {t:"Coughs carry further than news.", v:V(0.1,0.7,0.0,0.2,0.4)},
+    {t:"People stop touching doorknobs.", v:V(0.1,0.6,0.0,0.2,0.3)}
+  ],
+  work: [
+    {t:"Work never ends. Only hands do.", v:V(0.2,0.3,0.2,0.3,0.2)},
+    {t:"Everyone is busy pretending things are normal.", v:V(0.1,0.4,0.1,0.3,0.3)}
+  ]
+};
+
+function pickFragmentFrom(list, targetV, extraAvoid, familiarity){
+  if (!list || list.length===0) return null;
+  const avoid = new Set(recentFragments.slice(-10));
+  if (extraAvoid) for (const a of extraAvoid) avoid.add(a);
+
+  // Filter by familiarity requirement - entries with fam:N require familiarity >= N
+  const fam = familiarity || 0;
+  const famFiltered = list.filter(f => !f.fam || fam >= f.fam);
+  const searchList = famFiltered.filter(f=>!avoid.has(f.t));
+  if (extraAvoid && searchList.length===0) return null;
+  const useList = searchList.length ? searchList : famFiltered;
+  if (!useList.length) return null;
+
+  let best = null, bestScore = 999;
+  for (const f of useList){
+    // Prefer familiarity-gated lines when player has earned them
+    const famBonus = (f.fam && fam >= f.fam) ? -0.15 : 0;
+    const score = vDist(f.v, targetV) + noise01(f.t.length, (bestScore*10)|0, SEED ^ steps) * 0.06 + famBonus;
+    if (score < bestScore){ bestScore = score; best = f; }
+  }
+  if (!best) best = useList[Math.floor(noise01(steps, useList.length, SEED)*useList.length)];
+  return (best && best.t) ? best.t : null;
+}
+
+function pickMany(list, targetV, count, familiarity){
+  const out = [];
+  const extraAvoid = new Set();
+  for (let i=0;i<count;i++){
+    const t = pickFragmentFrom(list, targetV, extraAvoid, familiarity);
+    if (!t) break;
+    out.push(t);
+    extraAvoid.add(t);
+    recentFragments.push(t);
+    if (recentFragments.length>40) recentFragments = recentFragments.slice(-25);
+  }
+  return out;
+}
+
+function pickFragment(list, targetV, familiarity){
+  return pickMany(list, targetV, 1, familiarity)[0] || "...";
+}
+
+
+function activeOverlaysAt(tx,ty){
+  const ov = [];
+  const k = keyForXY(tx,ty);
+  if (worldEvents.has("plague_"+k)) ov.push(EVENT_OVERLAYS.plague);
+  if (worldEvents.has("routes_stirring")) ov.push(EVENT_OVERLAYS.routes);
+  if (worldEvents.has("war_started")) ov.push(EVENT_OVERLAYS.war);
+  return ov;
+}
+
+function sayNPC(building, topic, opts={}){
+  const pool = BUILDING_POOLS[building] || BUILDING_POOLS["."];
+  const topicKey = String(topic||"ROAD").toLowerCase();
+  const bodyLines = clamp((opts.bodyLines|0) || 1, 1, 3);
+  const overlayCap = (opts.overlayCap==null) ? 2 : clamp(opts.overlayCap|0, 0, 2);
+  const npcFam = opts.npc ? (opts.npc.familiarity || 0) : 0;
+  const frame = (opts.frame !== false); // include opener/close by default
+
+  const sx = (mode==="LOCAL" && local) ? local.tx : player.x;
+  const sy = (mode==="LOCAL" && local) ? local.ty : player.y;
+  let ctx = buildContextVector(building, sx, sy, opts.npc||null);
+
+  // Prefer topic-specific bodies. If a building lacks the topic, fall back to generic '.' topic,
+  // and only then to that building's 'road' (so ASK feels like it's answering the question).
+  let bodyList =
+    (pool && pool[topicKey]) ||
+    (BUILDING_POOLS["."] && BUILDING_POOLS["."][topicKey]) ||
+    (pool && pool.road) ||
+    (BUILDING_POOLS["."] && BUILDING_POOLS["."].road) ||
+    [];
+
+  const overlays = (mode==="LOCAL" && local) ? activeOverlaysAt(local.tx, local.ty) : activeOverlaysAt(player.x, player.y);
+
+  const injected = [];
+  if (overlayCap > 0){
+    for (const o of overlays){
+      if (injected.length >= overlayCap) break;
+      if (o.inject && noise01(steps, injected.length+7, SEED^0x0E) < 0.45){
+        const ln = pickFragment(o.inject, ctx);
+        if (ln) injected.push(ln);
+        ctx = vAdd(ctx, vScale(V(0,0,0,0,o.instabilityBias||0), 0.6));
+      }
+    }
+  }
+
+  const body = pickMany(bodyList, ctx, bodyLines, npcFam);
+
+  if (!frame){
+    return [...injected, ...body].filter(Boolean);
+  }
+
+  const opener = pickMany(pool.openers || BUILDING_POOLS["."].openers, ctx, 1, npcFam)[0];
+  const close  = pickMany(pool.close   || BUILDING_POOLS["."].close,   ctx, 1, npcFam)[0];
+
+  return [opener, ...injected, ...body, close].filter(Boolean);
+}
+
+
+// ---------- Internal text ----------
+const INTERNAL = {
+  travel:["The road continues.","The ground is uneven here.","Not many footprints.","The air shifts.","This place doesn't invite stopping."],
+  fatigue1:["Your steps slow.","You could rest.","The pack sits heavier."],
+  fatigue2:["Every mile adds weight.","The road asks more now.","You've been walking a long time."],
+  fatigue3:["Stopping sounds reasonable.","Pushing further will cost something."],
+  nearDog:["Paw prints. Fading.","Something moved through here.","You're not alone."],
+  routes:["The land feels thin here.","Directions feel unreliable.","Paths overlap."],
+};
+
+function maybeInternal(kind){
+  if (mode==="END") return;
+  if (steps - lastInternalStep < 3) return;
+  if (noise01(steps, 123, SEED^0x51) < 0.55) return;
+
+  const list = INTERNAL[kind] || INTERNAL.travel;
+  const avoid = new Set(recentInternal.slice(-2));
+  const choices = list.filter(t=>!avoid.has(t));
+  const pick = (choices.length?choices:list)[Math.floor(noise01(steps, list.length, SEED^0x0A)*list.length)];
+  if (!pick) return;
+  recentInternal.push(pick);
+  if (recentInternal.length>20) recentInternal = recentInternal.slice(-10);
+  lastInternalStep = steps;
+  log(pick, "m");
+}
+
+// ---------- World pressure ----------
+function advanceWorldPressure(){
+  if (lastPressureStep === steps) return;
+  lastPressureStep = steps;
+
+  if (worldEvents.has("routes_stirring") && towns.length && steps % 12 === 0){
+    const idx = (mix32(fnv1a32("plg"+SEED+","+steps))>>>0) % towns.length;
+    const t = towns[idx];
+    const k = keyForXY(t.x,t.y);
+    if (!worldEvents.has("plague_"+k) && noise01(t.x, t.y, SEED^steps) < 0.55){
+      worldEvents.add("plague_"+k);
+      log("A rumor spreads: sickness in a town you haven't seen.", "m");
+    }
+  }
+
+  if (!worldEvents.has("war_started") && steps > 28 && noise01(steps, 9001, SEED^0xBEEF) < 0.08){
+    worldEvents.add("war_started");
+    log("Soldiers begin to appear on the roads.", "m");
+  }
+
+  if (!worldEvents.has("capital_fallen") && steps > 60 && worldEvents.has("routes_stirring") && noise01(steps, 1337, SEED^0xC0DE) < 0.06){
+    worldEvents.add("capital_fallen");
+    log("Word arrives late, like bad weather: the capital has fallen.", "m");
+  }
+  // War can scorch a town (finally wiring the burned_ overlay into causality).
+  if (worldEvents.has("war_started") && steps % 18 === 0 && towns.length){
+    // pick a non-capital town biased by danger
+    let best = null;
+    for (let i=0;i<towns.length;i++){
+      const t = towns[(i + (mix32(SEED^steps)>>>0)) % towns.length];
+      if (capital && t.x===capital.x && t.y===capital.y) continue;
+      const k = keyForXY(t.x,t.y);
+      if (worldEvents.has("burned_"+k)) continue;
+      const score = danger(t.x,t.y) - civ(t.x,t.y)*0.25 + noise01(t.x,t.y,SEED^0xB00D)*0.2;
+      if (!best || score > best.score) best = {t, k, score};
+    }
+    if (best && best.score > 0.9){
+      worldEvents.add("burned_"+best.k);
+      log("Word arrives: a town burned in the night.", "m");
+    }
+  }
+
+}
+
+// ---------- Save/load (password) ----------
+const BASE32 = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function b32enc(bytes){
+  let out="", buffer=0, bits=0;
+  for (const b of bytes){
+    buffer = (buffer<<8) | b;
+    bits += 8;
+    while (bits >= 5){
+      out += BASE32[(buffer >>> (bits-5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits>0) out += BASE32[(buffer << (5-bits)) & 31];
+  return out;
+}
+function b32dec(str){
+  let buffer=0, bits=0;
+  const out=[];
+  for (const ch of str){
+    const idx = BASE32.indexOf(ch);
+    if (idx < 0) throw new Error("badchar");
+    buffer = (buffer<<5) | idx;
+    bits += 5;
+    if (bits >= 8){
+      out.push((buffer >>> (bits-8)) & 255);
+      bits -= 8;
+      if (out.length > 4000) throw new Error("toolong");
+    }
+  }
+  return new Uint8Array(out);
+}
+function chk(str){
+  let sum=0;
+  for (let i=0;i<str.length;i++) sum = (sum + str.charCodeAt(i)) % 31;
+  return BASE32[sum];
+}
+function sanitizeNPCMemory(n){
+  const out = Object.create(null);
+  if (!n || typeof n !== "object") return out;
+  for (const [k,v] of Object.entries(n)){
+    if (k === "__proto__" || k === "constructor" || k === "prototype") continue;
+    if (!v || typeof v !== "object") continue;
+    out[k] = {
+      trust: clamp((v.trust|0), -5, 5),
+      hostility: clamp((v.hostility|0), 0, 5),
+      familiarity: clamp((v.familiarity|0), 0, 99),
+      flags: Array.isArray(v.flags) ? v.flags.filter(x=>typeof x==="string").slice(0,20) : []
+    };
+  }
+  return out;
+}
+
+// --- Packed Save Codes (binary + base64url + CRC16) ---
+// Goal: short "1970-style" passwords that still survive copy/paste.
+//
+// Base64url alphabet: A-Z a-z 0-9 - _  (no padding).
+// CRC16-CCITT detects typos.
+// Binary format (v=3):
+// [v:1][seed:zigzag-varint][x:1][y:1][fatigue:1][rep:1][steps:varint][flags:1]
+// [plagueCount:varint][plagueIdx...]
+// [burnedCount:varint][burnedIdx...]
+// [blockedCount:varint][blockedIdx...]
+// [npcCount:varint][npcRecords...]
+// then [crc16:2] little-endian over all previous bytes.
+function crc16ccitt(u8){
+  let crc = 0xFFFF;
+  for (let i=0;i<u8.length;i++){
+    crc ^= (u8[i] << 8);
+    for (let b=0;b<8;b++){
+      if (crc & 0x8000) crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+      else crc = (crc << 1) & 0xFFFF;
+    }
+  }
+  return crc & 0xFFFF;
+}
+function b64urlEnc(u8){
+  // Convert to binary string in chunks (avoid call stack blowups).
+  let bin = "";
+  const CH = 0x8000;
+  for (let i=0;i<u8.length;i+=CH){
+    const sub = u8.subarray(i, i+CH);
+    bin += String.fromCharCode.apply(null, sub);
+  }
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64urlDec(s){
+  s = (s||"").replace(/\s+/g,"");
+  // padding
+  const pad = s.length % 4;
+  if (pad) s += "====".slice(pad);
+  s = s.replace(/-/g,"+").replace(/_/g,"/");
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i) & 255;
+  return out;
+}
+function zz32(n){ n = n|0; return ((n<<1) ^ (n>>31)) >>> 0; }
+function unzz32(z){ z = z>>>0; return ((z>>>1) ^ (-(z & 1))) | 0; }
+function encVarint(n, out){
+  n = n >>> 0;
+  while (n > 127){
+    out.push((n & 127) | 128);
+    n = n >>> 7;
+  }
+  out.push(n & 127);
+}
+function decVarint(u8, idx){
+  let res = 0, shift = 0;
+  while (true){
+    if (idx.i >= u8.length) throw new Error("eof");
+    const b = u8[idx.i++] | 0;
+    res |= (b & 127) << shift;
+    if ((b & 128) === 0) break;
+    shift += 7;
+    if (shift > 35) throw new Error("varint");
+  }
+  return res >>> 0;
+}
+const CELL_TO_ID = {".":0,"I":1,"M":2,"S":3,"T":4,"G":5,"r":6,"w":7,"t":8};
+const ID_TO_CELL = [".","I","M","S","T","G","r","w","t"];
+
+function packStateV3(){
+  const out = [];
+  const V = 4;
+  out.push(V);
+
+  // seed (signed) as zigzag varint
+  encVarint(zz32(SEED|0), out);
+
+  out.push(player.x & 255, player.y & 255);
+  out.push(player.fatigue & 255, player.rep & 255);
+  encVarint((steps>>>0), out);
+
+  // global flags
+  let flags = 0;
+  if (worldEvents.has("routes_stirring")) flags |= 1<<0;
+  if (worldEvents.has("war_started"))    flags |= 1<<1;
+  if (worldEvents.has("capital_fallen"))  flags |= 1<<2;
+  // dog hint progress (0..3) packed into flags bits 3-4
+  const dh = Math.max(0, Math.min(3, dogHintCount|0));
+  flags |= (dh & 3) << 3;
+
+  out.push(flags & 255);
+
+  // dog hint bitset (fixed-size, bounded)
+  encVarint(DOG_HINT_BITS.length, out);
+  for (let i=0;i<DOG_HINT_BITS.length;i++) out.push(DOG_HINT_BITS[i] & 255);
+
+  // tile events as compact indices
+  const plague=[], burned=[], blocked=[];
+  for (const e of worldEvents){
+    const str = String(e);
+    if (str.startsWith("plague_")){
+      const xy = str.slice(7).split("_"); if (xy.length===2){ const x=xy[0]|0, y=xy[1]|0; plague.push((y*WORLD_SIZE+x)>>>0); }
+    } else if (str.startsWith("burned_")){
+      const xy = str.slice(7).split("_"); if (xy.length===2){ const x=xy[0]|0, y=xy[1]|0; burned.push((y*WORLD_SIZE+x)>>>0); }
+    } else if (str.startsWith("road_blocked_")){
+      const xy = str.slice(13).split("_"); if (xy.length===2){ const x=xy[0]|0, y=xy[1]|0; blocked.push((y*WORLD_SIZE+x)>>>0); }
+    }
+  }
+  plague.sort((a,b)=>a-b); burned.sort((a,b)=>a-b); blocked.sort((a,b)=>a-b);
+  encVarint(Math.min(plague.length, 50), out);
+  for (const idx of plague.slice(0,50)) encVarint(idx, out);
+  encVarint(Math.min(burned.length, 35), out);
+  for (const idx of burned.slice(0,35)) encVarint(idx, out);
+  encVarint(Math.min(blocked.length, 35), out);
+  for (const idx of blocked.slice(0,35)) encVarint(idx, out);
+
+  // NPCs: compact record list
+  const sig = [];
+  for (const [id,n] of Object.entries(npcMemory)){
+    if (!n) continue;
+    if ((n.familiarity|0)>0 || (n.trust|0)!==0 || (n.hostility|0)>0) sig.push([id,n]);
+  }
+  sig.sort((a,b)=> (b[1].familiarity|0) - (a[1].familiarity|0));
+  const npcRows = sig.slice(0, 22);
+
+  // asked-topic mask (7 bits)
+  const TOP = { DOG:1<<0, ROAD:1<<1, TOWN:1<<2, ROUTES:1<<3, WAR:1<<4, SICKNESS:1<<5, WORK:1<<6 };
+  function askedMask(n){
+    let m = 0;
+    const flags = (n && Array.isArray(n.flags)) ? n.flags : [];
+    for (const f of flags){
+      if (typeof f !== "string") continue;
+      if (f==="asked_dog") m |= TOP.DOG;
+      else if (f==="asked_road") m |= TOP.ROAD;
+      else if (f==="asked_town") m |= TOP.TOWN;
+      else if (f==="asked_routes") m |= TOP.ROUTES;
+      else if (f==="asked_war") m |= TOP.WAR;
+      else if (f==="asked_sickness") m |= TOP.SICKNESS;
+      else if (f==="asked_work") m |= TOP.WORK;
+    }
+    return m & 127;
+  }
+
+  encVarint(npcRows.length, out);
+  for (const [id,n] of npcRows){
+    // Identity
+    if (id === CABBAGE.id){
+      out.push(0); // type 0
+    } else if (id.startsWith("npc_ambient_")){
+      const parts = id.split("_");
+      const kind = parts[2]||"TOWN";
+      const tx = parts[3]|0, ty = parts[4]|0;
+      out.push(1 | ((kind==="WILD")?4:0)); // type 1, bit2 = wild
+      out.push(tx & 255, ty & 255);
+    } else if (id.startsWith("npc_")){
+      const parts = id.split("_");
+      const cell = parts[1]||".";
+      const tx = parts[2]|0, ty = parts[3]|0;
+      const cid = (CELL_TO_ID[cell] != null) ? CELL_TO_ID[cell] : 0;
+      out.push(2); // type 2
+      out.push(cid & 255);
+      out.push(tx & 255, ty & 255);
+    } else {
+      // Unknown: store hashed identity (less perfect but safe)
+      out.push(3);
+      encVarint(fnv1a32(id)>>>0, out);
+    }
+
+    const fam = clamp((n.familiarity|0), 0, 99) & 255;
+    const tr  = clamp((n.trust|0), -5, 5) | 0;
+    const ho  = clamp((n.hostility|0), 0, 5) | 0;
+    const am  = askedMask(n);
+
+    out.push(fam);
+    const b1 = ((tr + 5) & 15) | ((ho & 7) << 4); // trust nibble + hostility
+    out.push(b1 & 255);
+    out.push(am & 127);
+  }
+
+  // CRC16 over payload
+  const payload = new Uint8Array(out);
+  const crc = crc16ccitt(payload);
+  const framed = new Uint8Array(payload.length + 2);
+  framed.set(payload, 0);
+  framed[framed.length-2] = crc & 255;
+  framed[framed.length-1] = (crc >>> 8) & 255;
+
+  return b64urlEnc(framed);
+}
+
+function tryLoadPackedV3(code){
+  let bytes;
+  try { bytes = b64urlDec(code); } catch(e){ return false; }
+  if (!bytes || bytes.length < 8) return false;
+
+  const payload = bytes.subarray(0, bytes.length-2);
+  const crcGot = (bytes[bytes.length-2] | (bytes[bytes.length-1] << 8)) & 0xFFFF;
+  const crcOk = crc16ccitt(payload);
+  if (crcGot !== crcOk) return false;
+
+  const idx = {i:0};
+  const ver = payload[idx.i++] | 0;
+  if (ver !== 3 && ver !== 4) return false;
+
+  const seedZZ = decVarint(payload, idx);
+  SEED = unzz32(seedZZ);
+
+  computeTowns(); // depends on SEED
+
+  player.x = clamp(payload[idx.i++]|0, 0, WORLD_SIZE-1);
+  player.y = clamp(payload[idx.i++]|0, 0, WORLD_SIZE-1);
+  player.fatigue = clamp(payload[idx.i++]|0, 0, 5);
+  player.rep = clamp(payload[idx.i++]|0, 0, 5);
+  steps = Math.max(0, decVarint(payload, idx) | 0);
+  const flags = payload[idx.i++]|0;
+
+  worldEvents = new Set();
+  npcMemory = Object.create(null);
+  resetDogHints();
+
+  // restore dog hint positions (v4+)
+  if (ver >= 4){
+    const hintLen = decVarint(payload, idx) >>> 0;
+    const copyLen = Math.min(hintLen, DOG_HINT_BITS.length);
+    for (let i=0;i<copyLen && idx.i < payload.length; i++){
+      DOG_HINT_BITS[i] = payload[idx.i++] & 255;
+    }
+    // skip any extra hint bytes from future versions
+    const skip = hintLen > copyLen ? (hintLen - copyLen) : 0;
+    idx.i = Math.min(payload.length, idx.i + skip);
+
+    // recompute count from bits
+    let c = 0;
+    for (let i=0;i<DOG_HINT_BITS.length;i++){
+      let v = DOG_HINT_BITS[i] & 255;
+      // popcount 8-bit
+      v = v - ((v >> 1) & 0x55);
+      v = (v & 0x33) + ((v >> 2) & 0x33);
+      c += (((v + (v >> 4)) & 0x0F) * 0x01);
+    }
+    dogHintCount = c|0;
+  } else {
+    dogHintCount = (flags >>> 3) & 3;
+  }
+
+  if (flags & (1<<0)) worldEvents.add("routes_stirring");
+  if (flags & (1<<1)) worldEvents.add("war_started");
+  if (flags & (1<<2)) worldEvents.add("capital_fallen");
+  if (dogHintCount >= 3 && !worldEvents.has("routes_stirring")) worldEvents.add("routes_stirring");
+
+  function addIdx(prefix, n){
+    const x = (n % WORLD_SIZE) | 0;
+    const y = ((n / WORLD_SIZE) | 0);
+    if (x>=0 && y>=0 && x<WORLD_SIZE && y<WORLD_SIZE) worldEvents.add(prefix + x + "_" + y);
+  }
+
+  const pc = decVarint(payload, idx);
+  for (let i=0;i<pc;i++) addIdx("plague_", decVarint(payload, idx));
+  const bc = decVarint(payload, idx);
+  for (let i=0;i<bc;i++) addIdx("burned_", decVarint(payload, idx));
+  const kc = decVarint(payload, idx);
+  for (let i=0;i<kc;i++) addIdx("road_blocked_", decVarint(payload, idx));
+
+  const npcCount = decVarint(payload, idx);
+  const TOP = { DOG:1<<0, ROAD:1<<1, TOWN:1<<2, ROUTES:1<<3, WAR:1<<4, SICKNESS:1<<5, WORK:1<<6 };
+  function flagsFromMask(mask){
+    const out = [];
+    if (mask & TOP.DOG) out.push("asked_dog");
+    if (mask & TOP.ROAD) out.push("asked_road");
+    if (mask & TOP.TOWN) out.push("asked_town");
+    if (mask & TOP.ROUTES) out.push("asked_routes");
+    if (mask & TOP.WAR) out.push("asked_war");
+    if (mask & TOP.SICKNESS) out.push("asked_sickness");
+    if (mask & TOP.WORK) out.push("asked_work");
+    return out;
+  }
+
+  for (let n=0;n<npcCount;n++){
+    if (idx.i >= payload.length) break;
+    const t = payload[idx.i++]|0;
+    let id = null;
+
+    if (t===0){
+      id = CABBAGE.id;
+    } else if ((t & 3) === 1){
+      const wild = (t & 4) !== 0;
+      const tx = payload[idx.i++]|0, ty = payload[idx.i++]|0;
+      id = "npc_ambient_" + (wild ? "WILD" : "TOWN") + "_" + tx + "_" + ty;
+    } else if (t===2){
+      const cid = payload[idx.i++]|0;
+      const cell = ID_TO_CELL[cid] || ".";
+      const tx = payload[idx.i++]|0, ty = payload[idx.i++]|0;
+      id = "npc_" + cell + "_" + tx + "_" + ty;
+    } else if (t===3){
+      // hashed unknown, skip
+      const _h = decVarint(payload, idx);
+      id = null;
+    }
+
+    const fam = clamp(payload[idx.i++]|0, 0, 99);
+    const b1 = payload[idx.i++]|0;
+    const tr = clamp(((b1 & 15) - 5)|0, -5, 5);
+    const ho = clamp(((b1 >>> 4) & 7)|0, 0, 5);
+    const am = payload[idx.i++]|0;
+
+    if (id){
+      npcMemory[id] = { familiarity: fam, trust: tr, hostility: ho, flags: flagsFromMask(am & 127) };
+    }
+  }
+
+  if (!passable(player.x, player.y)) placePlayer();
+
+  initCabbageRoute();
+  mode="WORLD";
+  local=null;
+  return true;
+}
+
+function savePasswordPacked(){
+  return packStateV3();
+}
+
+function loadPasswordAny(code){
+  code = (code||"").trim();
+  if (!code){ log("Invalid password.", "m"); return; }
+  // First try packed+CRC.
+  if (tryLoadPackedV3(code)){
+    log("The password takes.", "m");
+    render();
+    return;
+  }
+  // Fallback to legacy base32/checksum saves.
+  loadPasswordLegacy(code);
+}
+function savePasswordLegacy(){
+  // Slim save format:
+  // - store major flags as a bitmask
+  // - store per-tile events (plague/burned/blocked) as compact indices (y*WORLD_SIZE+x)
+  // - store NPCs with compact IDs + tiny asked-topic bitmask
+  const FLAG = {
+    ROUTES: 1<<0,
+    WAR:    1<<1,
+    CAP:    1<<2
+  };
+  let F = 0;
+  if (worldEvents.has("routes_stirring")) F |= FLAG.ROUTES;
+  if (worldEvents.has("war_started"))    F |= FLAG.WAR;
+  if (worldEvents.has("capital_fallen"))  F |= FLAG.CAP;
+
+  const plague=[], burned=[], blocked=[];
+  for (const e of worldEvents){
+    const str = String(e);
+    if (str.startsWith("plague_")){
+      const xy = str.slice(7).split("_"); if (xy.length===2){ const x=xy[0]|0, y=xy[1]|0; plague.push(y*WORLD_SIZE+x); }
+    } else if (str.startsWith("burned_")){
+      const xy = str.slice(7).split("_"); if (xy.length===2){ const x=xy[0]|0, y=xy[1]|0; burned.push(y*WORLD_SIZE+x); }
+    } else if (str.startsWith("road_blocked_")){
+      const xy = str.slice(13).split("_"); if (xy.length===2){ const x=xy[0]|0, y=xy[1]|0; blocked.push(y*WORLD_SIZE+x); }
+    }
+  }
+
+  // Keep only significant NPCs, cap count.
+  const sig = [];
+  for (const [id,n] of Object.entries(npcMemory)){
+    if (!n) continue;
+    if ((n.familiarity|0)>0 || (n.trust|0)!==0 || (n.hostility|0)>0) sig.push([id,n]);
+  }
+  sig.sort((a,b)=> (b[1].familiarity|0) - (a[1].familiarity|0));
+
+  const TOP = { DOG:1<<0, ROAD:1<<1, TOWN:1<<2, ROUTES:1<<3, WAR:1<<4, SICKNESS:1<<5, WORK:1<<6 };
+
+  function compactNpcId(id){
+    if (id === CABBAGE.id) return "c";
+    if (id.startsWith("npc_ambient_")){
+      const parts = id.split("_"); // npc ambient KIND tx ty
+      const kind = parts[2]||"TOWN";
+      const tx = parts[3]|0, ty = parts[4]|0;
+      return "a"+(kind==="TOWN"?"t":"w")+tx+"."+ty;
+    }
+    if (id.startsWith("npc_")){
+      const parts = id.split("_"); // npc CELL tx ty
+      const cell = parts[1]||".";
+      const tx = parts[2]|0, ty = parts[3]|0;
+      return cell+tx+"."+ty;
+    }
+    return "u"+fnv1a32(id).toString(36); // unknown fallback
+  }
+
+  function askedMask(n){
+    let m = 0;
+    const flags = (n && Array.isArray(n.flags)) ? n.flags : [];
+    for (const f of flags){
+      if (typeof f !== "string") continue;
+      if (f==="asked_dog") m |= TOP.DOG;
+      else if (f==="asked_road") m |= TOP.ROAD;
+      else if (f==="asked_town") m |= TOP.TOWN;
+      else if (f==="asked_routes") m |= TOP.ROUTES;
+      else if (f==="asked_war") m |= TOP.WAR;
+      else if (f==="asked_sickness") m |= TOP.SICKNESS;
+      else if (f==="asked_work") m |= TOP.WORK;
+    }
+    return m|0;
+  }
+
+  const nOut = [];
+  for (const [id,n] of sig.slice(0,18)){
+    nOut.push([compactNpcId(id), n.familiarity|0, n.trust|0, n.hostility|0, askedMask(n)]);
+  }
+
+  // Sort compact arrays for determinism; cap to keep passwords short.
+  plague.sort((a,b)=>a-b); burned.sort((a,b)=>a-b); blocked.sort((a,b)=>a-b);
+  const state = {
+    v: 2,
+    s: SEED|0,
+    x: player.x|0, y: player.y|0,
+    f: player.fatigue|0, r: player.rep|0,
+    st: steps|0,
+    F: F|0,
+    p: plague.slice(0, 32),
+    b: burned.slice(0, 24),
+    k: blocked.slice(0, 24),
+    n: nOut
+  };
+
+  const json = JSON.stringify(state);
+  const bytes = new TextEncoder().encode(json);
+  const body = b32enc(bytes);
+  return body + chk(body);
+}
+function loadPasswordLegacy(code){
+  code = (code||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if (code.length < 10){ log("Invalid password.", "m"); return; }
+
+  const body = code.slice(0,-1);
+  const c = code.slice(-1);
+  if (chk(body) !== c){ log("The password refuses to settle.", "m"); return; }
+
+  try{
+    const bytes = b32dec(body);
+    const json = new TextDecoder().decode(bytes);
+    const st = JSON.parse(json);
+    if (!st || typeof st !== "object") throw new Error("badstate");
+
+    // Common fields
+    SEED = (st.s|0);
+    computeTowns();
+
+    player.x = clamp((st.x|0), 0, WORLD_SIZE-1);
+    player.y = clamp((st.y|0), 0, WORLD_SIZE-1);
+    player.fatigue = clamp((st.f|0), 0, 5);
+    player.rep = clamp((st.r|0), 0, 5);
+    steps = Math.max(0, (st.st|0));
+
+    worldEvents = new Set();
+        resetDogHints();
+npcMemory = Object.create(null);
+
+    // v2 slim format
+    if ((st.v|0) === 2){
+      const F = (st.F|0);
+      if (F & (1<<0)) worldEvents.add("routes_stirring");
+      if (F & (1<<1)) worldEvents.add("war_started");
+      if (F & (1<<2)) worldEvents.add("capital_fallen");
+
+      function addIdx(prefix, idx){
+        idx = idx|0;
+        const x = idx % WORLD_SIZE;
+        const y = (idx / WORLD_SIZE) | 0;
+        if (x>=0 && y>=0 && x<WORLD_SIZE && y<WORLD_SIZE) worldEvents.add(prefix + x + "_" + y);
+      }
+      if (Array.isArray(st.p)) for (const idx of st.p.slice(0,64)) addIdx("plague_", idx);
+      if (Array.isArray(st.b)) for (const idx of st.b.slice(0,64)) addIdx("burned_", idx);
+      if (Array.isArray(st.k)) for (const idx of st.k.slice(0,64)) addIdx("road_blocked_", idx);
+
+      const TOP = { DOG:1<<0, ROAD:1<<1, TOWN:1<<2, ROUTES:1<<3, WAR:1<<4, SICKNESS:1<<5, WORK:1<<6 };
+
+      function expandNpcId(cid){
+        if (cid==="c") return CABBAGE.id;
+        if (typeof cid!=="string" || cid.length<2) return null;
+        if (cid[0]==="a"){
+          const kind = (cid[1]==="t") ? "TOWN" : "WILD";
+          const rest = cid.slice(2).split(".");
+          const tx = rest[0]|0, ty = rest[1]|0;
+          return "npc_ambient_"+kind+"_"+tx+"_"+ty;
+        }
+        // building cell like "M12.7"
+        const m = cid.match(/^(.)(-?\d+)\.(-?\d+)$/);
+        if (m){
+          const cell = m[1];
+          const tx = m[2]|0, ty = m[3]|0;
+          return "npc_"+cell+"_"+tx+"_"+ty;
+        }
+        return null;
+      }
+
+      function flagsFromMask(mask){
+        const out = [];
+        if (mask & TOP.DOG) out.push("asked_dog");
+        if (mask & TOP.ROAD) out.push("asked_road");
+        if (mask & TOP.TOWN) out.push("asked_town");
+        if (mask & TOP.ROUTES) out.push("asked_routes");
+        if (mask & TOP.WAR) out.push("asked_war");
+        if (mask & TOP.SICKNESS) out.push("asked_sickness");
+        if (mask & TOP.WORK) out.push("asked_work");
+        return out;
+      }
+
+      if (Array.isArray(st.n)){
+        for (const row of st.n.slice(0, 32)){
+          if (!Array.isArray(row) || row.length < 4) continue;
+          const id = expandNpcId(row[0]);
+          if (!id) continue;
+          const fam = clamp((row[1]|0), 0, 99);
+          const tr = clamp((row[2]|0), -5, 5);
+          const ho = clamp((row[3]|0), 0, 5);
+          const mask = (row[4]|0);
+          npcMemory[id] = { familiarity: fam, trust: tr, hostility: ho, flags: flagsFromMask(mask) };
+        }
+      }
+    } else {
+      // Backward compatibility: older format used st.e (events strings) and st.n (npc object)
+      const eArr = Array.isArray(st.e) ? st.e : [];
+      for (const e of eArr){
+      if (e === "war_on_roads") { worldEvents.add("war_started"); continue; }
+
+        if (typeof e !== "string") continue;
+        if (e.length > 64) continue;
+        if (e.startsWith("doghint_")){
+        const xy = e.slice(8).split("_");
+        if (xy.length===2) addDogHint(clamp(xy[0]|0,0,WORLD_SIZE-1), clamp(xy[1]|0,0,WORLD_SIZE-1));
+        continue;
+      }
+      worldEvents.add(e);
+      }
+      npcMemory = sanitizeNPCMemory(st.n||{});
+    pruneNPCMemory();
+    }
+
+    // Ensure loaded position is playable
+    if (!passable(player.x, player.y)){
+      placePlayer();
+    }
+
+    initCabbageRoute();
+    mode="WORLD";
+    local=null;
+
+    log("The password takes.", "m");
+    render();
+  } catch(e){
+    console.error("Load error:", e);
+    log("The password refuses to settle.", "m");
+  }
+}
+
+// ---------- UI / rendering ----------
+function escapeHtml(s){ return String(s).replace(/[&<>\"\']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;" }[m])); }
+function glyphSpan(ch){
+  const col = COLORS[ch] || "#e6e6e6";
+  return '<span style="color:'+col+'">'+escapeHtml(ch)+'</span>';
+}
+
+function renderLegend(){
+  const items = [["@", "Player"],["p","Person"],[".","Plains"],["F","Forest"],["~","Water"],["^","Mountains"],["T","Town"],["C","Capital"],["R","Ruins"],["#","Blocked"],["!","Distress"],["d","Dog"]];
+  const el = document.getElementById("legend");
+  el.innerHTML = items.map(([sym,name])=>{
+    const col = COLORS[sym] || "#fff";
+    return '<span class="chip"><i class="dot" style="background:'+col+'"></i><span>'+sym+' '+name+'</span></span>';
+  }).join("");
+}
+
+function renderMapWorld(){
+  let html = "";
+  for (let y=0;y<WORLD_SIZE;y++){
+    for (let x=0;x<WORLD_SIZE;x++){
+      html += (x===player.x && y===player.y) ? glyphSpan("@") : glyphSpan(finalTileAt(x,y));
+    }
+    html += "\n";
+  }
+  return html;
+}
+function renderMapLocal(){
+  let html = "";
+  // Build NPC position lookup
+  const npcAt = {};
+  if (local.npcs) {
+    for (const npc of local.npcs) {
+      npcAt[npc.x + "_" + npc.y] = npc.type;
+    }
+  }
+  
+  for (let y=0;y<local.size;y++){
+    for (let x=0;x<local.size;x++){
+      const key = x + "_" + y;
+      if (x===local.px && y===local.py) {
+        html += glyphSpan("@");
+      } else if (local.kind==="WILD" && local.dog && x===local.dog.x && y===local.dog.y) {
+        html += glyphSpan("d");
+      } else if (npcAt[key] === "n") {
+        // Show townsperson/wanderer as 'p'
+        html += glyphSpan("p");
+      } else if (npcAt[key] && npcAt[key] !== "w" && "IMSTG".includes(npcAt[key])) {
+        // Show building NPCs - render the building but they know someone's there
+        html += glyphSpan(local.map[y][x]);
+      } else {
+        html += glyphSpan(local.map[y][x]);
+      }
+    }
+    html += "\n";
+  }
+  return html;
+}
+
+function render(){
+  document.getElementById("modeLabel").textContent = mode;
+  document.getElementById("posLabel").textContent = (mode==="WORLD") ? ("("+player.x+","+player.y+") • seed "+(SEED|0)) : (local ? (local.kind+" @ ("+local.tx+","+local.ty+") • seed "+(SEED|0)) : "");
+
+  const mapOut = document.getElementById("mapOut");
+  if (mode==="END") mapOut.innerHTML = "";
+  else if (mode==="WORLD") mapOut.innerHTML = renderMapWorld();
+  else mapOut.innerHTML = renderMapLocal();
+
+  const fat = ["fresh","worn","tired","heavy","spent","near-done"][clamp(player.fatigue,0,5)];
+  const tone = worldEvents.has("capital_fallen") ? "hollow" : worldEvents.has("routes_stirring") ? "unsettled" : "quiet";
+  document.getElementById("statusLine").textContent = "Fatigue: "+fat+" • Roads: "+tone+" • Steps: "+steps;
+
+  const l = document.getElementById("log");
+  l.scrollTop = l.scrollHeight;
+}
+
+// ---------- Log ----------
+function log(text, cls){
+  const div = document.getElementById("log");
+  const p = document.createElement("p");
+  p.className = "line";
+  if (cls==="m") p.innerHTML = '<span class="m">'+escapeHtml(text)+'</span>';
+  else p.textContent = text;
+  div.appendChild(p);
+  // cap log lines
+  while (div.children.length > 300) div.removeChild(div.firstChild);
+  div.scrollTop = div.scrollHeight;
+}
+function clearLogSoft(){
+  document.getElementById("log").innerHTML = "";
+}
+
+// ---------- Command system ----------
+function cmdHelp(){
+  log("Commands: N S E W, ENTER, EXIT, LOOK, TALK, ASK <topic>, CALL, WAIT, REST, RIDE, STATUS, SAVE, LOAD <CODE>, NEW <seed>, HELP", "m");
+  log("Topics: DOG, ROAD, TOWN, ROUTES, WAR, SICKNESS, WORK", "m");
+}
+function cmdStatus(){
+  const fatWord = ["fresh","worn","tired","heavy","spent","near-done"][clamp(player.fatigue,0,5)];
+  const repWord = ["unknown","noticed","recognized","remembered","expected","spoken-of"][clamp(player.rep,0,5)];
+  const tone = worldEvents.has("capital_fallen") ? "The kingdom feels hollow."
+            : worldEvents.has("routes_stirring") ? "The roads feel unsettled."
+            : "The day feels ordinary.";
+  log("You are "+fatWord+". People are "+repWord+".", "m");
+  log(tone, "m");
+}
+
+function travelEventCheck(){
+  const r = noise01(player.x + steps, player.y - steps, SEED ^ 0x7A7A);
+  if (r < 0.06) log("You notice old tracks crossing the land.", "m");
+  else if (r < 0.10) log("A distant tower is visible from here.", "m");
+  else if (r < 0.13) log("A traveler passes without speaking.", "m");
+  else if (r < 0.15) log("You feel like you are being watched.", "m");
+}
+
+function moveWorld(dx,dy){
+  if (mode!=="WORLD"){ log("Not here.", "m"); return; }
+  const nx = player.x + dx, ny = player.y + dy;
+  if (nx<0||ny<0||nx>=WORLD_SIZE||ny>=WORLD_SIZE){ log("You cannot go that way.", "m"); return; }
+  const t = finalTileAt(nx,ny);
+  if (t==="~"){ log("Deep water blocks your path.", "m"); return; }
+  if (t==="^"){ log("The mountains resist passage.", "m"); return; }
+  if (t==="#"){ log("The road is blocked.", "m"); return; }
+
+  player.x=nx; player.y=ny;
+  steps++;
+  player.fatigue = clamp(player.fatigue + (t==="F" ? 2 : 1), 0, 5);
+
+  if (dogIsNear(player.x, player.y)){
+    maybeInternal("nearDog");
+    if (addDogHint(player.x, player.y)){
+      if (dogHintCount >= 3 && !worldEvents.has("routes_stirring")){
+        worldEvents.add("routes_stirring");
+        log("Animals have been restless. You feel it in the roads.", "m");
+      }
+    }
+  } else maybeInternal("travel");
+
+  travelEventCheck();
+  advanceWorldPressure();
+  render();
+}
+
+function cmdEnter(){
+  if (mode!=="WORLD"){ log("You are already inside.", "m"); return; }
+  const tile = finalTileAt(player.x, player.y);
+  if (tile==="T" || tile==="C" || tile==="!" || tile==="R"){
+    local = generateTown(player.x, player.y, false);
+    mode="LOCAL";
+    log("Buildings gather. The road narrows.", "m");
+    render(); return;
+  }
+  if (tile==="." || tile==="F"){
+    local = generateWilderness(player.x, player.y);
+    mode="LOCAL";
+    log("The land closes around you.", "m");
+    if (local.dog) log("You sense movement nearby.", "m");
+    render(); return;
+  }
+  log("There is nothing to enter here.", "m");
+}
+
+function cmdExit(){
+  if (mode!=="LOCAL"){ log("Not here.", "m"); return; }
+  mode="WORLD"; local=null;
+  log("You return to the open road.", "m");
+  render();
+}
+
+function moveLocal(dx,dy){
+  if (mode!=="LOCAL" || !local){ log("Not here.", "m"); return; }
+  const nx = local.px + dx, ny = local.py + dy;
+
+  // walking off edge exits back to world
+  if (nx<0||ny<0||nx>=local.size||ny>=local.size){
+    cmdExit(); return;
+  }
+
+  if (!local.map[ny] || local.map[ny][nx]===undefined){
+    log("The ground is strange here.", "m");
+    return;
+  }
+  const cell = local.map[ny][nx];
+  if (cell==="#"){ log("A wall blocks your way.", "m"); return; }
+
+  local.px=nx; local.py=ny;
+  steps++;
+  player.fatigue = clamp(player.fatigue + 1, 0, 5);
+
+  if (local.kind==="WILD" && worldEvents.has("routes_stirring")) maybeInternal("routes");
+  else if (player.fatigue>=4) maybeInternal("fatigue3");
+  else if (player.fatigue>=2) maybeInternal("fatigue2");
+  else if (player.fatigue>=1) maybeInternal("fatigue1");
+
+  advanceWorldPressure();
+  render();
+}
+
+function cmdLook(){
+  if (mode==="END") return;
+  if (mode==="WORLD"){
+    const tile = finalTileAt(player.x, player.y);
+    const desc = ({".":"Open land stretches out.","F":"Trees crowd closer.","~":"Water, cold and absolute.","^":"High stone. Thin air.","T":"A town sits where roads gather.","C":"The capital's shadow reaches far.","R":"Old stones. A place avoided.","!":"A town under strain.","#":"A blockage. Deliberate."})[tile] || "You see nothing special.";
+    log(desc, "m");
+    if (dogIsNear(player.x, player.y)) log("Something moved through here recently.", "m");
+    if (dogIsVeryNear(player.x, player.y)) log("The trail is fresh. ENTER to search.", "m");
+    return;
+  }
+  const cell = local.map[local.py][local.px];
+  
+  // Check if there's an NPC here
+  const hasNPC = local.npcs && local.npcs.some(n => n.x === local.px && n.y === local.py);
+  
+  const d = (cell==="w") ? "A battered wagon. Cabbages stacked unevenly."
+          : (cell==="I") ? "An inn. Warmth behind a door." + (hasNPC ? " Someone moves inside." : "")
+          : (cell==="M") ? "A market space. Trade leaves traces." + (hasNPC ? " A merchant watches." : "")
+          : (cell==="S") ? "A smithy. Heat and hammer-sound." + (hasNPC ? " The smith is working." : "")
+          : (cell==="T") ? "A temple. Quiet held in stone." + (hasNPC ? " A figure kneels in shadow." : "")
+          : (cell==="G") ? "A guard post. Eyes on the road." + (hasNPC ? " A guard stands ready." : "")
+          : (cell==="r") ? "Burned timbers. A place that won't return."
+          : (cell==="t") ? "Brush and shadow."
+          : (cell==="^") ? "Rock, rough underfoot."
+          : (cell==="|") ? "A worn street line." + (hasNPC ? " Someone lingers nearby." : "")
+          : (cell==="+") ? "A crossing of streets." + (hasNPC ? " A local is passing through." : "")
+          : (hasNPC ? "Someone is here." : "Nothing calls out.");
+  log(d, "m");
+  
+  if (local.dog && local.px===local.dog.x && local.py===local.dog.y){
+    log("Your dog. It's here.", "m");
+    log("(CALL to reunite.)", "m");
+  } else if (local.dog) {
+    const dist = Math.abs(local.px - local.dog.x) + Math.abs(local.py - local.dog.y);
+    if (dist <= 2) log("Movement in the brush nearby.", "m");
+  }
+}
+
+
+// Helper: standardize local NPC IDs so TALK and ASK refer to the same "person".
+function speakerName(cell){
+  if (cell==="w") return "Cabbage Merchant";
+  if (cell==="I") return "Innkeeper";
+  if (cell==="M") return "Merchant";
+  if (cell==="S") return "Smith";
+  if (cell==="T") return "Priest";
+  if (cell==="G") return "Guard";
+  if (cell==="r") return "Survivor";
+  if (cell===".") return (local && local.kind==="TOWN") ? "Local" : "Wanderer";
+  if (cell==="t") return "Wanderer";
+  return "Someone";
+}
+
+function logSpeaker(cell, topic){
+  const who = speakerName(cell);
+  const tag = topic ? (who + " (" + topic + "):") : (who + ":");
+  log(tag, "m");
+}
+
+function getLocalNPCId(cell, tx, ty){
+  if (cell === "w") return CABBAGE.id;
+  // Generic / ambient speakers share an ID per local map area.
+  if (cell === "." || cell === "F" || cell === "t" || cell === "^" || cell === "|" || cell === "+" ){
+    return "npc_ambient_" + local.kind + "_" + tx + "_" + ty;
+  }
+  return "npc_" + cell + "_" + tx + "_" + ty;
+}
+
+function cmdTalk(){
+  if (mode==="END") return;
+  if (mode==="WORLD"){ log("No one to speak with here.", "m"); return; }
+
+  const cell = local.map[local.py][local.px];
+
+  // wagon / cabbage merchant
+  if (cell==="w" && local.kind==="TOWN" && (cabbageIsHereWorld(local.tx, local.ty) || local.wagonForced)){
+    const st = getNPC(CABBAGE.id);
+    st.familiarity = clamp(st.familiarity+1,0,99);
+    const opener = CABBAGE.openers[Math.floor(noise01(steps, 1, SEED^0xCAB)*CABBAGE.openers.length)];
+    const idx = clamp(st.familiarity-1, 0, CABBAGE.complaint.length-1);
+    log(opener);
+    log(CABBAGE.complaint[idx], "m");
+    setNPC(CABBAGE.id, st);
+    if (player.fatigue>=2 && st.familiarity>=2){
+      log(CABBAGE.rideOffer.join(" "), "m");
+      log("(Type RIDE.)", "m");
+    }
+    player.rep = clamp(player.rep + 1, 0, 5);
+    return;
+  }
+
+  const id = getLocalNPCId(cell, local.tx, local.ty);
+  const st = getNPC(id);
+  st.familiarity = clamp(st.familiarity+1,0,99);
+  setNPC(id, st);
+
+  // Talking is a small bid for trust; high fatigue can sour it.
+  if (player.rep>=3) st.trust = clamp((st.trust|0) + 1, -5, 5);
+  if (player.fatigue>=4) st.hostility = clamp((st.hostility|0) + 1, 0, 5);
+  setNPC(id, st);
+
+  let building = BUILDING_POOLS[cell] ? cell : ".";
+  const topic = (dogIsNear(local.tx, local.ty) && noise01(steps, 2, SEED^0xD06) < 0.6) ? "DOG" : "ROAD";
+  const lines = sayNPC(building, topic, {bodyLines:1, overlayCap:1, npc: st});
+  logSpeaker(cell, topic);
+  for (const ln of lines) log(ln);
+  player.rep = clamp(player.rep + (st.familiarity>=2 ? 1:0), 0, 5);
+}
+
+function cmdAsk(topic){
+  if (mode==="END") return;
+  topic = (topic||"").toUpperCase().trim();
+  if (!topic){ log("Ask about what?", "m"); return; }
+  const KNOWN = new Set(["DOG","ROAD","TOWN","ROUTES","WORK","WAR","SICKNESS"]); 
+  if (!KNOWN.has(topic)) { log("No one understands that word.", "m"); return; }
+  if (topic==="ROUTES" && !worldEvents.has("routes_stirring")){
+    log("No one here understands the word the way you mean it.", "m");
+    return;
+  }
+  if (mode==="WORLD"){
+    if (topic==="DOG"){
+      log("You call softly. The wind answers.", "m");
+      if (dogIsNear(player.x, player.y)) log("But the ground suggests you are close.", "m");
+    } else log("There is no one to ask.", "m");
+    return;
+  }
+  const cell = local.map[local.py][local.px];
+
+  const id = getLocalNPCId(cell, local.tx, local.ty);
+  const st = getNPC(id);
+  st.familiarity = clamp(st.familiarity + 1, 0, 99);
+  setNPC(id, st);
+
+  // Tiny memory bridge: repeated probing makes some people bristle.
+  st.flags = st.flags || [];
+  const keyFlag = "asked_"+topic.toLowerCase();
+  if (st.flags.includes(keyFlag)) st.hostility = clamp((st.hostility|0) + 1, 0, 5);
+  else st.flags.push(keyFlag);
+  // Reputation and familiarity can build trust.
+  if (player.rep>=3) st.trust = clamp((st.trust|0) + 1, -5, 5);
+  setNPC(id, st);
+
+  // If the wagon symbol appears but the schedule says the merchant isn't here,
+  // fall back to market-style talk instead of feeling "broken".
+  let building = BUILDING_POOLS[cell] ? cell : ".";
+  if (cell === "w" && !cabbageIsHereWorld(local.tx, local.ty)) building = "M";
+
+  const lines = sayNPC(building, topic, {bodyLines:2, overlayCap:1, npc: st, frame:false});
+  logSpeaker(cell, topic);
+  for (const ln of lines) log(ln);
+  if (topic==="DOG" && (st.familiarity>=3 || (st.trust|0)>=2)){
+    const dir = dogDirectionHint(local.tx, local.ty);
+    if (dir) log("(A gesture: " + dir + ".)", "m");
+  }
+  if (topic==="DOG" && dogIsNear(local.tx, local.ty)) maybeInternal("nearDog");
+  if (topic==="ROUTES") maybeInternal("routes");
+  player.rep = clamp(player.rep + 1, 0, 5);
+}
+
+function cmdWait(){
+  steps++;
+  player.fatigue = clamp(player.fatigue - 1, 0, 5);
+  log("You wait.", "m");
+  advanceWorldPressure();
+  maybeInternal(player.fatigue>=3 ? "fatigue2" : "travel");
+  render();
+}
+
+function cmdRest(){
+  if (mode!=="LOCAL"){ log("Not here.", "m"); return; }
+  if (local.kind==="TOWN"){
+    steps += 2;
+    player.fatigue = clamp(player.fatigue - 3, 0, 5);
+    log("You rest for a while.", "m");
+    advanceWorldPressure();
+    render(); return;
+  }
+  steps += 2;
+  player.fatigue = clamp(player.fatigue - 2, 0, 5);
+  if (noise01(steps, 404, SEED^0xA357) < 0.18) log("Sleep comes shallow. You wake too quickly.", "m");
+  else log("You rest. The world does not.", "m");
+  advanceWorldPressure();
+  render();
+}
+
+function cmdRide(){
+  if (mode!=="LOCAL" || !local || local.kind!=="TOWN"){ log("Not here.", "m"); return; }
+  const cell = local.map[local.py][local.px];
+  if (!(cell==="w" && (cabbageIsHereWorld(local.tx, local.ty) || local.wagonForced))){ log("No ride is offered.", "m"); return; }
+  if (!cabbageRoute.length){ log("The merchant has nowhere to go.", "m"); return; }
+  const st = getNPC(CABBAGE.id);
+  if (player.fatigue < 2 || st.familiarity < 2){ log("Not today.", "m"); return; }
+
+  const idx = cabbageIndex();
+  const next = cabbageRoute[(idx+1) % cabbageRoute.length];
+  if (!next){ log("The route is unclear.", "m"); return; }
+
+  log("You climb onto the wagon.", "m");
+  log("Cabbages shift beneath the weight.", "m");
+  log("The road becomes a rhythm.", "m");
+  log("He complains the whole way.", "m");
+  log("You rest.", "m");
+
+  steps += 3;
+  player.fatigue = clamp(player.fatigue - 3, 0, 5);
+  advanceWorldPressure();
+
+  clearLogSoft();
+  log("The wagon stops.", "m");
+  log(CABBAGE.afterRide[0], "m");
+
+  player.x = next.x; player.y = next.y;
+  local = generateTown(player.x, player.y, true);
+  mode = "LOCAL";
+  render();
+}
+
+function cmdNew(seedStr){
+  const s = (seedStr||"").trim();
+  SEED = s ? fnv1a32(s) : initialSeed();
+  startNewGame();
+  log("World seeded: "+(s? s : (SEED|0)), "m");
+}
+function cmdDebug(){
+  log("Seed: "+(SEED|0), "m");
+  log("Pos: ("+player.x+","+player.y+") mode "+mode, "m");
+  log("Towns: "+towns.length+" Capital: ("+capital.x+","+capital.y+")", "m");
+  log("Events: "+worldEvents.size+" NPCs: "+Object.keys(npcMemory).length, "m");
+  log("Cabbage route: "+cabbageRoute.length, "m");
+}
+
+
+function cmdBlock(){
+  if (mode!=="WORLD"){ log("Try it on the open road.", "m"); return; }
+  const t = tileAt(player.x, player.y);
+  if (t==="~" || t==="^"){ log("You can't block water or mountains.", "m"); return; }
+  const k = keyForXY(player.x, player.y);
+  const key = "road_blocked_"+k;
+  if (worldEvents.has(key)){
+    worldEvents.delete(key);
+    log("The blockage is cleared.", "m");
+  } else {
+    worldEvents.add(key);
+    log("Someone sets a barricade on the road.", "m");
+  }
+  render();
+}
+
+// ---------- Dog calling and endings ----------
+function cmdCall(){
+  if (mode==="END") return;
+  
+  if (mode==="WORLD"){
+    log("You call out.", "m");
+    if (dogIsVeryNear(player.x, player.y)){
+      log("Something stirs in the distance.", "m");
+      log("You should search here.", "m");
+    } else if (dogIsNear(player.x, player.y)){
+      log("The wind carries it. Maybe.", "m");
+    } else {
+      log("Your voice falls flat against the land.", "m");
+    }
+    return;
+  }
+  
+  // In LOCAL mode
+  if (!local) return;
+  
+  // Check if dog is here and we're near it
+  if (local.dog){
+    const dist = Math.abs(local.px - local.dog.x) + Math.abs(local.py - local.dog.y);
+    
+    if (dist === 0){
+      // Standing on the dog's tile - reunion!
+      triggerEnding("reunion");
+      return;
+    } else if (dist <= 2){
+      log("You call softly.", "m");
+      log("A shape in the brush. Ears up.", "m");
+      log("It doesn't run.", "m");
+      log("(Move closer.)", "m");
+      return;
+    } else {
+      log("You call out.", "m");
+      log("Something moves at the edge of sight.", "m");
+      return;
+    }
+  }
+  
+  log("You call out.", "m");
+  if (dogIsNear(local.tx, local.ty)){
+    log("The air feels close. Keep looking.", "m");
+  } else {
+    log("Nothing answers.", "m");
+  }
+}
+
+function triggerEnding(type){
+  mode = "END";
+  clearLogSoft();
+  
+  const fallen = worldEvents.has("capital_fallen");
+  const war = worldEvents.has("war_started");
+  const hints = dogHintCount;
+  
+  if (type === "reunion"){
+    log("", "m");
+    log("The dog looks up.", "m");
+    log("", "m");
+    
+    if (fallen){
+      // Bittersweet ending - found the dog but the world collapsed
+      log("It's thinner than you remember.", "m");
+      log("The roads behind you are quieter now.", "m");
+      log("But it came when you called.", "m");
+      log("", "m");
+      log("You walk home together.", "m");
+      log("What's left of it.", "m");
+      log("", "m");
+      log("THE QUIET ROADS", "m");
+      log("Ending: The Long Way Back", "m");
+    } else if (war){
+      // Tense ending - found dog during wartime
+      log("Dust on its coat. Burrs in its fur.", "m");
+      log("It's been through something.", "m");
+      log("So have you.", "m");
+      log("", "m");
+      log("The roads aren't safe anymore.", "m");
+      log("But you're not walking them alone.", "m");
+      log("", "m");
+      log("THE QUIET ROADS", "m");
+      log("Ending: Found in Time", "m");
+    } else if (hints >= 5 && player.rep >= 3){
+      // Best ending - patient search, built relationships
+      log("It bounds toward you.", "m");
+      log("No hesitation. It remembers.", "m");
+      log("", "m");
+      log("People helped you find your way.", "m");
+      log("The roads were kind.", "m");
+      log("", "m");
+      log("You walk home together.", "m");
+      log("The gate is still open.", "m");
+      log("", "m");
+      log("THE QUIET ROADS", "m");
+      log("Ending: Homecoming", "m");
+    } else {
+      // Standard ending
+      log("It approaches slowly. Sniffs your hand.", "m");
+      log("Then presses against your leg.", "m");
+      log("", "m");
+      log("The search is over.", "m");
+      log("The roads continue without you.", "m");
+      log("", "m");
+      log("THE QUIET ROADS", "m");
+      log("Ending: Reunion", "m");
+    }
+  }
+  
+  log("", "m");
+  log("Steps taken: " + steps, "m");
+  log("Towns visited: " + countVisitedTowns(), "m");
+  log("People spoken to: " + Object.keys(npcMemory).length, "m");
+  log("", "m");
+  log("(NEW <seed> to begin again)", "m");
+  
+  render();
+}
+
+function countVisitedTowns(){
+  let count = 0;
+  for (const id of Object.keys(npcMemory)){
+    if (id.startsWith("npc_") && !id.includes("ambient")) count++;
+  }
+  return Math.min(count, towns.length);
+}
+
+function runCommand(raw){
+  const input = (raw||"").trim();
+  if (!input) return;
+
+  log("> "+input, "m");
+
+  const parts = input.split(/\s+/);
+  const cmd = parts[0].toUpperCase();
+  const arg = parts.slice(1).join(" ");
+
+  if (mode==="END"){
+    if (cmd==="LOAD") loadPasswordLegacy(arg);
+    else log("The story is done. (LOAD <password> to continue elsewhere.)", "m");
+    return;
+  }
+
+  if (cmd==="N"||cmd==="NORTH") return (mode==="WORLD"?moveWorld(0,-1):moveLocal(0,-1));
+  if (cmd==="S"||cmd==="SOUTH") return (mode==="WORLD"?moveWorld(0, 1):moveLocal(0, 1));
+  if (cmd==="E"||cmd==="EAST")  return (mode==="WORLD"?moveWorld(1, 0):moveLocal(1, 0));
+  if (cmd==="W"||cmd==="WEST")  return (mode==="WORLD"?moveWorld(-1,0):moveLocal(-1,0));
+
+  // Common aliases / typos
+  if (cmd==="HI" || cmd==="HELLO") return cmdTalk();
+  if (cmd==="EX" || cmd==="EXT") return cmdExit();
+
+  switch(cmd){
+    case "HELP": return cmdHelp();
+    case "STATUS": return cmdStatus();
+    case "ENTER": return cmdEnter();
+    case "EXIT": return cmdExit();
+    case "LOOK": return cmdLook();
+    case "TALK": return cmdTalk();
+    case "ASK": return cmdAsk(arg);
+    case "CALL": return cmdCall();
+    case "WAIT": return cmdWait();
+    case "REST": return cmdRest();
+    case "RIDE": return cmdRide();
+    case "SAVE": { const pw = savePasswordPacked(); log("Password:", "m"); log(pw, "m"); return; }
+    case "LOAD": { loadPasswordAny(arg); return; }
+    case "NEW": return cmdNew(arg);
+    case "CLEAR": clearLogSoft(); return;
+    case "DEBUG": return cmdDebug();
+    case "BLOCK": return cmdBlock();
+    default: log("Nothing comes of that.", "m"); return;
+  }
+}
+
+// ---------- Command history ----------
+const history = [];
+let hIdx = 0;
+function pushHistory(cmd){
+  if (!cmd) return;
+  if (history.length===0 || history[history.length-1]!==cmd) history.push(cmd);
+  if (history.length>100) history.shift();
+  hIdx = history.length;
+}
+
+// ---------- Start placement (connected to a town) ----------
+function passable(x,y){
+  const t = finalTileAt(x,y);
+  return t !== "~" && t !== "^" && t !== "#";
+}
+function reachableTownFrom(sx,sy){
+  const q = [{x:sx,y:sy}];
+  const seen = new Set([keyForXY(sx,sy)]);
+  while (q.length){
+    const p = q.shift();
+    if (isTownAt(p.x,p.y)) return true;
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (const [dx,dy] of dirs){
+      const nx=p.x+dx, ny=p.y+dy;
+      if (nx<0||ny<0||nx>=WORLD_SIZE||ny>=WORLD_SIZE) continue;
+      if (!passable(nx,ny)) continue;
+      const k=keyForXY(nx,ny);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      q.push({x:nx,y:ny});
+    }
+  }
+  return false;
+}
+function placePlayer(){
+  // try seeded candidates
+  for (let i=0;i<300;i++){
+    const x = (mix32(SEED + i*17)>>>0)%WORLD_SIZE;
+    const y = (mix32(SEED + i*33)>>>0)%WORLD_SIZE;
+    if (!passable(x,y)) continue;
+    if (reachableTownFrom(x,y)){ player.x=x; player.y=y; return; }
+  }
+  // fallback scan
+  for (let y=0;y<WORLD_SIZE;y++){
+    for (let x=0;x<WORLD_SIZE;x++){
+      if (passable(x,y) && reachableTownFrom(x,y)){ player.x=x; player.y=y; return; }
+    }
+  }
+  // Absolute last resort: find any passable tile.
+  for (let yy=0; yy<WORLD_SIZE; yy++){
+    for (let xx=0; xx<WORLD_SIZE; xx++){
+      if (passable(xx,yy)){ player.x=xx; player.y=yy; return; }
+    }
+  }
+  player.x=10; player.y=10;
+}
+
+// ---------- Boot ----------
+function startNewGame(){
+  worldEvents = new Set();
+    resetDogHints();
+npcMemory = Object.create(null);
+  recentFragments = [];
+  recentInternal = [];
+  lastInternalStep = -999;
+  lastPressureStep = -999;
+  steps = 0;
+  player.fatigue = 0;
+  player.rep = 0;
+
+  computeTowns();
+  initCabbageRoute();
+  placePlayer();
+
+  clearLogSoft();
+  log("The yard gate is open.", "m");
+  log("Your dog is gone.", "m");
+  log("", "m");
+  log("Find it before the roads change.", "m");
+  log("", "m");
+  log("LOOK around. TALK to people (p). ASK about your DOG.", "m");
+  log("CALL when you're close.", "m");
+
+  renderLegend();
+  render();
+}
+
+const inputEl = document.getElementById("cmd");
+document.getElementById("btn").addEventListener("click", ()=>{
+  const v = inputEl.value;
+  pushHistory(v);
+  inputEl.value="";
+  runCommand(v);
+  render();
+  inputEl.focus();
+});
+inputEl.addEventListener("keydown", (e)=>{
+  if (e.key==="ArrowUp"){
+    e.preventDefault();
+    if (hIdx>0){ hIdx--; inputEl.value = history[hIdx] || ""; }
+    return;
+  }
+  if (e.key==="ArrowDown"){
+    e.preventDefault();
+    if (hIdx < history.length){ hIdx++; inputEl.value = history[hIdx] || ""; }
+    else { hIdx = history.length; inputEl.value=""; }
+    return;
+  }
+  if (e.key==="Enter"){
+    const v = inputEl.value;
+    pushHistory(v);
+    inputEl.value="";
+    runCommand(v);
+    render();
+  }
+});
+
+// Start now
+startNewGame();
+inputEl.focus();
+
+</script>
+</body>
+</html>
