@@ -75,6 +75,8 @@ winnable: 1992 of 2000
 fresh-trail truth: 40.1% (20494 of 51152)
 ```
 
+CI on pull request 2 passed both jobs: `test` on Node 20 (build, 170 tests, the built file uploaded) and `browser` on Node 22 with GitHub's Chrome.
+
 Beyond the tests, four comparisons between the built file and the legacy file all came out identical:
 
 - Every measure of the full sweep, over 2,000 seeds.
