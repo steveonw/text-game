@@ -18,5 +18,23 @@ jobs:
           node-version: 20
       - name: Legacy file is unchanged
         run: echo "85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legacy/quiet-roads-v13.html" | sha256sum --check
+      - name: Build
+        run: npm run build
       - name: Test
         run: npm test
+      - name: Upload the built game
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-quiet-roads
+          path: dist/index.html
+          if-no-files-found: error
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Play the goldens in headless Chrome
+        run: npm run browser-check

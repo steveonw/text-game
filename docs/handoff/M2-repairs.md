@@ -10,7 +10,9 @@
 
 ## Tasks
 
-Fix each defect below, add a test named for its ID in `test/repairs.test.mjs`, then re-record only the golden transcripts that the fix changes.
+First, freeze the v13 baseline. `test/golden/` was recorded from the legacy file, and `test/legacy.test.mjs` replays it against that file. Copy it to `test/golden-v13/` and point `test/legacy.test.mjs` at the copy. From then on `test/golden/` describes the current build, and `node tools/record-goldens.mjs dist/index.html` records it.
+
+Then fix each defect below, add a test named for its ID in `test/repairs.test.mjs`, and re-record only the golden transcripts that the fix changes.
 
 | Defect | Fix |
 | --- | --- |
@@ -56,6 +58,8 @@ One addition follows from D3: a burned town places one Survivor in `local.npcs` 
 - D6: a burned town and the fallen capital also draw as `R` but are towns. Test all three kinds of `R`.
 - D5: `TOPIC_FALLBACKS` has no DOG, ROAD or ROUTES entries. Those topics still come from the role and generic pools.
 - D19: M0's transcript `27-new-inside-a-town` pins the broken behavior. It is the one golden this fix should change.
+- The recorder searches for seeds that show each case. A fix can change which seed it finds, which rewrites a whole transcript. That is a real change to a golden: list it, and say which fix moved the seed.
+- `test/modules.test.mjs`, `test/bundle.test.mjs` and `npm run browser-check` all read `test/golden/`. After each re-record all three must pass again.
 
 ## Out of scope
 

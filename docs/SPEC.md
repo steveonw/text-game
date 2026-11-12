@@ -290,6 +290,8 @@ text-game/
   src/
     index.template.html       markup and CSS from v13
     main.js                   boot, input, history, initial seed
+    state.js                  G, the one state object (M1)
+    io.js                     the seam between logic and the page (M1)
     render.js                 the only module that draws
     rng.js                    fnv1a32, mix32, noise01
     world.js                  terrain fields, tiles, towns, capital, start
@@ -304,7 +306,11 @@ text-game/
     content/pools.js          every player-facing line
   tools/
     build.mjs                 src -> dist/index.html
+    browser-check.mjs         plays the goldens in headless Chrome (M1)
     harness/load.mjs          headless loader with a stub page
+    harness/modules.mjs       plays the modules directly, with no page (M1)
+    harness/golden.mjs        reads and replays the golden files
+    record-goldens.mjs        records test/golden/ from a build
     sweep.mjs                 seed sweep and CI gates
     bot.mjs                   explorer, tracker, asker, waiter
   test/
@@ -373,9 +379,9 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-11: at the root. The owner confirmed `text-game` is the repository for this project.
 
-- [ ] **A build with no dependencies (before M1)**
+- [x] **A build with no dependencies (before M1)**
 
-    Default: a short script of our own. The alternative is esbuild as a development-only dependency; the shipped file is the same either way.
+    Decided 2026-11-11: a short script of our own, `tools/build.mjs`. The owner said to go on to M1 with the default. The alternative was esbuild as a development-only dependency.
 
 - [ ] **Trail, or a signal field (before M3)**
 
