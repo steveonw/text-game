@@ -250,3 +250,33 @@ test('D4: a speaker never falls silent, and never says one line twice in a reply
   assert.deepEqual(pickMany(pool, [0, 0, 0, 0, 0], 3), ['one', 'two'], 'a pool of two gives two lines, not a repeat');
   assert.deepEqual(pickMany([], [0, 0, 0, 0, 0], 2), []);
 });
+
+test('D5: every topic is answered from its own lines, never from ROAD', () => {
+  const texts = (list) => list.map((f) => f.t);
+  for (const role of ['I', 'M', 'S', 'T', 'G', '.']) {
+    const road = texts(BUILDING_POOLS[role].road);
+    for (const topic of ['TOWN', 'WAR', 'SICKNESS', 'WORK']) {
+      bootModules('ask-2');
+      const said = sayNPC(role, topic, { bodyLines: 2, overlayCap: 0, frame: false });
+      const own = texts(TOPIC_FALLBACKS[topic.toLowerCase()]);
+      assert.ok(said.length >= 1, `${role} ${topic}: something is said`);
+      for (const line of said) {
+        assert.ok(own.includes(line), `${role} ${topic}: "${line}" is a ${topic} line`);
+        assert.ok(!road.includes(line), `${role} ${topic}: "${line}" is not a ROAD line`);
+      }
+    }
+    for (const topic of ['DOG', 'ROAD', 'ROUTES']) {
+      bootModules('ask-2');
+      const own = texts(BUILDING_POOLS[role][topic.toLowerCase()]);
+      for (const line of sayNPC(role, topic, { bodyLines: 2, overlayCap: 0, frame: false })) assert.ok(own.includes(line), `${role} ${topic}: "${line}" is the role's own`);
+    }
+  }
+  // and through the command, at an inn
+  bootModules('talk-1');
+  const t = nearest((x, y) => isTownAt(x, y) && generateTown(x, y, false).map[2][2] === 'I');
+  walkTo(t.x, t.y); say('ENTER'); localTo(2, 2);
+  const out = say('ASK TOWN');
+  assert.equal(out[1], 'Innkeeper (TOWN):');
+  const innRoad = texts(BUILDING_POOLS.I.road), townLines = texts(TOPIC_FALLBACKS.town);
+  for (const line of afterTag(out)) { assert.ok(townLines.includes(line)); assert.ok(!innRoad.includes(line)); }
+});
