@@ -4,7 +4,8 @@ import { G } from './state.js';
 import { cabbageIsHereWorld } from './clock.js';
 import { fnv1a32, mix32, noise01 } from './rng.js';
 import { LOCAL_SIZE, TUNE } from './tuning.js';
-import { dogIsVeryNear, keyForXY } from './world.js';
+import { dogIsVeryNear } from './trail.js';
+import { keyForXY } from './world.js';
 
 // ---------- Local map gen ----------
 export function generateWilderness(tx,ty){
@@ -47,8 +48,9 @@ export function generateWilderness(tx,ty){
     }
   }
 
+  // The dog is on its own tile, always, and nowhere else. v13 rolled for it on every very-near tile.
   let dog = null;
-  if (dogIsVeryNear(tx,ty) && noise01(tx,ty,G.seed^0x0D06) > TUNE.dogRollAbove){
+  if (dogIsVeryNear(tx,ty)){
     const hx = (mix32(fnv1a32("dog"+tx+","+ty+","+G.seed))>>>0)%(size-2);
     const hy = (mix32(fnv1a32("dog2"+tx+","+ty+","+G.seed))>>>0)%(size-2);
     dog = {x:1+hx, y:1+hy};

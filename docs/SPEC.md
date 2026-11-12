@@ -410,13 +410,13 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-11: a short script of our own, `tools/build.mjs`. The owner said to go on to M1 with the default. The alternative was esbuild as a development-only dependency.
 
-- [ ] **Trail, or a signal field (before M3)**
+- [x] **Trail, or a signal field (before M3)**
 
-    Default: one dog on a walkable trail, as in 4.1. The lighter alternative keeps v13's signal field and centres it on a single dog. This is the largest design choice in the spec.
+    Decided 2026-11-12: one dog on a walkable trail, as in 4.1. The owner said to go with the defaults. The alternative kept v13's signal field and centred it on a single dog.
 
-- [ ] **Two additions to locked things (before M3)**
+- [x] **Two additions to locked things (before M3)**
 
-    Default: `?` marks found sign on the world map, and "guarded" is the status word for the war stage. Both add to a palette and vocabulary the source treats as fixed.
+    Decided 2026-11-12, with the defaults: `?` marks found sign on the world map (M3), and "guarded" is the status word for the war stage (M4). Both add to a palette and vocabulary the source treats as fixed.
 
 - [ ] **An ending without the dog (before M4)**
 

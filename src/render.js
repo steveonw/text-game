@@ -4,7 +4,8 @@
 import { G } from './state.js';
 import { clamp } from './rng.js';
 import { WORLD_SIZE } from './tuning.js';
-import { finalTileAt } from './world.js';
+import { trailIndexAt } from './trail.js';
+import { finalTileAt, hasDogHint } from './world.js';
 
 // ---------- Palette (LOCKED) ----------
 export const COLORS = {
@@ -33,11 +34,20 @@ export function drawLegend(){
   }).join("");
 }
 
+// Found sign is drawn as ? on plains and forest. Towns, the capital, ruins and closed
+// roads keep their own glyph. A hint bit off the trail can only come from a code saved
+// by v13, whose "near" tiles were not a trail; it is kept but not drawn.
+export function worldGlyph(x,y){
+  const g = finalTileAt(x,y);
+  if ((g==="." || g==="F") && hasDogHint(x,y) && trailIndexAt(x,y) >= 0) return "?";
+  return g;
+}
+
 export function renderMapWorld(){
   let html = "";
   for (let y=0;y<WORLD_SIZE;y++){
     for (let x=0;x<WORLD_SIZE;x++){
-      html += (x===G.player.x && y===G.player.y) ? glyphSpan("@") : glyphSpan(finalTileAt(x,y));
+      html += glyphSpan((x===G.player.x && y===G.player.y) ? "@" : worldGlyph(x,y));
     }
     html += "\n";
   }

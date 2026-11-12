@@ -10,7 +10,8 @@ import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './i
 import { clamp, fnv1a32, noise01 } from './rng.js';
 import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
-import { addDogHint, computeTowns, dogDirectionHint, dogIsNear, dogIsVeryNear, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
+import { callAnswer, dogDirectionHint, dogIsNear, dogIsVeryNear } from './trail.js';
+import { addDogHint, computeTowns, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
 // ---------- Command system ----------
 export function cmdHelp(){
@@ -257,7 +258,7 @@ export function cmdAsk(topic){
   if (G.mode==="WORLD"){
     if (topic==="DOG"){
       log("You call softly. The wind answers.", "m");
-      if (dogIsNear(G.player.x, G.player.y)) log("But the ground suggests you are close.", "m");
+      if (callAnswer(G.player.x, G.player.y)) log("But the ground suggests you are close.", "m");
     } else log("There is no one to ask.", "m");
     return;
   }
@@ -398,10 +399,12 @@ export function cmdCall(){
 
   if (G.mode==="WORLD"){
     log("You call out.", "m");
-    if (dogIsVeryNear(G.player.x, G.player.y)){
+    // The dog's own tile, then a few trail positions either side of it, then nothing.
+    const heard = callAnswer(G.player.x, G.player.y);
+    if (heard === "here"){
       log("Something stirs in the distance.", "m");
       log("You should search here.", "m");
-    } else if (dogIsNear(G.player.x, G.player.y)){
+    } else if (heard === "near"){
       log("The wind carries it. Maybe.", "m");
     } else {
       log("Your voice falls flat against the land.", "m");
@@ -434,7 +437,7 @@ export function cmdCall(){
   }
 
   log("You call out.", "m");
-  if (dogIsNear(G.local.tx, G.local.ty)){
+  if (callAnswer(G.local.tx, G.local.ty)){
     log("The air feels close. Keep looking.", "m");
   } else {
     log("Nothing answers.", "m");
