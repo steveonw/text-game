@@ -1,7 +1,7 @@
 {
   "name": "14-ending-homecoming",
   "covers": "A full game to \"Ending: Homecoming\": reputation 3 earned by talking in a town, 5 hint tiles walked, dog found before war.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "homecoming-16",
   "commands": [
     "N",
@@ -65,8 +65,11 @@
     ["m","> ASK ROAD"],
     ["m","Innkeeper (ROAD):"],
     ["","Roads aren't quiet lately."],
+    ["","People don't linger."],
     ["m","> ASK TOWN"],
     ["m","Innkeeper (TOWN):"],
+    ["","It's smaller than it used to be."],
+    ["","Every town has its quiet corners."],
     ["m","> STATUS"],
     ["m","You are near-done. People are remembered."],
     ["m","The day feels ordinary."],

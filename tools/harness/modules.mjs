@@ -11,17 +11,22 @@ import { setHost } from '../../src/io.js';
 import { fnv1a32 } from '../../src/rng.js';
 import { runCommand, startNewGame } from '../../src/commands.js';
 import { mapHtml, posText, statusText } from '../../src/render.js';
-import { tileAt } from '../../src/world.js';
+import { passable, tileAt } from '../../src/world.js';
 import { WORLD_SIZE } from '../../src/tuning.js';
 
 const ENTITIES = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" };
 const stripTags = (s) => String(s).replace(/<[^>]*>/g, '').replace(/&(amp|lt|gt|quot|#39);/g, (m) => ENTITIES[m]);
 
+let current = { log: [], screen: [] };
+
 // Start a clean game from a seed string. Returns the two line records the host keeps.
-export function bootModules(seed) {
+// opts.debug stands for opening the page with ?debug=1.
+export function bootModules(seed, opts = {}) {
   const log = [];      // every line ever written, in order
   const screen = [];   // what a page would still show: cleared by clear(), capped at 300 lines
+  current = { log, screen };
   setHost({
+    debug() { return !!opts.debug; },
     out(text, cls) {
       const line = [cls === 'm' ? 'm' : '', String(text)];
       log.push(line); screen.push(line);
@@ -48,8 +53,63 @@ export function sendModules(commands) {
   return consoleLines;
 }
 
-export function playModules(seed, commands) {
-  const { log, screen } = bootModules(seed);
+// Send commands and return the text of the lines they wrote.
+export function say(...commands) {
+  const before = current.log.length;
+  sendModules(commands);
+  return current.log.slice(before).map(([, text]) => text);
+}
+export const screenText = () => current.screen.map(([, text]) => text);
+
+// Routes on the world map, by the game's own passable().
+const STEP = [[0, -1, 'N'], [1, 0, 'E'], [0, 1, 'S'], [-1, 0, 'W']];
+function bfs(sx, sy) {
+  const N = WORLD_SIZE, dist = new Int16Array(N * N).fill(-1), prev = new Int16Array(N * N).fill(-1);
+  const q = [[sx, sy]]; dist[sy * N + sx] = 0;
+  for (let h = 0; h < q.length; h++) {
+    const [x, y] = q[h];
+    for (const [dx, dy] of STEP) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= N || ny >= N) continue;
+      const i = ny * N + nx;
+      if (dist[i] >= 0 || !passable(nx, ny)) continue;
+      dist[i] = dist[y * N + x] + 1; prev[i] = y * N + x; q.push([nx, ny]);
+    }
+  }
+  return { dist, prev };
+}
+// Nearest reachable world tile satisfying pred(x, y, distance), or null.
+export function nearest(pred) {
+  const N = WORLD_SIZE, { dist } = bfs(G.player.x, G.player.y); let best = null;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const d = dist[y * N + x];
+    if (d >= 0 && pred(x, y, d) && (!best || d < best.d)) best = { x, y, d };
+  }
+  return best;
+}
+// Walk the world map to (x, y) by the shortest route. Returns false if there is none.
+export function walkTo(x, y) {
+  const N = WORLD_SIZE, sx = G.player.x, sy = G.player.y, { dist, prev } = bfs(sx, sy);
+  if (dist[y * N + x] < 0) return false;
+  const cmds = []; let cur = y * N + x;
+  while (cur !== sy * N + sx) {
+    const p = prev[cur], cx = cur % N, cy = (cur / N) | 0, px = p % N, py = (p / N) | 0;
+    cmds.push(cx > px ? 'E' : cx < px ? 'W' : cy > py ? 'S' : 'N'); cur = p;
+  }
+  sendModules(cmds.reverse());
+  return true;
+}
+// Walk a local map to cell (x, y): along the row, then the column.
+export function localTo(x, y) {
+  const cmds = [];
+  for (let px = G.local.px; px !== x; px += px < x ? 1 : -1) cmds.push(px < x ? 'E' : 'W');
+  for (let py = G.local.py; py !== y; py += py < y ? 1 : -1) cmds.push(py < y ? 'S' : 'N');
+  sendModules(cmds);
+  return G.local && G.local.px === x && G.local.py === y;
+}
+
+export function playModules(seed, commands, opts = {}) {
+  const { log, screen } = bootModules(seed, opts);
   sendModules(commands);
   const html = mapHtml();
   return {

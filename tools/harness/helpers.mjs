@@ -41,8 +41,13 @@ function __find(pred){
   }
   return best;
 }
-function __enterableWild(x,y){ const t = finalTileAt(x,y); return t === "." || t === "F"; }
-// A dog tile: plains or forest, very near, and the wilderness roll places the dog.
+// Does ENTER open wilderness here? From M2 the game answers that itself (enterKind);
+// v13 has no such function, and there it is plains and forest only.
+function __enterableWild(x,y){
+  if (typeof enterKind === "function") return enterKind(x,y) === "WILD";
+  const t = finalTileAt(x,y); return t === "." || t === "F";
+}
+// A dog tile: ENTER opens wilderness, the signal is very near, and the wilderness roll places the dog.
 function __isDogTile(x,y){ return __enterableWild(x,y) && dogIsVeryNear(x,y) && !!generateWilderness(x,y).dog; }
 function __isNaturalRuin(x,y){ return tileAt(x,y) === "R" && !isTownAt(x,y); }
 function __warStep(limit){ for (let s = 29; s <= (limit||400); s++) if (noise01(s, 9001, SEED ^ 0xBEEF) < 0.08) return s; return -1; }

@@ -1,7 +1,7 @@
 {
   "name": "12-load-old-formats",
   "covers": "LOAD accepts the two older base32 forms and packed version 3, each made in a different world from the one loaded into.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "old-formats-1",
   "commands": [
     "LOAD RNTHNJT4GJYCE63CHJ5DLN3XGS5DSPTTFSTHSJT4GE2C2JV3EJ7DJMBCN2TDWPKNEK3CEQTWFSTHG7BCHJ2VEMBCJ2TDWNKNEK2CEQU5GN3X4MBCNJTDWY47FSTGYJT4MPQU2JVQEJ7FYY3CLS2VAMTWEJYDJMBTFS3C2QL7MX8SF",

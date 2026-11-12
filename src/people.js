@@ -2,7 +2,7 @@
 // gets said. The narrator's inner voice is picked here too.
 
 import { G } from './state.js';
-import { BUILDING_POOLS, EVENT_OVERLAYS, INTERNAL, V } from './content/pools.js';
+import { BUILDING_POOLS, EVENT_OVERLAYS, INTERNAL, TOPIC_FALLBACKS, V } from './content/pools.js';
 import { log } from './io.js';
 import { clamp, noise01 } from './rng.js';
 import { TUNE } from './tuning.js';
@@ -95,9 +95,20 @@ export function pickFragmentFrom(list, targetV, extraAvoid, familiarity){
   const fam = familiarity || 0;
   const famFiltered = list.filter(f => !f.fam || fam >= f.fam);
   const searchList = famFiltered.filter(f=>!avoid.has(f.t));
-  if (extraAvoid && searchList.length===0) return null;
-  const useList = searchList.length ? searchList : famFiltered;
-  if (!useList.length) return null;
+  if (searchList.length===0){
+    // D4: every candidate is inside the no-repeat window. Say the one shown longest
+    // ago, but never a line already used in this same reply. In v13 this returned
+    // nothing, and replies thinned out to a bare name tag.
+    const open = famFiltered.filter(f => !(extraAvoid && extraAvoid.has(f.t)));
+    if (!open.length) return null;
+    let oldest = open[0], oldestAt = G.recentFragments.lastIndexOf(open[0].t);
+    for (const f of open){
+      const at = G.recentFragments.lastIndexOf(f.t);
+      if (at < oldestAt){ oldest = f; oldestAt = at; }
+    }
+    return oldest.t;
+  }
+  const useList = searchList;
 
   let best = null, bestScore = 999;
   for (const f of useList){
@@ -149,13 +160,13 @@ export function sayNPC(building, topic, opts={}){
   const sy = (G.mode==="LOCAL" && G.local) ? G.local.ty : G.player.y;
   let ctx = buildContextVector(building, sx, sy, opts.npc||null);
 
-  // Prefer topic-specific bodies. If a building lacks the topic, fall back to generic '.' topic,
-  // and only then to that building's 'road' (so ASK feels like it's answering the question).
+  // D5: a topic is answered from its own lines: the role's, then the generic fallback
+  // table, then the generic role's. Never from another topic. In v13 a role with no
+  // lines for a topic answered from its ROAD lines, and TOPIC_FALLBACKS was never read.
   let bodyList =
     (pool && pool[topicKey]) ||
+    TOPIC_FALLBACKS[topicKey] ||
     (BUILDING_POOLS["."] && BUILDING_POOLS["."][topicKey]) ||
-    (pool && pool.road) ||
-    (BUILDING_POOLS["."] && BUILDING_POOLS["."].road) ||
     [];
 
   const overlays = (G.mode==="LOCAL" && G.local) ? activeOverlaysAt(G.local.tx, G.local.ty) : activeOverlaysAt(G.player.x, G.player.y);

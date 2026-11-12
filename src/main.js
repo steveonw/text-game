@@ -15,7 +15,10 @@ function initialSeed(){
   return (Date.now() ^ (Math.random()*1e9|0)) | 0;
 }
 
-setHost({ out: appendLine, clear: clearLines, render: renderPage, legend: drawLegend, freshSeed: initialSeed });
+// D17: the maintenance commands DEBUG and BLOCK answer only on a page opened with ?debug=1.
+const debugPage = new URLSearchParams(location.search).get("debug") === "1";
+
+setHost({ out: appendLine, clear: clearLines, render: renderPage, legend: drawLegend, freshSeed: initialSeed, debug: () => debugPage });
 G.seed = initialSeed();
 
 // ---------- Command history ----------

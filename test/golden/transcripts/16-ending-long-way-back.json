@@ -1,7 +1,7 @@
 {
   "name": "16-ending-long-way-back",
   "covers": "A full game to \"Ending: The Long Way Back\": the routes stir, the player waits beside the dog until the capital falls, then calls.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "fall-2",
   "commands": [
     "S",

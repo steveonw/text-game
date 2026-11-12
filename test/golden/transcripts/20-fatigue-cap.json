@@ -1,7 +1,7 @@
 {
   "name": "20-fatigue-cap",
-  "covers": "Defect D11: fatigue climbs to its cap of 5 and movement goes on at no cost.",
-  "source": "legacy/quiet-roads-v13.html",
+  "covers": "Fatigue climbs to its cap of 5 and movement goes on at no cost (D11, open until M4).",
+  "source": "dist/index.html",
   "seed": "tired-1",
   "commands": [
     "STATUS",

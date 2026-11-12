@@ -1,7 +1,7 @@
 {
   "name": "15-ending-found-in-time",
   "covers": "A full game to \"Ending: Found in Time\": the player waits beside the dog until war starts, then calls.",
-  "source": "legacy/quiet-roads-v13.html",
+  "source": "dist/index.html",
   "seed": "war-2",
   "commands": [
     "S",

@@ -36,7 +36,7 @@
 ## Acceptance
 
 - [ ] Sweep: 2,000 of 2,000 seeds winnable. v13: 1,992.
-- [ ] Sweep: "The trail is fresh. ENTER to search." is followed by a dog on ENTER every time. v13: 40.1%.
+- [ ] Sweep: "The trail is fresh. ENTER to search." is followed by a dog on ENTER every time. v13: 40.1%. At `m2`: 40.2%.
 - [ ] Exactly one dog tile per seed in each of the three clock states.
 - [ ] Trail length is 20 or more on at least 95% of seeds. The distribution is in the exit report.
 - [ ] The tracker bot reaches den 1 on every seed.
@@ -52,6 +52,10 @@
 - Homecoming still asks for 5 hint tiles. They are now sign tiles, so that rule's code does not change.
 - Wanderers are rolled independently of the dog. Keep their roll and its salt, or every wilderness map drifts.
 - Measured on v13: the farthest walkable tile is a median 31 steps from the start, and 1,394 of 2,000 seeds have a natural-ruins tile 20 or more steps away. Expect the plains fallback on about 30% of seeds.
+- From M2: `enterKind(x, y)` in `commands.js` says what ENTER opens on a tile, `"TOWN"`, `"WILD"` or nothing. Ask it wherever the trail needs to know whether a tile can be searched. Natural ruins answer `"WILD"`.
+- From M2: under v13's signal field the dog can now be found in natural ruins (3,440 dog tiles over the sweep). This step replaces that field, so those tiles go with it. The sweep pins in `test/bundle.test.mjs` record M2's numbers and are meant to change here.
+- From M2: the goldens to re-record are in `test/golden/`. Transcripts 13 to 17, 19 and 28 find the dog through the signal field. Their plans in `tools/record-goldens.mjs` use `__openDogTile` and `__ruinDogTile`, which need new definitions. `test/golden-v13/` is frozen.
+- From M2: the bot policy `homecoming` earns reputation from a person in a town. `homecoming-v13` works only on the legacy file.
 
 ## Out of scope
 

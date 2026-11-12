@@ -81,3 +81,15 @@ export function advanceWorldPressure(){
   }
 
 }
+
+// D10: an action that costs several steps is evaluated on each of them, not only on
+// the last. G.steps already holds the final count; firstStep is the first step passed.
+// In v13 REST and RIDE jumped the counter, and the checks for the steps between never ran.
+export function advanceWorldPressureFrom(firstStep){
+  const last = G.steps;
+  for (let s = firstStep; s <= last; s++){
+    G.steps = s;
+    advanceWorldPressure();
+  }
+  G.steps = last;
+}

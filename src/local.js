@@ -56,6 +56,13 @@ export function generateWilderness(tx,ty){
   return { kind:"WILD", tx, ty, size, map, px:4, py:4, dog, npcs };
 }
 
+// D2: every building has its own slot and its own roll, whatever else is missing.
+// In v13 both went by position in the list, so the guard post, fifth, landed on the
+// smithy's corner, and a town rearranged itself when sickness or fire removed a building.
+export const TOWN_BUILDINGS = ["I","M","S","T","G"];
+
+export const TOWN_SLOTS = { "I":[2,2], "M":[6,2], "S":[2,6], "T":[6,6], "G":[7,4] }; // G: the east end of the street
+
 export function generateTown(tx,ty, forceWagon=false){
   const size = LOCAL_SIZE;
   const map = Array.from({length:size}, ()=>Array(size).fill("."));
@@ -71,24 +78,34 @@ export function generateTown(tx,ty, forceWagon=false){
 
   const k = keyForXY(tx,ty);
   const plagued = G.worldEvents.has("plague_"+k);
-  const burned = G.worldEvents.has("burned_"+k);
+  // D7: once the capital has fallen it is a burned town like any other.
+  const fallen = G.worldEvents.has("capital_fallen") && !!G.capital && tx===G.capital.x && ty===G.capital.y;
+  const burned = G.worldEvents.has("burned_"+k) || fallen;
 
-  let buildings = ["I","M","S","T","G"];
+  let buildings = TOWN_BUILDINGS.slice();
   if (plagued) buildings = buildings.filter(b=>b!=="M");
   if (burned) buildings = buildings.filter(b=>b!=="I");
 
   // Track NPC positions for rendering
   const npcs = [];
+  let survivor = false;
 
-  buildings.forEach((b,i)=>{
+  buildings.forEach((b)=>{
+    const i = TOWN_BUILDINGS.indexOf(b);
     const r = noise01(tx*10+i, ty*10+i, G.seed ^ 0x0B11D);
     if (r > TUNE.buildingAbove){
-      const x = (i%2===0)?2:6;
-      const y = (i<2)?2:6;
+      const x = TOWN_SLOTS[b][0];
+      const y = TOWN_SLOTS[b][1];
       map[y][x] = burned ? "r" : b;
       // NPCs present in non-burned buildings
       if (!burned && b !== "r") {
         npcs.push({x, y, type: b});
+      }
+      // D3: one Survivor stands at the first burned building, drawn as a person (p).
+      // In v13 a Survivor could be spoken to only because any cell answered.
+      if (burned && !survivor) {
+        npcs.push({x, y, type:"n"});
+        survivor = true;
       }
     }
   });
@@ -106,5 +123,8 @@ export function generateTown(tx,ty, forceWagon=false){
     npcs.push({x:wagon.x, y:wagon.y, type:"w"});
   }
 
-  return { kind:"TOWN", tx, ty, size, map, px:4, py:4, wagon, wagonForced: !!forceWagon, npcs };
+  // D9: if the wagon is here when the player arrives, the merchant stays for the visit.
+  // v13 set this only for arrivals by RIDE; otherwise his timetable could move on during
+  // the walk to him, leaving a wagon with nobody at it.
+  return { kind:"TOWN", tx, ty, size, map, px:4, py:4, wagon, wagonForced: !!wagon, npcs };
 }

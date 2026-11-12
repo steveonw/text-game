@@ -1,16 +1,16 @@
 // The parser and every command, and starting a new game.
 
 import { G } from './state.js';
-import { advanceWorldPressure, cabbageIndex, cabbageIsHereWorld, initCabbageRoute } from './clock.js';
+import { advanceWorldPressure, advanceWorldPressureFrom, cabbageIndex, cabbageIsHereWorld, initCabbageRoute } from './clock.js';
 import { BUILDING_POOLS, CABBAGE } from './content/pools.js';
 import { triggerEnding } from './endings.js';
 import { generateTown, generateWilderness } from './local.js';
 import { getNPC, maybeInternal, sayNPC, setNPC } from './people.js';
-import { clearLogSoft, freshSeed, log, render, renderLegend } from './io.js';
+import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './io.js';
 import { clamp, fnv1a32, noise01 } from './rng.js';
-import { loadPasswordAny, loadPasswordLegacy, savePasswordPacked } from './save.js';
+import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
-import { addDogHint, computeTowns, dogDirectionHint, dogIsNear, dogIsVeryNear, finalTileAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
+import { addDogHint, computeTowns, dogDirectionHint, dogIsNear, dogIsVeryNear, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
 // ---------- Command system ----------
 export function cmdHelp(){
@@ -64,16 +64,26 @@ export function moveWorld(dx,dy){
   render();
 }
 
+// What ENTER opens on a world tile: "TOWN", "WILD" or null.
+// D6: a ruins tile is a town only where a town stands (a burned town, the fallen
+// capital). Natural ruins open as wilderness until M4 gives them a map of their own.
+export function enterKind(x,y){
+  const tile = finalTileAt(x,y);
+  if (tile==="T" || tile==="C" || tile==="!" || (tile==="R" && isTownAt(x,y))) return "TOWN";
+  if (tile==="." || tile==="F" || tile==="R") return "WILD";
+  return null;
+}
+
 export function cmdEnter(){
   if (G.mode!=="WORLD"){ log("You are already inside.", "m"); return; }
-  const tile = finalTileAt(G.player.x, G.player.y);
-  if (tile==="T" || tile==="C" || tile==="!" || tile==="R"){
+  const kind = enterKind(G.player.x, G.player.y);
+  if (kind==="TOWN"){
     G.local = generateTown(G.player.x, G.player.y, false);
     G.mode="LOCAL";
     log("Buildings gather. The road narrows.", "m");
     render(); return;
   }
-  if (tile==="." || tile==="F"){
+  if (kind==="WILD"){
     G.local = generateWilderness(G.player.x, G.player.y);
     G.mode="LOCAL";
     log("The land closes around you.", "m");
@@ -186,9 +196,16 @@ export function getLocalNPCId(cell, tx, ty){
   return "npc_" + cell + "_" + tx + "_" + ty;
 }
 
+// D3: is anyone standing on the player's cell of the local map?
+export function someoneHere(){
+  return !!(G.local && G.local.npcs && G.local.npcs.some(n => n.x === G.local.px && n.y === G.local.py));
+}
+
 export function cmdTalk(){
   if (G.mode==="END") return;
   if (G.mode==="WORLD"){ log("No one to speak with here.", "m"); return; }
+  // D3: TALK needs someone here. In v13 any cell answered, and an empty field spoke as a Wanderer.
+  if (!someoneHere()){ log("No one to speak with here.", "m"); return; }
 
   const cell = G.local.map[G.local.py][G.local.px];
 
@@ -244,6 +261,8 @@ export function cmdAsk(topic){
     } else log("There is no one to ask.", "m");
     return;
   }
+  // D3: ASK needs someone here too; nothing is remembered and no reputation is earned.
+  if (!someoneHere()){ log("There is no one to ask.", "m"); return; }
   const cell = G.local.map[G.local.py][G.local.px];
 
   const id = getLocalNPCId(cell, G.local.tx, G.local.ty);
@@ -260,10 +279,10 @@ export function cmdAsk(topic){
   if (G.player.rep>=TUNE.trustAtReputation) st.trust = clamp((st.trust|0) + 1, -5, 5);
   setNPC(id, st);
 
-  // If the wagon symbol appears but the schedule says the merchant isn't here,
-  // fall back to market-style talk instead of feeling "broken".
+  // If the wagon symbol appears but the merchant isn't here, fall back to market-style
+  // talk instead of feeling "broken". (Since D9 he is here whenever his wagon is.)
   let building = BUILDING_POOLS[cell] ? cell : ".";
-  if (cell === "w" && !cabbageIsHereWorld(G.local.tx, G.local.ty)) building = "M";
+  if (cell === "w" && !(cabbageIsHereWorld(G.local.tx, G.local.ty) || G.local.wagonForced)) building = "M";
 
   const lines = sayNPC(building, topic, {bodyLines:2, overlayCap:1, npc: st, frame:false});
   logSpeaker(cell, topic);
@@ -288,18 +307,19 @@ export function cmdWait(){
 
 export function cmdRest(){
   if (G.mode!=="LOCAL"){ log("Not here.", "m"); return; }
+  const before = G.steps;
   if (G.local.kind==="TOWN"){
     G.steps += TUNE.restSteps;
     G.player.fatigue = clamp(G.player.fatigue - TUNE.restTownRecovers, 0, 5);
     log("You rest for a while.", "m");
-    advanceWorldPressure();
+    advanceWorldPressureFrom(before + 1); // D10
     render(); return;
   }
   G.steps += TUNE.restSteps;
   G.player.fatigue = clamp(G.player.fatigue - TUNE.restWildRecovers, 0, 5);
   if (noise01(G.steps, 404, G.seed^0xA357) < TUNE.shallowSleepChance) log("Sleep comes shallow. You wake too quickly.", "m");
   else log("You rest. The world does not.", "m");
-  advanceWorldPressure();
+  advanceWorldPressureFrom(before + 1); // D10
   render();
 }
 
@@ -311,21 +331,27 @@ export function cmdRide(){
   const st = getNPC(CABBAGE.id);
   if (G.player.fatigue < TUNE.rideMinFatigue || st.familiarity < TUNE.rideMinFamiliarity){ log("Not today.", "m"); return; }
 
-  const idx = cabbageIndex();
+  // D9: the merchant is where his wagon is, so the next stop is the one after this
+  // town. v13 took it from the timetable, which may have moved on without him.
+  const here = G.cabbageRoute.findIndex(t => t.x === G.local.tx && t.y === G.local.ty);
+  const idx = (here >= 0) ? here : cabbageIndex();
   const next = G.cabbageRoute[(idx+1) % G.cabbageRoute.length];
   if (!next){ log("The route is unclear.", "m"); return; }
 
+  // D8: the page is cleared before the ride is told, not after it. In v13 these
+  // five lines were erased in the same tick they were written.
+  clearLogSoft();
   log("You climb onto the wagon.", "m");
   log("Cabbages shift beneath the weight.", "m");
   log("The road becomes a rhythm.", "m");
   log("He complains the whole way.", "m");
   log("You rest.", "m");
 
+  const before = G.steps;
   G.steps += TUNE.rideSteps;
   G.player.fatigue = clamp(G.player.fatigue - TUNE.rideRecovers, 0, 5);
-  advanceWorldPressure();
+  advanceWorldPressureFrom(before + 1); // D10
 
-  clearLogSoft();
   log("The wagon stops.", "m");
   log(CABBAGE.afterRide[0], "m");
 
@@ -426,7 +452,10 @@ export function runCommand(raw){
   const arg = parts.slice(1).join(" ");
 
   if (G.mode==="END"){
-    if (cmd==="LOAD") loadPasswordLegacy(arg);
+    // D1: after an ending NEW and HELP work, and LOAD takes a code in any format.
+    if (cmd==="LOAD") loadPasswordAny(arg);
+    else if (cmd==="NEW") cmdNew(arg);
+    else if (cmd==="HELP") cmdHelp();
     else log("The story is done. (LOAD <password> to continue elsewhere.)", "m");
     return;
   }
@@ -456,14 +485,19 @@ export function runCommand(raw){
     case "LOAD": { loadPasswordAny(arg); return; }
     case "NEW": return cmdNew(arg);
     case "CLEAR": clearLogSoft(); return;
-    case "DEBUG": return cmdDebug();
-    case "BLOCK": return cmdBlock();
+    // D17: without ?debug=1 these two are unknown words, like any other.
+    case "DEBUG": if (debugOn()) return cmdDebug(); log("Nothing comes of that.", "m"); return;
+    case "BLOCK": if (debugOn()) return cmdBlock(); log("Nothing comes of that.", "m"); return;
     default: log("Nothing comes of that.", "m"); return;
   }
 }
 
 // ---------- Boot ----------
 export function startNewGame(){
+  // D19: a new game always opens on the world map, wherever NEW was typed.
+  G.mode = "WORLD";
+  G.local = null;
+
   G.worldEvents = new Set();
     resetDogHints();
 G.npcMemory = Object.create(null);

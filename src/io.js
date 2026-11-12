@@ -10,6 +10,7 @@ export const HOST = {
   render() {},           // redraw the map, labels and status line from G
   legend() {},           // draw the legend
   freshSeed() { throw new Error("no host installed: cannot make an unseeded world"); },
+  debug() { return false; }, // true when the page was opened with ?debug=1
 };
 
 export function setHost(h){ Object.assign(HOST, h); }
@@ -23,3 +24,5 @@ export function render(){ HOST.render(); }
 export function renderLegend(){ HOST.legend(); }
 
 export function freshSeed(){ return HOST.freshSeed(); }
+
+export function debugOn(){ return !!HOST.debug(); }
