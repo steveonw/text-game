@@ -279,10 +279,10 @@ export function cmdAsk(topic){
   if (G.player.rep>=TUNE.trustAtReputation) st.trust = clamp((st.trust|0) + 1, -5, 5);
   setNPC(id, st);
 
-  // If the wagon symbol appears but the schedule says the merchant isn't here,
-  // fall back to market-style talk instead of feeling "broken".
+  // If the wagon symbol appears but the merchant isn't here, fall back to market-style
+  // talk instead of feeling "broken". (Since D9 he is here whenever his wagon is.)
   let building = BUILDING_POOLS[cell] ? cell : ".";
-  if (cell === "w" && !cabbageIsHereWorld(G.local.tx, G.local.ty)) building = "M";
+  if (cell === "w" && !(cabbageIsHereWorld(G.local.tx, G.local.ty) || G.local.wagonForced)) building = "M";
 
   const lines = sayNPC(building, topic, {bodyLines:2, overlayCap:1, npc: st, frame:false});
   logSpeaker(cell, topic);
@@ -331,7 +331,10 @@ export function cmdRide(){
   const st = getNPC(CABBAGE.id);
   if (G.player.fatigue < TUNE.rideMinFatigue || st.familiarity < TUNE.rideMinFamiliarity){ log("Not today.", "m"); return; }
 
-  const idx = cabbageIndex();
+  // D9: the merchant is where his wagon is, so the next stop is the one after this
+  // town. v13 took it from the timetable, which may have moved on without him.
+  const here = G.cabbageRoute.findIndex(t => t.x === G.local.tx && t.y === G.local.ty);
+  const idx = (here >= 0) ? here : cabbageIndex();
   const next = G.cabbageRoute[(idx+1) % G.cabbageRoute.length];
   if (!next){ log("The route is unclear.", "m"); return; }
 

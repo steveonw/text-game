@@ -11,7 +11,8 @@ import { mapHtml } from '../src/render.js';
 import { noise01 } from '../src/rng.js';
 import { TUNE } from '../src/tuning.js';
 import { pickMany, sayNPC } from '../src/people.js';
-import { BUILDING_POOLS, TOPIC_FALLBACKS } from '../src/content/pools.js';
+import { BUILDING_POOLS, CABBAGE, TOPIC_FALLBACKS } from '../src/content/pools.js';
+import { cabbageIsHereWorld } from '../src/clock.js';
 
 const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/\n$/, '').split('\n');
 const STORY_DONE = 'The story is done. (LOAD <password> to continue elsewhere.)';
@@ -328,4 +329,26 @@ test('D8: the ride is told on the page, not erased as it is written', () => {
   assert.deepEqual(page.slice(0, 5), told, 'the five lines of the ride are on the page');
   assert.deepEqual(page.slice(-2), ['The wagon stops.', 'Right. Here we are.']);
   assert.ok(!page.includes('> RIDE'), 'the page was cleared first');
+});
+
+test('D9: the merchant stays with his wagon while the player is in town, and rides on to his next stop', () => {
+  let checked = 0, shortRoutes = 0;
+  for (const seed of ['wagon-1', 'ride-1', 'sweep-3', 'sweep-11', 'sweep-17', 'sweep-29']) {
+    const stop = atTheWagon(seed, 6);            // six idle steps and three to walk: his 7-step stop is over
+    assert.ok(!cabbageIsHereWorld(stop.x, stop.y), `${seed}: by the timetable he has moved on`);
+    assert.equal(G.local.map[4][1], 'w');
+    const first = say('TALK');
+    assert.ok(CABBAGE.openers.includes(first[1]), `${seed}: the merchant himself answers (got "${first[1]}")`);
+    assert.ok(say('TALK').includes('(Type RIDE.)'), `${seed}: the ride is offered`);
+    assert.ok(say('RIDE').includes('The wagon stops.'), `${seed}: and given`);
+    const route = G.cabbageRoute, next = route[1 % route.length];
+    assert.deepEqual([G.player.x, G.player.y], [next.x, next.y], `${seed}: to the stop after this one`);
+    assert.ok(!(G.player.x === stop.x && G.player.y === stop.y), `${seed}: never back to the same town`);
+    assert.equal(G.mode, 'LOCAL');
+    assert.ok(G.local.wagon);
+    if (route.length === 2) shortRoutes++;
+    checked++;
+  }
+  assert.equal(checked, 6);
+  assert.ok(shortRoutes >= 1, 'covers a two-town route, where v13 could ride from a town to itself');
 });

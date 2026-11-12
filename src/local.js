@@ -123,5 +123,8 @@ export function generateTown(tx,ty, forceWagon=false){
     npcs.push({x:wagon.x, y:wagon.y, type:"w"});
   }
 
-  return { kind:"TOWN", tx, ty, size, map, px:4, py:4, wagon, wagonForced: !!forceWagon, npcs };
+  // D9: if the wagon is here when the player arrives, the merchant stays for the visit.
+  // v13 set this only for arrivals by RIDE; otherwise his timetable could move on during
+  // the walk to him, leaving a wagon with nobody at it.
+  return { kind:"TOWN", tx, ty, size, map, px:4, py:4, wagon, wagonForced: !!wagon, npcs };
 }
