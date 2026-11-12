@@ -140,3 +140,24 @@ test('D2: every town building has its own slot; the guard post no longer overwri
   }
   assert.ok(towns > 900 && both > 300, `checked ${towns} towns, ${both} with both smith and guard`);
 });
+
+test('D7: the fallen capital is burned inside, like any burned town', () => {
+  let checked = 0;
+  for (let n = 1; n <= 60; n++) {
+    bootModules('sweep-' + n);
+    const c = G.capital;
+    const before = generateTown(c.x, c.y, false).map.flat();
+    const stood = before.filter((b) => 'MSTG'.includes(b)).length; // the inn is not drawn in a burned town (v13)
+    G.worldEvents.add('capital_fallen');
+    const town = generateTown(c.x, c.y, false);
+    const cells = town.map.flat();
+    assert.ok(!cells.some((b) => 'IMSTG'.includes(b)), `sweep-${n}: no building stands`);
+    assert.equal(cells.filter((b) => b === 'r').length, stood, `sweep-${n}: each building that stood is burned timbers`);
+    assert.ok(!town.npcs.some((p) => 'IMSTG'.includes(p.type)), 'no staff');
+    // another town is untouched by the capital's fall
+    const other = G.towns.find((t) => !(t.x === c.x && t.y === c.y));
+    assert.ok(!generateTown(other.x, other.y, false).map.flat().includes('r'));
+    checked++;
+  }
+  assert.equal(checked, 60);
+});

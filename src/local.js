@@ -78,7 +78,9 @@ export function generateTown(tx,ty, forceWagon=false){
 
   const k = keyForXY(tx,ty);
   const plagued = G.worldEvents.has("plague_"+k);
-  const burned = G.worldEvents.has("burned_"+k);
+  // D7: once the capital has fallen it is a burned town like any other.
+  const fallen = G.worldEvents.has("capital_fallen") && !!G.capital && tx===G.capital.x && ty===G.capital.y;
+  const burned = G.worldEvents.has("burned_"+k) || fallen;
 
   let buildings = TOWN_BUILDINGS.slice();
   if (plagued) buildings = buildings.filter(b=>b!=="M");
