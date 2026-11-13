@@ -42,7 +42,7 @@ Six source files changed, by 448 lines added and 25 removed; 278 of the added li
 
 `npm run browser-check`, Chrome 153: 34 of 34 transcripts in `test/golden` match on the built page, and 27 of 27 in `test/golden-v13` match on the legacy page. No errors, no request beyond the page itself.
 
-CI_RESULT
+CI on pull request 8 passed both jobs on commit `ca3cfa5`: `test` on Node 20 (build, 309 tests, the built file uploaded) and `browser` on Node 22 with GitHub's Chrome. The only commit after that one adds this paragraph.
 
 ### Gestures over the sweep
 
