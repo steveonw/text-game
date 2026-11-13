@@ -33,6 +33,7 @@ export const TUNE = {
 
   // The direction gesture
   gestureSignWithin: 4,          // a gesture is offered only where sign lies within this many tiles of the speaker
+  seenWithin: 2,                 // a town has seen the dog when sign lies within this many tiles of it (M5)
   gestureMisleadChance: 0.12,    // chance a gesture points another open way
   gestureAtFamiliarity: 3,       // ASK DOG earns a gesture at this familiarity...
   gestureAtTrust: 2,             // ...or at this trust
@@ -67,9 +68,10 @@ export const TUNE = {
   forestFatigue: 2,              // fatigue per move into forest
   waitRecovers: 1,               // fatigue WAIT restores
   restSteps: 2,                  // steps REST costs
-  restTownRecovers: 3,           // fatigue REST restores in a town
+  restTownRecovers: 5,           // fatigue REST restores in a town: all of it (M5; v13 3)
   restSickTownRecovers: 1,       // ...and in a town with sickness
-  restWildRecovers: 2,           // fatigue REST restores in the wild
+  restWildRecovers: 5,           // fatigue REST restores outside a town: all of it (M5; v13 2)
+  restShallowRecovers: 3,        // ...when sleep comes shallow (M5)
   shallowSleepChance: 0.18,      // chance of the shallow-sleep line when resting in the wild
   rideSteps: 3,                  // steps RIDE costs
   rideRecovers: 3,               // fatigue RIDE restores

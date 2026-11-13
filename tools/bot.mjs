@@ -13,6 +13,8 @@
 //                   unvisited neighbour in turn and stays on the first that has
 //                   sign too. ENTERs where the trail is fresh, walks to the dog
 //                   and CALLs. Never talks.
+//   resting         M5 on. The tracker, but it RESTs wherever it stands whenever its
+//                   fatigue is 5, before it moves again.
 //   waiter          M4 on. Only WAITs. It must end on the change date, as The Open Gate.
 //   homecoming      first walks to the nearest town, finds someone and asks until
 //                   reputation is 3. Then, on a build with a trail, it walks back
@@ -101,6 +103,8 @@ function __note(){
     if (d.x === player.x && d.y === player.y){ __den1Step = steps; __den1BeforeWar = !worldEvents.has("war_started"); }
   }
 }
+var __rests = false;
+function __restIfSpent(){ if (__rests && player.fatigue >= 5 && mode === "WORLD"){ __say("REST"); __note(); } }
 function __untried(x, y){ return passable(x, y) && !__sign.has(keyForXY(x, y)) && !__noSign.has(keyForXY(x, y)); }
 function __track(){
   __sign = new Set(); __noSign = new Set(); __clockSeen = __clockState();
@@ -118,9 +122,11 @@ function __track(){
     for (const n of __neighbours(player.x, player.y)){
       if (!__untried(n.x, n.y)) continue;
       const back = {N:"S", S:"N", E:"W", W:"E"}[n.dir];
+      __restIfSpent(); if (mode === "END") return;
       __say(n.dir); __note();
       if (mode === "END") return;
       if (__sign.has(keyForXY(player.x, player.y))){ found = true; break; }
+      __restIfSpent(); if (mode === "END") return;
       __say(back); __note();
     }
     if (found) continue;
@@ -130,7 +136,7 @@ function __track(){
       return __neighbours(x, y).some(function(n){ return __untried(n.x, n.y); });
     });
     if (!t || (t.x === player.x && t.y === player.y)){ __say("WAIT"); __note(); continue; }
-    for (const c of __pathTo(player.x, player.y, t.x, t.y)){ __say(c); __note(); if (mode === "END") return; }
+    for (const c of __pathTo(player.x, player.y, t.x, t.y)){ __restIfSpent(); if (mode === "END") return; __say(c); __note(); if (mode === "END") return; }
   }
 }
 function __neighbours(x, y){
@@ -147,7 +153,8 @@ function __runBot(policy){
   __botReset();
   __den1Step = -1; __den1BeforeWar = false;
   const tracking = typeof trail === "function";
-  if (policy === "tracker"){ __track(); return; }
+  __rests = (policy === "resting");
+  if (policy === "tracker" || policy === "resting"){ __track(); return; }
   if (policy === "waiter"){ let g = 0; while (mode !== "END" && g++ < 400) __say("WAIT"); return; }
   if (policy === "homecoming" && tracking){
     // Reputation first, from someone in the nearest town; then back to the yard to follow the sign.
@@ -233,6 +240,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const n = parseInt(process.argv[3] || String(BOT_RUNS), 10);
   console.log(`Bots on ${path.relative(ROOT, htmlPath)} over ${n} seeds`);
   const trailBuild = load(htmlPath, { seed: 'bot-host' }).get('typeof trail === "function"');
-  const policies = htmlPath === LEGACY ? ['explorer', 'homecoming-v13', 'homecoming'] : trailBuild ? ['waiter', 'tracker', 'homecoming', 'explorer'] : ['explorer', 'homecoming'];
+  const policies = htmlPath === LEGACY ? ['explorer', 'homecoming-v13', 'homecoming'] : trailBuild ? ['waiter', 'tracker', 'resting', 'homecoming', 'explorer'] : ['explorer', 'homecoming'];
   for (const policy of policies) console.log(JSON.stringify(runPolicy(htmlPath, policy, n)));
 }

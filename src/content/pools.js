@@ -132,3 +132,281 @@ export const ROADS_CHANGED = "The roads have changed. The one you walked is gone
 
 // STATUS in the war stage, beside v13's "The roads feel unsettled."
 export const STATUS_GUARDED = "The roads feel guarded.";                              // REVIEW
+
+// ---------- M5: what people say ----------
+// 118 lines v13 does not have. Every one is a draft under the voice rules, for the
+// owner to edit: // REVIEW. v13's pools above are unchanged; sayNPC() reads these
+// beside them.
+//
+//   PEOPLE[role].town, .war, .sickness, .work   two lines a topic          48
+//   PEOPLE[role].earned.dog, .road, .routes      one at fam 2, one at fam 4 36
+//   PEOPLE[role].unseen                          DOG, in a town off the trail 12
+//   PEOPLE.wanderer, PEOPLE.survivor             a pool each                22
+//
+// Roles: I innkeeper, M merchant, S smith, T priest, G guard, "." a local.
+export const PEOPLE = {
+  "I": {
+    town: [
+      {t:"Rooms fill, then empty.", v:V(0.5,0.2,0.0,0.2,0.2)},                 // REVIEW
+      {t:"Same faces at the table.", v:V(0.6,0.1,0.0,0.2,0.1)},                // REVIEW
+    ],
+    war: [
+      {t:"Soldiers drink and don't pay.", v:V(0.2,0.5,0.2,0.2,0.4)},           // REVIEW
+      {t:"No one sings here now.", v:V(0.3,0.5,0.0,0.2,0.4)},                  // REVIEW
+    ],
+    sickness: [
+      {t:"I boil the cups twice.", v:V(0.3,0.6,0.0,0.2,0.3)},                  // REVIEW
+      {t:"Empty beds. Not from travel.", v:V(0.2,0.6,0.0,0.2,0.4)},            // REVIEW
+    ],
+    work: [
+      {t:"Fires, beds, floors. Then again.", v:V(0.4,0.2,0.0,0.4,0.1)},        // REVIEW
+      {t:"Nobody sleeps past dawn here.", v:V(0.4,0.2,0.0,0.4,0.1)},           // REVIEW
+    ],
+    earned: {
+      dog: [
+        {t:"Drank from the trough. Then gone.", v:V(0.4,0.3,0.0,0.1,0.3), fam:2},  // REVIEW
+        {t:"Looked back once. At the road.", v:V(0.4,0.3,0.0,0.1,0.4), fam:4},     // REVIEW
+      ],
+      road: [
+        {t:"The road's emptier at night now.", v:V(0.3,0.4,0.0,0.2,0.4), fam:2},   // REVIEW
+        {t:"Travelers whisper here. Not before.", v:V(0.3,0.5,0.0,0.2,0.4), fam:4},// REVIEW
+      ],
+      routes: [
+        {t:"Guests arrive tired from short walks.", v:V(0.2,0.5,0.0,0.3,0.7), fam:2}, // REVIEW
+        {t:"Some roads end where they began.", v:V(0.2,0.5,0.0,0.2,0.8), fam:4},     // REVIEW
+      ],
+    },
+    unseen: [
+      {t:"No dog here. Not lately.", v:V(0.4,0.2,0.0,0.1,0.2)},                // REVIEW
+      {t:"Strays don't stop at this inn.", v:V(0.4,0.2,0.0,0.1,0.2)},          // REVIEW
+    ],
+  },
+  "M": {
+    town: [
+      {t:"Coin moves slower here.", v:V(0.1,0.3,0.3,0.1,0.2)},                 // REVIEW
+      {t:"Everyone haggles. No one buys.", v:V(0.0,0.3,0.3,0.1,0.2)},          // REVIEW
+    ],
+    war: [
+      {t:"Soldiers take first. Pay later.", v:V(0.0,0.5,0.4,0.1,0.4)},         // REVIEW
+      {t:"Iron sells. Bread sells. Little else.", v:V(0.0,0.5,0.3,0.1,0.4)},   // REVIEW
+    ],
+    sickness: [
+      {t:"Nobody wants what others touched.", v:V(0.0,0.6,0.2,0.1,0.4)},      // REVIEW
+      {t:"I sell at arm's length now.", v:V(0.1,0.6,0.3,0.1,0.3)},             // REVIEW
+    ],
+    work: [
+      {t:"Count, weigh, argue. Every day.", v:V(0.1,0.2,0.4,0.3,0.1)},         // REVIEW
+      {t:"Stock doesn't move itself.", v:V(0.0,0.2,0.4,0.3,0.1)},              // REVIEW
+    ],
+    earned: {
+      dog: [
+        {t:"Stole nothing. Odd, for a stray.", v:V(0.1,0.3,0.2,0.1,0.2), fam:2},   // REVIEW
+        {t:"Sat by my cart. Then went.", v:V(0.2,0.3,0.2,0.1,0.3), fam:4},         // REVIEW
+      ],
+      road: [
+        {t:"I send goods. Half arrive.", v:V(0.0,0.4,0.3,0.1,0.5), fam:2},         // REVIEW
+        {t:"I don't travel after dark. Anymore.", v:V(0.1,0.5,0.3,0.1,0.5), fam:4},// REVIEW
+      ],
+      routes: [
+        {t:"My ledgers don't match the miles.", v:V(0.0,0.5,0.3,0.1,0.7), fam:2},  // REVIEW
+        {t:"Distances shift. Prices follow.", v:V(0.0,0.5,0.2,0.1,0.8), fam:4},    // REVIEW
+      ],
+    },
+    unseen: [
+      {t:"Haven't seen a dog. Ask elsewhere.", v:V(0.1,0.2,0.3,0.1,0.2)},      // REVIEW
+      {t:"Dogs don't buy. I don't watch.", v:V(0.0,0.2,0.4,0.1,0.2)},          // REVIEW
+    ],
+  },
+  "S": {
+    town: [
+      {t:"Hinges and nails. That's this town.", v:V(0.1,0.2,0.4,0.2,0.1)},     // REVIEW
+      {t:"They bring me what breaks.", v:V(0.0,0.2,0.4,0.2,0.2)},              // REVIEW
+    ],
+    war: [
+      {t:"Blades now. Not plows.", v:V(0.0,0.5,0.4,0.2,0.4)},                  // REVIEW
+      {t:"They want edges. Fast.", v:V(0.0,0.5,0.5,0.2,0.4)},                  // REVIEW
+    ],
+    sickness: [
+      {t:"Fire cleans what water won't.", v:V(0.0,0.5,0.4,0.2,0.3)},           // REVIEW
+      {t:"Fewer hands to hold the tongs.", v:V(0.0,0.6,0.3,0.2,0.4)},          // REVIEW
+    ],
+    work: [
+      {t:"Heat, strike, wait.", v:V(0.0,0.1,0.5,0.3,0.1)},                     // REVIEW
+      {t:"The anvil doesn't rest.", v:V(0.0,0.2,0.5,0.4,0.1)},                 // REVIEW
+    ],
+    earned: {
+      dog: [
+        {t:"Wouldn't come near the anvil.", v:V(0.0,0.3,0.3,0.1,0.3), fam:2},      // REVIEW
+        {t:"It knew where it was going.", v:V(0.1,0.3,0.3,0.1,0.4), fam:4},        // REVIEW
+      ],
+      road: [
+        {t:"Broken wheels. Many of them.", v:V(0.0,0.4,0.3,0.1,0.4), fam:2},       // REVIEW
+        {t:"Horseshoes wear wrong on these roads.", v:V(0.0,0.4,0.3,0.1,0.6), fam:4}, // REVIEW
+      ],
+      routes: [
+        {t:"Compass needles drift here.", v:V(0.0,0.5,0.2,0.1,0.8), fam:2},        // REVIEW
+        {t:"Old iron hums near the stones.", v:V(0.0,0.5,0.2,0.1,0.8), fam:4},     // REVIEW
+      ],
+    },
+    unseen: [
+      {t:"No dogs by my fire.", v:V(0.0,0.2,0.4,0.1,0.2)},                     // REVIEW
+      {t:"Not here. Not that I know.", v:V(0.0,0.2,0.4,0.1,0.2)},              // REVIEW
+    ],
+  },
+  "T": {
+    town: [
+      {t:"Fewer come. More stay late.", v:V(0.4,0.3,0.1,0.1,0.2)},             // REVIEW
+      {t:"Every roof here has a story.", v:V(0.5,0.2,0.0,0.1,0.1)},            // REVIEW
+    ],
+    war: [
+      {t:"Both sides pray to me.", v:V(0.3,0.5,0.1,0.1,0.4)},                  // REVIEW
+      {t:"We bury, and say little.", v:V(0.2,0.6,0.1,0.1,0.4)},                // REVIEW
+    ],
+    sickness: [
+      {t:"I sit with those who cough.", v:V(0.4,0.6,0.0,0.1,0.3)},             // REVIEW
+      {t:"Prayers are shorter now.", v:V(0.2,0.6,0.1,0.1,0.4)},                // REVIEW
+    ],
+    work: [
+      {t:"Candles, words, waiting.", v:V(0.4,0.2,0.0,0.2,0.1)},                // REVIEW
+      {t:"Someone must keep watch.", v:V(0.4,0.3,0.1,0.2,0.2)},                // REVIEW
+    ],
+    earned: {
+      dog: [
+        {t:"Waited at the door. Patient.", v:V(0.4,0.3,0.1,0.1,0.3), fam:2},       // REVIEW
+        {t:"It was looking for someone.", v:V(0.4,0.3,0.1,0.1,0.4), fam:4},        // REVIEW
+      ],
+      road: [
+        {t:"The road takes more than it gives.", v:V(0.3,0.4,0.1,0.1,0.5), fam:2}, // REVIEW
+        {t:"Walk with care. Not with haste.", v:V(0.4,0.4,0.1,0.1,0.4), fam:4},    // REVIEW
+      ],
+      routes: [
+        {t:"Old paths remember feet.", v:V(0.2,0.4,0.1,0.1,0.8), fam:2},           // REVIEW
+        {t:"What was bound is coming loose.", v:V(0.1,0.5,0.2,0.1,0.9), fam:4},    // REVIEW
+      ],
+    },
+    unseen: [
+      {t:"No such visitor here.", v:V(0.4,0.2,0.1,0.1,0.2)},                   // REVIEW
+      {t:"Lost things find other doors.", v:V(0.4,0.3,0.1,0.1,0.3)},           // REVIEW
+    ],
+  },
+  "G": {
+    town: [
+      {t:"Quiet town. Keep it quiet.", v:V(0.0,0.2,0.8,0.1,0.1)},              // REVIEW
+      {t:"Everyone here is accounted for.", v:V(0.0,0.2,0.8,0.1,0.1)},         // REVIEW
+    ],
+    war: [
+      {t:"Orders change by the hour.", v:V(0.0,0.5,0.7,0.1,0.5)},              // REVIEW
+      {t:"Not my war. My post.", v:V(0.0,0.5,0.7,0.1,0.4)},                    // REVIEW
+    ],
+    sickness: [
+      {t:"No one sick passes this gate.", v:V(0.0,0.5,0.8,0.1,0.3)},           // REVIEW
+      {t:"Cover your mouth. Keep moving.", v:V(0.0,0.5,0.7,0.1,0.3)},          // REVIEW
+    ],
+    work: [
+      {t:"Stand. Watch. Report.", v:V(0.0,0.2,0.8,0.2,0.1)},                   // REVIEW
+      {t:"Long shifts. Short sleep.", v:V(0.0,0.3,0.7,0.4,0.1)},               // REVIEW
+    ],
+    earned: {
+      dog: [
+        {t:"Too quick to stop. We tried.", v:V(0.0,0.3,0.7,0.1,0.3), fam:2},       // REVIEW
+        {t:"Not wild. Someone's. You could tell.", v:V(0.1,0.3,0.6,0.1,0.3), fam:4}, // REVIEW
+      ],
+      road: [
+        {t:"Patrols come back short.", v:V(0.0,0.5,0.7,0.1,0.5), fam:2},           // REVIEW
+        {t:"Between us: don't trust the markers.", v:V(0.1,0.5,0.6,0.1,0.6), fam:4}, // REVIEW
+      ],
+      routes: [
+        {t:"Maps were changed. Not by us.", v:V(0.0,0.5,0.7,0.1,0.7), fam:2},      // REVIEW
+        {t:"Some posts guard nothing now.", v:V(0.0,0.5,0.6,0.1,0.8), fam:4},      // REVIEW
+      ],
+    },
+    unseen: [
+      {t:"No dogs reported.", v:V(0.0,0.2,0.8,0.1,0.2)},                       // REVIEW
+      {t:"Nothing like that at my post.", v:V(0.0,0.2,0.8,0.1,0.2)},           // REVIEW
+    ],
+  },
+  ".": {
+    town: [
+      {t:"Not much happens here.", v:V(0.3,0.2,0.0,0.1,0.1)},                  // REVIEW
+      {t:"We know each other. Mostly.", v:V(0.3,0.2,0.0,0.1,0.2)},             // REVIEW
+    ],
+    war: [
+      {t:"Sons left. Some came back.", v:V(0.1,0.6,0.0,0.1,0.4)},              // REVIEW
+      {t:"We hide the good grain.", v:V(0.1,0.5,0.0,0.1,0.4)},                 // REVIEW
+    ],
+    sickness: [
+      {t:"We keep the shutters closed.", v:V(0.1,0.6,0.0,0.1,0.3)},            // REVIEW
+      {t:"Don't drink from the well.", v:V(0.1,0.7,0.0,0.1,0.3)},              // REVIEW
+    ],
+    work: [
+      {t:"Fields don't wait for news.", v:V(0.2,0.2,0.0,0.3,0.1)},             // REVIEW
+      {t:"Same chores. Fewer hands.", v:V(0.2,0.3,0.0,0.3,0.2)},               // REVIEW
+    ],
+    earned: {
+      dog: [
+        {t:"Kids tried to catch it.", v:V(0.3,0.2,0.0,0.1,0.2), fam:2},            // REVIEW
+        {t:"Slept in our barn once.", v:V(0.4,0.2,0.0,0.1,0.3), fam:4},            // REVIEW
+      ],
+      road: [
+        {t:"We don't go far anymore.", v:V(0.2,0.4,0.0,0.1,0.4), fam:2},           // REVIEW
+        {t:"Grandmother says the roads moved before.", v:V(0.2,0.4,0.0,0.1,0.6), fam:4}, // REVIEW
+      ],
+      routes: [
+        {t:"Fences don't end where they did.", v:V(0.1,0.4,0.0,0.1,0.7), fam:2},   // REVIEW
+        {t:"We count steps home now.", v:V(0.2,0.5,0.0,0.1,0.7), fam:4},           // REVIEW
+      ],
+    },
+    unseen: [
+      {t:"A dog? Not around here.", v:V(0.3,0.2,0.0,0.1,0.2)},                 // REVIEW
+      {t:"Only our own dogs here.", v:V(0.3,0.2,0.0,0.1,0.1)},                 // REVIEW
+    ],
+  },
+  // Someone met in the wild. Other topics come from TOPIC_FALLBACKS.
+  wanderer: {
+    openers: [
+      {t:"Hm.", v:V(0.1,0.3,0.0,0.2,0.2)},                                     // REVIEW
+      {t:"Passing through too?", v:V(0.3,0.2,0.0,0.3,0.2)},                    // REVIEW
+      {t:"Keep your distance. Please.", v:V(0.0,0.4,0.1,0.2,0.3)},             // REVIEW
+    ],
+    dog: [
+      {t:"Tracks everywhere out here.", v:V(0.1,0.3,0.0,0.2,0.3)},             // REVIEW
+      {t:"Animals keep to their own roads.", v:V(0.1,0.3,0.0,0.2,0.4)},        // REVIEW
+    ],
+    road: [
+      {t:"I sleep where it's dry.", v:V(0.2,0.3,0.0,0.4,0.2)},                 // REVIEW
+      {t:"Towns are worse than this.", v:V(0.1,0.4,0.0,0.3,0.3)},              // REVIEW
+    ],
+    routes: [
+      {t:"I walk in circles some days.", v:V(0.1,0.4,0.0,0.3,0.7)},            // REVIEW
+      {t:"The land folds. I don't ask.", v:V(0.1,0.5,0.0,0.2,0.8)},            // REVIEW
+    ],
+    close: [
+      {t:"Go on, then.", v:V(0.1,0.3,0.0,0.2,0.2)},                            // REVIEW
+      {t:"Don't follow me.", v:V(0.0,0.4,0.1,0.2,0.2)},                        // REVIEW
+    ],
+  },
+  // The one left in a burned town. Other topics come from TOPIC_FALLBACKS.
+  survivor: {
+    openers: [
+      {t:"You came too late.", v:V(0.1,0.6,0.0,0.3,0.4)},                      // REVIEW
+      {t:"Nothing left to take.", v:V(0.0,0.6,0.0,0.3,0.4)},                   // REVIEW
+      {t:"Sit. Mind the ash.", v:V(0.2,0.5,0.0,0.3,0.4)},                      // REVIEW
+    ],
+    dog: [
+      {t:"Animals don't come near ash.", v:V(0.1,0.6,0.0,0.3,0.4)},            // REVIEW
+      {t:"I wasn't watching for dogs.", v:V(0.0,0.6,0.0,0.3,0.3)},             // REVIEW
+    ],
+    road: [
+      {t:"They came in by the road.", v:V(0.0,0.7,0.1,0.3,0.4)},               // REVIEW
+      {t:"Nobody comes back here.", v:V(0.1,0.6,0.0,0.3,0.4)},                 // REVIEW
+    ],
+    routes: [
+      {t:"The smoke went odd ways.", v:V(0.0,0.6,0.0,0.3,0.7)},                // REVIEW
+      {t:"Even the paths burned wrong.", v:V(0.0,0.6,0.0,0.3,0.8)},            // REVIEW
+    ],
+    close: [
+      {t:"Leave me with it.", v:V(0.1,0.5,0.0,0.3,0.3)},                       // REVIEW
+      {t:"Go. Before they return.", v:V(0.0,0.7,0.1,0.3,0.4)},                 // REVIEW
+    ],
+  },
+};
