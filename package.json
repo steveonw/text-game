@@ -14,6 +14,7 @@
     "browser-check": "node tools/build.mjs && node tools/browser-check.mjs",
     "sweep": "node tools/build.mjs && node tools/sweep.mjs dist/index.html",
     "bots": "node tools/build.mjs && node tools/bot.mjs dist/index.html",
+    "balance": "node tools/build.mjs && node tools/balance.mjs dist/index.html 2000 --gate",
     "sweep:legacy": "node tools/sweep.mjs legacy/quiet-roads-v13.html",
     "bots:legacy": "node tools/bot.mjs legacy/quiet-roads-v13.html",
     "record": "node tools/build.mjs && node tools/record-goldens.mjs dist/index.html"

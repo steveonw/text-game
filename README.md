@@ -6,18 +6,44 @@ One HTML file, no dependencies, nothing fetched from the network.
 
 ## Play
 
-Needs Node 20 or later to build. There is nothing to install.
+Once 1.0 is published: **https://steveonw.github.io/text-game/**
+
+Or build it yourself. It needs Node 20 or later and nothing else:
 
 ```
 npm run build
 ```
 
-Then open `dist/index.html` in a browser. Type `HELP` for the commands.
+Then open `dist/index.html` in a browser.
 
-- Add `?seed=anything` to the address to get the same world every time.
-- `SAVE` prints a password; `LOAD <password>` restores it.
+### Commands
 
-The file it builds is the v13 prototype with twelve of its defects repaired, its dog put on a trail and its clock given an end: same worlds, the same lines and fifteen new ones, same save codes. The prototype itself is kept, byte for byte and never edited, and can be opened the same way:
+| Command | What it does |
+| --- | --- |
+| `N` `S` `E` `W` | move (also `NORTH` `SOUTH` `EAST` `WEST`) |
+| `LOOK` | look around; on the world map it also names the four neighbouring tiles |
+| `ENTER` | go into a town, the wild or ruins |
+| `EXIT` | back to the road (also `EX`, `EXT`) |
+| `TALK` | speak to someone here (also `HI`, `HELLO`) |
+| `ASK <topic>` | `DOG` `ROAD` `TOWN` `ROUTES` `WAR` `SICKNESS` `WORK` |
+| `CALL` | call your dog |
+| `WAIT` | let a moment pass |
+| `REST` | rest a while |
+| `RIDE` | ride the wagon, when offered |
+| `STATUS` | how you are, how the roads are |
+| `SAVE` | get a password |
+| `LOAD <password>` | go back to a saved game |
+| `NEW <seed>` | a new world |
+| `CLEAR` | clear the log |
+| `HELP` | this list |
+
+### Seeds and passwords
+
+- **A seed is a world.** Add `?seed=anything` to the address, or type `NEW anything`, and you get the same world, the same trail and the same dates every time. With no seed the page picks one.
+- **SAVE prints a password** of about 25 characters at the start, longer the more people you have spoken to. `LOAD <password>` puts you back where you were. Passwords are case-sensitive; one changed character and LOAD refuses it.
+- **Passwords from v13 and from builds before M6 do not load.** They described a game with no trail and no fixed dates.
+
+The file it builds is the v13 prototype grown into 1.0: the same worlds, with twelve defects repaired, the dog put on a trail, a clock with an end and a fifth ending. The prototype itself is kept, byte for byte and never edited, and can be opened the same way:
 
 ```
 SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legacy/quiet-roads-v13.html
@@ -27,7 +53,7 @@ SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legac
 
 `docs/SPEC.md` describes v13 as built, how it measures when played by script across 2,000 seeds, and the design for a finished 1.0. The work is split into eight steps, M0 to M7, each with a handoff sheet in `docs/handoff/` and an exit report in `docs/handoff/exits/`.
 
-This repository is at **M6**: all five endings report true numbers, save codes are short, and the page says what it shows.
+This repository is at **M6**, with M7 under way: all five endings report true numbers, save codes are short, and the page says what it shows. The bots now run against the targets for 1.0 on every push; `docs/balance.md` has the results. Five of the six targets hold at the starting numbers. The sixth, that asking should pay, cannot be met by tuning alone and waits on a decision.
 
 What changed in M6:
 
@@ -83,7 +109,6 @@ What changed in M2, for a v13 player:
 - The ride on the cabbage wagon is told, and the merchant does not vanish from his wagon.
 - `DEBUG` and `BLOCK` answer only on a page opened with `?debug=1`.
 
-The numbers are not balanced yet: that is M7, the last step before 1.0.
 
 ## Test
 
@@ -92,15 +117,20 @@ npm test                # goldens, the trail, the clock, people, the content lin
 npm run browser-check   # play the goldens in headless Chrome (Node 22 or later, and Chrome)
 npm run sweep           # measure the built game across 2,000 seeds, and run the gates
 npm run bots            # scripted players over 500 seeds (takes a few minutes)
+npm run balance         # every bot on 2,000 seeds against the 1.0 targets; fails on a miss (about 8 minutes on two cores)
 npm run record          # build, then re-record test/golden/ from the build
 ```
 
-`npm test` takes about two minutes. It fails if the legacy file changes by a byte, if any recorded game plays out differently, if any of 2,000 worlds is generated differently from v13's, if a save code made by v13 or by the current game stops loading, if a repaired defect comes back, if a module breaks one of the build's rules, or if any of 2,000 seeds fails a gate: no trail, a den or the threshold out of reach, a fresh trail with no dog behind it, a date outside its window, or a closed road that cuts the dog off.
+`npm test` takes about two minutes. It fails if the legacy file changes by a byte, if any recorded game plays out differently, if any of 2,000 worlds is generated differently from v13's, if a code made by the current game stops loading or one made by v13 loads, if a repaired defect comes back, if a module breaks one of the build's rules, or if any of 2,000 seeds fails a gate: no trail, a den or the threshold out of reach, a fresh trail with no dog behind it, a date outside its window, or a closed road that cuts the dog off.
 
 There are two sets of recorded games:
 
 - `test/golden/` is what the game does now: 34 transcripts, replayed against the modules, the built file and, in the browser check, the real page. Re-record it only when a change is meant, and say why in the step's exit report.
 - `test/golden-v13/` is what v13 did: 27 transcripts, frozen, replayed against the legacy file. It is never re-recorded.
+
+## Publishing
+
+Pushing a version tag, `v1.0.0` or later, runs `.github/workflows/pages.yml`: it builds and tests the game and publishes `dist/index.html` to GitHub Pages. The owner can also run it by hand from the Actions tab. Pages must be set once to deploy from GitHub Actions (Settings, Pages, Source). `dist/` is never committed.
 
 ## How the build works
 
@@ -133,11 +163,14 @@ tools/build.mjs               the build
 tools/browser-check.mjs       plays the goldens in a real browser
 tools/harness/                runs a single-file build, or the modules, headlessly
 tools/sweep.mjs  tools/bot.mjs  tools/record-goldens.mjs
+tools/balance.mjs             the bots on 2,000 seeds against the 1.0 targets
+tools/tune.mjs                a tuning trial, on a copy of the build
 tools/tag-milestones.mjs      tags a step, mN, when its exit report reaches main
 test/                         legacy, modules, bundle, build-rule, repair, trail, clock, people, content and tagging tests
 test/golden/                  transcripts, world hashes, save codes: the current game
 test/golden-v13/              the same, recorded from v13 and frozen
 docs/SPEC.md                  the spec
+docs/balance.md               the bots' results, and every tuning trial
 docs/handoff/                 standing brief, one sheet per step, exit reports
 ```
 

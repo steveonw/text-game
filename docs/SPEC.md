@@ -505,6 +505,10 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-13: dropped. The owner found the old saving "a bit much" and left the call to Claude. Codes from v13, and from the builds up to M5, are refused with v13's refusal line. They described a game with no trail and no clock dates. The default was that every v13 code keeps loading.
 
-- [ ] **How 1.0 is published (before M7)**
+- [x] **How 1.0 is published (before M7)**
 
-    Default: GitHub Pages, built by CI on a version tag, with `dist/` not committed.
+    Decided 2026-11-13, with the default: GitHub Pages, built by CI on a version tag, with `dist/` not committed. The owner said to go ahead as Claude saw fit. The workflow is `.github/workflows/pages.yml`; it also runs by hand.
+
+- [ ] **What makes asking pay (found in M7)**
+
+    The target that an asking bot reach den 1 before the war on 70% to 85% of seeds cannot be met by tuning: every asking lever at its most generous gives 33%, while the sign bot is at 48% (`docs/balance.md`). Options are in the M7 stop report. Until decided, CI reports this target as open and gates the rest.

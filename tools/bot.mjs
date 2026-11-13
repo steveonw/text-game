@@ -304,9 +304,15 @@ export function runBot(htmlPath, seedStr, policy) {
   };
 }
 
-export function runPolicy(htmlPath, policy, n = BOT_RUNS) {
+export function runPolicy(htmlPath, policy, n = BOT_RUNS, seedOf = botSeed) {
   const runs = [];
-  for (let i = 1; i <= n; i++) runs.push(runBot(htmlPath, botSeed(i), policy));
+  for (let i = 1; i <= n; i++) runs.push(runBot(htmlPath, seedOf(i), policy));
+  return summarize(policy, runs);
+}
+
+// The table row for one policy, from its runs.
+export function summarize(policy, runs) {
+  const n = runs.length;
   const endings = {};
   for (const r of runs) endings[r.ending] = (endings[r.ending] || 0) + 1;
   const done = runs.filter((r) => r.ending !== 'none');
