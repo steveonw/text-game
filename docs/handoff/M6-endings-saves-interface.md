@@ -52,6 +52,9 @@
 - From M4: the dates are computed from the seed (`dates()` in `clock.js`) and are not saved. A code saved by v13 after one of its dates catches up on the first step after loading: the war, the fall and, if it is past the change date, the end, all at once. Decide whether an old code that late should end at once.
 - From M4: the mode label reads `RUIN` inside a ruin map. The legend by mode needs an entry for stones: `r` fallen, `^` standing.
 - From M4: a tired world move adds 2 to the step counter, so "Steps taken" on the ending screen counts clock steps, not moves.
+- From M5: REST now works on the world map. The legend by mode should say so if it lists commands.
+- From M5: a townsperson is labelled "Someone" (v13). If the owner wants "Local", it is `speakerName` in `commands.js`.
+- From M5: the 118 new lines and the 15 from M4 carry `// REVIEW` until the owner has edited them. A test checks the tag on the M5 lines; when the owner approves them, change that test to check the tag is gone.
 
 ## Out of scope
 

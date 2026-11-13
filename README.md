@@ -27,7 +27,17 @@ SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legac
 
 `docs/SPEC.md` describes v13 as built, how it measures when played by script across 2,000 seeds, and the design for a finished 1.0. The work is split into eight steps, M0 to M7, each with a handoff sheet in `docs/handoff/` and an exit report in `docs/handoff/exits/`.
 
-This repository is at **M4**: the game has a clock that ends.
+This repository is at **M5**: people answer every topic, say more as they come to know you, and point true when they trust you.
+
+What changed in M5:
+
+- **Every topic gets an answer.** Innkeeper, merchant, smith, priest, guard and local each have lines for TOWN, WAR, SICKNESS and WORK. The wanderer and the survivor have voices of their own.
+- **Familiar people say more.** A line for DOG, ROAD and ROUTES opens up at the second conversation, and another at the fourth.
+- **Only towns the dog passed have seen it.** Elsewhere people say they haven't.
+- **Gestures for more than the dog.** Asked about the dog, sickness, the war, other towns, or (of a guard) the road, a person may point the first step of the way. Someone who trusts you always points true; someone who only knows you is wrong about one time in eight; a stranger does not point.
+- **Rest outside a town.** REST works anywhere, the world map included, and restores all your fatigue for two steps, or less when sleep comes shallow.
+
+118 lines are new in M5, drafts tagged `// REVIEW` in `src/content/pools.js` for the owner to edit.
 
 What changed in M4:
 
@@ -40,7 +50,7 @@ What changed in M4:
 - **Sickness matters.** The cabbage wagon skips a sick town, and REST there restores little.
 - **Four status words:** quiet, unsettled, guarded, hollow.
 
-Fifteen lines are new in M4. Each is a draft tagged `// REVIEW` in `src/content/pools.js`, for the owner to edit.
+Fifteen lines are new in M4, also tagged `// REVIEW`.
 
 What changed in M3:
 
@@ -62,12 +72,12 @@ What changed in M2, for a v13 player:
 - The ride on the cabbage wagon is told, and the merchant does not vanish from his wagon.
 - `DEBUG` and `BLOCK` answer only on a page opened with `?debug=1`.
 
-Still v13's: what people say, the text of the endings and the save format. Those are M5 and M6. The numbers are not balanced yet: that is M7.
+Still v13's: the text of the endings, the legend and the save format. Those are M6. The numbers are not balanced yet: that is M7.
 
 ## Test
 
 ```
-npm test                # goldens, the trail, the clock, repairs, worlds, save codes, sweep gates and build rules
+npm test                # goldens, the trail, the clock, people, the content lint, repairs, worlds, save codes, sweep gates and build rules
 npm run browser-check   # play the goldens in headless Chrome (Node 22 or later, and Chrome)
 npm run sweep           # measure the built game across 2,000 seeds, and run the gates
 npm run bots            # scripted players over 500 seeds (takes a few minutes)
@@ -78,7 +88,7 @@ npm run record          # build, then re-record test/golden/ from the build
 
 There are two sets of recorded games:
 
-- `test/golden/` is what the game does now: 30 transcripts, replayed against the modules, the built file and, in the browser check, the real page. Re-record it only when a change is meant, and say why in the step's exit report.
+- `test/golden/` is what the game does now: 34 transcripts, replayed against the modules, the built file and, in the browser check, the real page. Re-record it only when a change is meant, and say why in the step's exit report.
 - `test/golden-v13/` is what v13 did: 27 transcripts, frozen, replayed against the legacy file. It is never re-recorded.
 
 ## How the build works
@@ -103,6 +113,7 @@ src/                          the game
   render.js                   everything that draws
   tuning.js                   every tunable number
   trail.js                    the dog and its trail
+  gesture.js                  every gesture anyone makes
   rng.js  world.js  clock.js  local.js  people.js  commands.js  endings.js  save.js
   content/pools.js            every pooled line
 dist/index.html               the built game (not committed)
@@ -112,7 +123,7 @@ tools/browser-check.mjs       plays the goldens in a real browser
 tools/harness/                runs a single-file build, or the modules, headlessly
 tools/sweep.mjs  tools/bot.mjs  tools/record-goldens.mjs
 tools/tag-milestones.mjs      tags a step, mN, when its exit report reaches main
-test/                         legacy, modules, bundle, build-rule, repair, trail, clock and tagging tests
+test/                         legacy, modules, bundle, build-rule, repair, trail, clock, people, content and tagging tests
 test/golden/                  transcripts, world hashes, save codes: the current game
 test/golden-v13/              the same, recorded from v13 and frozen
 docs/SPEC.md                  the spec
