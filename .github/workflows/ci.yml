@@ -38,3 +38,13 @@ jobs:
           node-version: 22
       - name: Play the goldens in headless Chrome
         run: npm run browser-check
+
+  balance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: The bots on 2,000 seeds, against the 1.0 targets
+        run: npm run balance

@@ -113,6 +113,7 @@
     ["m","WAIT: let a moment pass"],
     ["m","REST: rest a while"],
     ["m","RIDE: ride the wagon, when offered"],
+    ["m","FOLLOW: go with someone who offers to show you"],
     ["m","STATUS: how you are, how the roads are"],
     ["m","SAVE: get a password"],
     ["m","LOAD <password>: go back to a saved game"],

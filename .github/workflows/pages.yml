@@ -1,0 +1,53 @@
+name: pages
+
+# Publishes the game to GitHub Pages when a version tag (v1.0.0, v1.0.1, ...) is
+# pushed, or when the owner runs it by hand from the Actions tab. A tag pushed by
+# the tagging workflow does not start this one; version tags are pushed by the owner.
+#
+# One-time setup by the owner: Settings > Pages > Build and deployment > Source:
+# "GitHub Actions".
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Legacy file is unchanged
+        run: echo "85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legacy/quiet-roads-v13.html" | sha256sum --check
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+      - name: No web address in the page
+        run: "! grep -E 'https?://' dist/index.html"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

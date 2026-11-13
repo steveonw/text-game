@@ -31,6 +31,7 @@ const PLAIN = [
   ...Object.entries(POOLS.STONES).map(([k, t]) => ({ t, where: `STONES[${k}]` })),
   { t: POOLS.ROAD_CLOSED_RUMOR, where: 'ROAD_CLOSED_RUMOR' },
   ...POOLS.OPEN_GATE.filter(Boolean).map((t, i) => ({ t, where: `OPEN_GATE[${i}]` })),
+  ...[...POOLS.GUIDE.offer, ...POOLS.GUIDE.walk, POOLS.GUIDE.declined].map((t, i) => ({ t, where: `GUIDE[${i}]` })),
   ...Object.entries(POOLS.LEGEND).flatMap(([k, v]) => v.map(([, t], i) => ({ t, where: `LEGEND.${k}[${i}]` }))),
   { t: POOLS.STATUS_GUARDED, where: 'STATUS_GUARDED' },
 ];

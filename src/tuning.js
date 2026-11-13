@@ -25,7 +25,7 @@ export const TUNE = {
   homeRegionMinTiles: 100,       // the yard goes in the largest region with a town, unless that region is smaller than this
   trailLength: 30,               // the threshold is the candidate whose distance from the yard is closest to this
   thresholdMinSteps: 20,         // a natural ruin serves as the threshold only at this distance or more
-  viaTownWithin: 10,             // the trail passes beside the nearest town when it is this close to the yard
+  viaTownWithin: 15,             // the trail passes beside the nearest town when it is this close to the yard (M7; was 10)
   den1At: 0.4,                   // den 1 is the plains or forest tile nearest this fraction of the trail
   den2At: 0.7,                   // den 2, likewise
   callNearPositions: 3,          // CALL gets the near answer within this many trail positions of the dog
@@ -33,7 +33,7 @@ export const TUNE = {
 
   // The direction gesture
   gestureSignWithin: 4,          // a gesture is offered only where sign lies within this many tiles of the speaker
-  seenWithin: 2,                 // a town has seen the dog when sign lies within this many tiles of it (M5)
+  seenWithin: 4,                 // a town has seen the dog when sign lies within this many tiles of it (M7; M5 2)
   gestureMisleadChance: 0.12,    // chance a gesture points another open way
   gestureAtFamiliarity: 3,       // ASK DOG earns a gesture at this familiarity...
   gestureAtTrust: 2,             // ...or at this trust
@@ -42,7 +42,7 @@ export const TUNE = {
   sicknessEverySteps: 12,        // while stirring, sickness is rolled every this many steps
   sicknessChance: 0.55,          // chance the chosen town falls sick
   stirByStep: 24,                // the routes are stirring by this step, sign or no sign
-  warFrom: 30,                   // the war starts on a seeded step from this...
+  warFrom: 34,                   // the war starts on a seeded step from this... (M7; was 30)
   warTo: 50,                     // ...to this
   stageGapFrom: 25,              // the capital falls this many steps after the war starts, at least...
   stageGapTo: 40,                // ...and at most; the roads change as long again after the fall

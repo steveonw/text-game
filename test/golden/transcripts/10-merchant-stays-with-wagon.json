@@ -53,6 +53,8 @@
     ["","Kids tried to catch it."],
     ["","It ran like it knew."],
     ["m","(A gesture: north.)"],
+    ["","Come. I'll walk you there."],
+    ["m","(Type FOLLOW.)"],
     ["m","> RIDE"],
     ["m","You climb onto the wagon."],
     ["m","Cabbages shift beneath the weight."],

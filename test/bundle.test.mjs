@@ -132,26 +132,26 @@ test('bundle: sweep: every seed can be won and the fresh-trail line is always tr
 test('bundle: sweep gates: a trail on every seed, one dog in every state of the clock, dates in their windows, and the dog in reach to the last step', () => {
   const g = sweepGates(DIST, SWEEP_SIZE);
   assert.deepEqual(g.failures, []);
-  // Pinned with the sweep: the shape of the trails. M3 acceptance asks for 20 tiles or more on 95% of seeds.
+  // Pinned with the sweep: the shape of the trails. M7 moved viaTownWithin from 10 to 15, so more pass a town. M3 acceptance asks for 20 tiles or more on 95% of seeds.
   assert.ok(g.trail.atLeast20 >= 0.95 * SWEEP_SIZE);
   assert.deepEqual({ atLeast20: g.trail.atLeast20, min: g.trail.length.min, median: g.trail.length.median, max: g.trail.length.max, onRuins: g.trail.thresholdOnRuins, onOpenGround: g.trail.thresholdOnOpenGround, besideATown: g.trail.passesBesideATown },
-    { atLeast20: 1997, min: 19, median: 31, max: 53, onRuins: 1401, onOpenGround: 599, besideATown: 964 });
+    { atLeast20: 1998, min: 19, median: 31, max: 60, onRuins: 1401, onOpenGround: 599, besideATown: 1221 });
   // M4: the dates, and the roads the clock closes while a player waits the whole game out.
   assert.deepEqual(g.clock, {
-    war: { min: 30, median: 40, max: 50 },
-    fall: { min: 55, median: 73, max: 90 },
-    change: { min: 82, median: 105, max: 130 },
+    war: { min: 34, median: 42, max: 50 },
+    fall: { min: 59, median: 74, max: 90 },
+    change: { min: 85, median: 107, max: 130 },
     closures: { none: 63, median: 4, max: 5 },
   });
 });
 
 // M5 acceptance: gesture accuracy on the sweep. 100% at trust 2; 85% to 91% at
 // familiarity 3 without it. v13: 58.9%.
-test('bundle: sweep: gestures are always true at trust 2, and 89.4% true at familiarity 3 without it', () => {
+test('bundle: sweep: gestures are always true at trust 2, and 89.3% true at familiarity 3 without it', () => {
   const g = sweepGestures(DIST, SWEEP_SIZE);
   assert.equal(g.trustedRight, g.trusted);
   assert.ok(g.familiarRate >= 0.85 && g.familiarRate <= 0.91, `${(100 * g.familiarRate).toFixed(1)}%`);
-  assert.deepEqual({ trusted: g.trusted, familiarRight: g.familiarRight }, { trusted: 21790, familiarRight: 19477 });
+  assert.deepEqual({ trusted: g.trusted, familiarRight: g.familiarRight }, { trusted: 23170, familiarRight: 20692 });
 });
 
 // M2 acceptance: in every town where smith and guard both roll, both appear. v13: 0 of 2,717.

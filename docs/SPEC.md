@@ -233,6 +233,15 @@ The asker follows a gesture in 302 games of 500 and still does worse than the bo
 | "Towns" on the ending screen | remembered staff (D15) | towns entered, of 4 |
 | Legend items | 12, world only, one of them a dog the world map never draws | 12 world, 11 town, 6 wild, 5 ruins |
 
+**M7 (balance and release).** The bots run on all 2,000 sweep seeds against the six targets of 4.8, and CI fails on a miss. Five held at the starting values. The sixth, that asking pay, needed the guide (4.5): seven new lines, and FOLLOW. Three numbers were tuned: `viaTownWithin` 10 to 15, `seenWithin` 2 to 4, `warFrom` 30 to 34. The game is published to GitHub Pages from a version tag.
+
+| Measure, 2,000 seeds | M6 | M7 |
+| --- | --- | --- |
+| Sign bot (resting) on den 1 before the war | 48.3% | 51.0% |
+| Asker on den 1 before the war | 27.1% | 74.5% |
+| Asker wins Homecoming | 11.7% | 36.1% |
+| Least-reached ending, by its best bot | The Long Way Back, 7.6% | The Long Way Back, 7.3% |
+
 ## 4. The logical end: 1.0
 
 1.0 makes the opening line true: one dog on one trail, a clock that ends, and people whose answers are worth the walk. Everything in this section is proposed.
@@ -309,6 +318,7 @@ Ruin maps use only glyphs already in the locked palette.
 - A gesture is always true at trust 2 or more. At familiarity 3 without that trust it is wrong 12% of the time, v13's rate. Below both there is no gesture.
 - v13's sighting lines ("Ran past the gate.") are spoken only in towns the trail passes. Other towns get new lines for not having seen it.
 - Wanderers and Survivors get their own pools.
+- (M7) In a town that has seen the dog, a person who points true when asked about it offers to show the way. FOLLOW walks you by the shortest open way to where the dog rests, each step paid for as a move. A wrong gesture comes with no offer.
 - The cabbage merchant waits while you are in his town. His six complaints and the ride are unchanged, and the ride's narration is shown.
 
 This needs about 140 new lines beside the 103 in v13, all under the voice rules in the standing brief.
@@ -339,11 +349,13 @@ All numbers live in one file and are tuned in M7 against bots, not by feel.
 
 | Constant | Starting value | Basis |
 | --- | --- | --- |
-| War begins | Step 30 to 50 | v13 median 37 |
+| War begins | Step 30 to 50; M7 tuned it to 34 to 50 | v13 median 37 |
 | Capital falls | 25 to 40 steps after war | v13 medians: war 37, fall 72 |
 | Roads change | 25 to 40 steps after the fall | New |
 | Stirring at the latest | Step 24 | v13 median 10 |
 | Trail length | About 30 tiles, 20 at least | Measured reach, median 31 |
+| Trail passes the nearest town | When it is 10 steps from the yard or nearer; M7 tuned it to 15 | New |
+| A town has seen the dog | Sign within 2 tiles; M7 tuned it to 4, the gesture's reach | New |
 | Den positions | 40% and 70% of the trail | New |
 | Slow walking | At fatigue 5 | New |
 | Road closures | One per 18 steps, 6 at most | v13 burn cadence |
@@ -505,6 +517,10 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-13: dropped. The owner found the old saving "a bit much" and left the call to Claude. Codes from v13, and from the builds up to M5, are refused with v13's refusal line. They described a game with no trail and no clock dates. The default was that every v13 code keeps loading.
 
-- [ ] **How 1.0 is published (before M7)**
+- [x] **How 1.0 is published (before M7)**
 
-    Default: GitHub Pages, built by CI on a version tag, with `dist/` not committed.
+    Decided 2026-11-13, with the default: GitHub Pages, built by CI on a version tag, with `dist/` not committed. The owner said to go ahead as Claude saw fit. The workflow is `.github/workflows/pages.yml`; it also runs by hand.
+
+- [x] **What makes asking pay (found in M7)**
+
+    Decided 2026-11-13: keep the target (an asking bot on den 1 before the war on 70% to 85% of seeds) and make asking say more. Tuning alone gave the asker 33% at most, and a measured ceiling showed that only an answer that gets the player to the dog's place could reach the band. So a person who has seen the dog, and points true, offers to walk you there (FOLLOW, 4.5). With it and three tuned numbers the asker is at 74.5% and the sign bot at 51% (`docs/balance.md`). This lifted M7's rule of no logic and no text for this one change.
