@@ -60,6 +60,7 @@
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
+    ["m","North: plains. East: the edge. South: the edge. West: plains."],
     ["m","> TALK"],
     ["m","No one to speak with here."],
     ["m","> STATUS"],
@@ -69,7 +70,8 @@
     ["m","Not here."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
-    ["m","Something moved through here recently."]
+    ["m","Something moved through here recently."],
+    ["m","North: plains. East: the edge. South: the edge. West: plains."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -83,6 +85,7 @@
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
+    ["m","North: plains. East: the edge. South: the edge. West: plains."],
     ["m","> TALK"],
     ["m","No one to speak with here."],
     ["m","> STATUS"],
@@ -92,7 +95,8 @@
     ["m","Not here."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
-    ["m","Something moved through here recently."]
+    ["m","Something moved through here recently."],
+    ["m","North: plains. East: the edge. South: the edge. West: plains."]
   ],
   "finalMap": [
     "..~~~.~FF..........~",

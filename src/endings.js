@@ -2,7 +2,9 @@
 
 import { G } from './state.js';
 import { clearLogSoft, log, render } from './io.js';
-import { ROADS_CHANGED } from './content/pools.js';
+import { OPEN_GATE } from './content/pools.js';
+import { trail } from './trail.js';
+import { hasDogHint } from './world.js';
 import { TUNE } from './tuning.js';
 
 export function triggerEnding(type){
@@ -67,29 +69,36 @@ export function triggerEnding(type){
   }
 
   if (type === "changed"){
-    // The Open Gate: the roads changed before the dog was found.
-    // PLACEHOLDER until M6 writes this ending. One line stands in for it.
+    // The Open Gate (M6): the roads changed before the dog was found.
     log("", "m");
-    log(ROADS_CHANGED, "m");
+    for (const line of OPEN_GATE) log(line, "m");
     log("", "m");
     log("THE QUIET ROADS", "m");
     log("Ending: The Open Gate", "m");
   }
 
+  // M6: true numbers. v13's "Towns visited" counted remembered building staff (D15).
   log("", "m");
   log("Steps taken: " + G.steps, "m");
-  log("Towns visited: " + countVisitedTowns(), "m");
+  log("Towns entered: " + townsEntered() + " of " + G.towns.length, "m");
   log("People spoken to: " + Object.keys(G.npcMemory).length, "m");
+  log("Sign found: " + signFound() + " of " + trail().tiles.length, "m");
   log("", "m");
   log("(NEW <seed> to begin again)", "m");
 
   render();
 }
 
-export function countVisitedTowns(){
-  let count = 0;
-  for (const id of Object.keys(G.npcMemory)){
-    if (id.startsWith("npc_") && !id.includes("ambient")) count++;
-  }
-  return Math.min(count, G.towns.length);
+// Towns the player has ENTERed: bits of G.townsEntered, one per entry of G.towns.
+export function townsEntered(){
+  let n = 0;
+  for (let i = 0; i < G.towns.length; i++) if (G.townsEntered & (1 << i)) n++;
+  return n;
+}
+
+// Trail tiles the player has stood on.
+export function signFound(){
+  let n = 0;
+  for (const t of trail().tiles) if (hasDogHint(t.x, t.y)) n++;
+  return n;
 }

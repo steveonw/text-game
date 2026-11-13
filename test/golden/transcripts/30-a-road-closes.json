@@ -221,6 +221,7 @@
     ["m","The road is blocked."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
+    ["m","North: plains. East: plains. South: blocked. West: plains."],
     ["m","> STATUS"],
     ["m","You are near-done. People are unknown."],
     ["m","The roads feel guarded."]
@@ -373,6 +374,7 @@
     ["m","The road is blocked."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
+    ["m","North: plains. East: plains. South: blocked. West: plains."],
     ["m","> STATUS"],
     ["m","You are near-done. People are unknown."],
     ["m","The roads feel guarded."]

@@ -127,8 +127,17 @@ export const STONES = {
   "^": "A standing stone. It leans.",             // REVIEW
 };
 
-// The fifth ending. Its full text is M6's; until then this one line stands in for it.
-export const ROADS_CHANGED = "The roads have changed. The one you walked is gone.";   // REVIEW
+// The fifth ending, The Open Gate (M6): the roads change before the dog is found.
+// Shaped like v13's four. "" is a blank line.
+export const OPEN_GATE = [
+  "The roads have changed.",                       // REVIEW
+  "The one you walked is gone.",                   // REVIEW
+  "Somewhere past the stones, it waits.",          // REVIEW
+  "",
+  "You go back the way you remember.",             // REVIEW
+  "The gate stands open.",                         // REVIEW
+  "Nothing comes through it.",                     // REVIEW
+];
 
 // STATUS in the war stage, beside v13's "The roads feel unsettled."
 export const STATUS_GUARDED = "The roads feel guarded.";                              // REVIEW
@@ -410,3 +419,33 @@ export const PEOPLE = {
     ],
   },
 };
+
+// ---------- M6: the interface ----------
+// The legend for each mode: [glyph, name]. Local T is a temple and local ^ a rock;
+// on the world map they are a town and mountains.
+export const LEGEND = {
+  WORLD: [["@","You"],["p","Person"],[".","Plains"],["F","Forest"],["~","Water"],["^","Mountains"],["T","Town"],["C","Capital"],["R","Ruins"],["#","Blocked"],["!","Distress"],["?","Sign"]],
+  TOWN:  [["@","You"],["p","Person"],["|","Street"],["#","Wall"],["I","Inn"],["M","Market"],["S","Smithy"],["T","Temple"],["G","Guard post"],["w","Wagon"],["r","Burned"]],
+  WILD:  [["@","You"],["p","Person"],[".","Ground"],["t","Brush"],["^","Rock"],["d","Dog"]],
+  RUIN:  [["@","You"],[".","Ground"],["r","Fallen stone"],["^","Standing stone"],["d","Dog"]],
+};
+
+// Every live command, as HELP lists it and the side panel shows it.
+export const COMMANDS = [
+  ["N S E W", "move (also NORTH SOUTH EAST WEST)"],
+  ["LOOK", "look around"],
+  ["ENTER", "go into a town, the wild or ruins"],
+  ["EXIT", "back to the road (also EX, EXT)"],
+  ["TALK", "speak to someone here (also HI, HELLO)"],
+  ["ASK <topic>", "DOG ROAD TOWN ROUTES WAR SICKNESS WORK"],
+  ["CALL", "call your dog"],
+  ["WAIT", "let a moment pass"],
+  ["REST", "rest a while"],
+  ["RIDE", "ride the wagon, when offered"],
+  ["STATUS", "how you are, how the roads are"],
+  ["SAVE", "get a password"],
+  ["LOAD <password>", "go back to a saved game"],
+  ["NEW <seed>", "a new world"],
+  ["CLEAR", "clear the log"],
+  ["HELP", "this list"],
+];

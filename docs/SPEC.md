@@ -321,7 +321,7 @@ After every ending NEW and LOAD work. The ending screen reports steps, towns ent
 - The legend follows the mode. Found sign is drawn with `?`, a glyph already in the palette and unused.
 - HELP lists every live command. DEBUG and BLOCK need `?debug=1`.
 - Save v5 stores found sign as a mask over trail positions (8 bytes, down from 50). Target: 40 characters or fewer at step 0.
-- Every v13 code still loads. Seed, position, steps, stage and people carry over; hint tiles carry over where they lie on the trail.
+- Old codes are not carried over (decided before M6). LOAD refuses a v13 code with v13's line, "The password refuses to settle."
 
 ### 4.8 Starting values and balance targets
 
@@ -491,9 +491,9 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-13, with the default: the AI drafts under the voice rules and the owner edits every line before merge. The alternative was that the owner writes them and M5 only wires them in. The owner also asked that resting outside a town be allowed; see "Since v13", M5.
 
-- [ ] **Old save codes (before M6)**
+- [x] **Old save codes (before M6)**
 
-    Default: every v13 code keeps loading. Dropping them removes two readers and their tests.
+    Decided 2026-11-13: dropped. The owner found the old saving "a bit much" and left the call to Claude. Codes from v13, and from the builds up to M5, are refused with v13's refusal line. They described a game with no trail and no clock dates. The default was that every v13 code keeps loading.
 
 - [ ] **How 1.0 is published (before M7)**
 

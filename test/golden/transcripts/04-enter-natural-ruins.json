@@ -51,6 +51,7 @@
     ["m","The ground is uneven here."],
     ["m","> LOOK"],
     ["m","Old stones. A place avoided."],
+    ["m","North: plains. East: ruins. South: plains. West: plains."],
     ["m","> ENTER"],
     ["m","The land closes around you."],
     ["m","> LOOK"],
@@ -80,7 +81,8 @@
     ["m","> EXIT"],
     ["m","You return to the open road."],
     ["m","> LOOK"],
-    ["m","Old stones. A place avoided."]
+    ["m","Old stones. A place avoided."],
+    ["m","North: plains. East: ruins. South: plains. West: plains."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -102,6 +104,7 @@
     ["m","The ground is uneven here."],
     ["m","> LOOK"],
     ["m","Old stones. A place avoided."],
+    ["m","North: plains. East: ruins. South: plains. West: plains."],
     ["m","> ENTER"],
     ["m","The land closes around you."],
     ["m","> LOOK"],
@@ -131,7 +134,8 @@
     ["m","> EXIT"],
     ["m","You return to the open road."],
     ["m","> LOOK"],
-    ["m","Old stones. A place avoided."]
+    ["m","Old stones. A place avoided."],
+    ["m","North: plains. East: ruins. South: plains. West: plains."]
   ],
   "finalMap": [
     ".^^^^^^...RRRRRRRR^^",

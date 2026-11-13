@@ -2,22 +2,33 @@
 
 import { G } from './state.js';
 import { STAGE_WORDS, advanceWorldPressure, advanceWorldPressureFrom, cabbageIsHereWorld, initCabbageRoute, nextWagonStop, stage } from './clock.js';
-import { BUILDING_POOLS, CABBAGE, STATUS_GUARDED, STONES } from './content/pools.js';
+import { BUILDING_POOLS, CABBAGE, COMMANDS, LEGEND, STATUS_GUARDED, STONES } from './content/pools.js';
 import { triggerEnding } from './endings.js';
 import { generateRuin, generateTown, generateWilderness } from './local.js';
 import { getNPC, maybeInternal, sayNPC, setNPC } from './people.js';
 import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './io.js';
 import { clamp, fnv1a32, noise01 } from './rng.js';
-import { loadPasswordAny, savePasswordPacked } from './save.js';
+import { loadPassword, savePassword } from './save.js';
+import { worldGlyph } from './render.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
 import { gestureFor } from './gesture.js';
 import { callAnswer, dogIsNear, dogIsVeryNear, isThreshold } from './trail.js';
 import { addDogHint, computeTowns, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
 // ---------- Command system ----------
+// M6: every live command and alias, from the table the side panel shows.
 export function cmdHelp(){
-  log("Commands: N S E W, ENTER, EXIT, LOOK, TALK, ASK <topic>, CALL, WAIT, REST, RIDE, STATUS, SAVE, LOAD <CODE>, NEW <seed>, HELP", "m");
-  log("Topics: DOG, ROAD, TOWN, ROUTES, WAR, SICKNESS, WORK", "m");
+  log("Commands:", "m");
+  for (const [cmd, what] of COMMANDS) log(cmd + ": " + what, "m");
+  if (debugOn()) log("DEBUG, BLOCK: maintenance, on this page only", "m");
+}
+
+// M6: LOOK on the world map names the four neighbours, north, east, south, west,
+// in the legend's words for what the map draws there.
+export function neighbourLine(x, y){
+  const NAMES = Object.fromEntries(LEGEND.WORLD.map(([g, name]) => [g, name.toLowerCase()]));
+  const word = (nx, ny) => (nx < 0 || ny < 0 || nx >= WORLD_SIZE || ny >= WORLD_SIZE) ? "the edge" : (NAMES[worldGlyph(nx, ny)] || "unknown");
+  return "North: " + word(x, y-1) + ". East: " + word(x+1, y) + ". South: " + word(x, y+1) + ". West: " + word(x-1, y) + ".";
 }
 
 export function cmdStatus(){
@@ -82,6 +93,8 @@ export function cmdEnter(){
   if (G.mode!=="WORLD"){ log("You are already inside.", "m"); return; }
   const kind = enterKind(G.player.x, G.player.y);
   if (kind==="TOWN"){
+    const i = G.towns.findIndex(t => t.x === G.player.x && t.y === G.player.y);
+    if (i >= 0) G.townsEntered |= (1 << i); // M6: for the ending's "Towns entered"
     G.local = generateTown(G.player.x, G.player.y, false);
     G.mode="LOCAL";
     log("Buildings gather. The road narrows.", "m");
@@ -141,6 +154,7 @@ export function cmdLook(){
     log(desc, "m");
     if (dogIsNear(G.player.x, G.player.y)) log("Something moved through here recently.", "m");
     if (dogIsVeryNear(G.player.x, G.player.y)) log("The trail is fresh. ENTER to search.", "m");
+    log(neighbourLine(G.player.x, G.player.y), "m");
     return;
   }
   const cell = G.local.map[G.local.py][G.local.px];
@@ -473,8 +487,8 @@ export function runCommand(raw){
   const arg = parts.slice(1).join(" ");
 
   if (G.mode==="END"){
-    // D1: after an ending NEW and HELP work, and LOAD takes a code in any format.
-    if (cmd==="LOAD") loadPasswordAny(arg);
+    // D1: after an ending NEW and HELP work, and LOAD takes a code.
+    if (cmd==="LOAD") loadPassword(arg);
     else if (cmd==="NEW") cmdNew(arg);
     else if (cmd==="HELP") cmdHelp();
     else log("The story is done. (LOAD <password> to continue elsewhere.)", "m");
@@ -502,8 +516,8 @@ export function runCommand(raw){
     case "WAIT": return cmdWait();
     case "REST": return cmdRest();
     case "RIDE": return cmdRide();
-    case "SAVE": { const pw = savePasswordPacked(); log("Password:", "m"); log(pw, "m"); return; }
-    case "LOAD": { loadPasswordAny(arg); return; }
+    case "SAVE": { const pw = savePassword(); log("Password:", "m"); log(pw, "m"); return; }
+    case "LOAD": { loadPassword(arg); return; }
     case "NEW": return cmdNew(arg);
     case "CLEAR": clearLogSoft(); return;
     // D17: without ?debug=1 these two are unknown words, like any other.
