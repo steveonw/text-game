@@ -5,13 +5,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { bootModules, say, screenText, nearest, walkTo, localTo } from '../tools/harness/modules.mjs';
 import { G } from '../src/state.js';
-import { isTownAt, tileAt, finalTileAt, dogIsVeryNear, keyForXY } from '../src/world.js';
+import { isTownAt, tileAt, finalTileAt, keyForXY } from '../src/world.js';
+import { dogIsVeryNear } from '../src/trail.js';
 import { generateTown, generateWilderness } from '../src/local.js';
 import { mapHtml } from '../src/render.js';
 import { noise01 } from '../src/rng.js';
 import { TUNE } from '../src/tuning.js';
 import { pickMany, sayNPC } from '../src/people.js';
-import { BUILDING_POOLS, CABBAGE, TOPIC_FALLBACKS } from '../src/content/pools.js';
+import { BUILDING_POOLS, CABBAGE, EVENT_OVERLAYS, TOPIC_FALLBACKS } from '../src/content/pools.js';
 import { cabbageIsHereWorld } from '../src/clock.js';
 
 const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/\n$/, '').split('\n');
@@ -279,7 +280,11 @@ test('D5: every topic is answered from its own lines, never from ROAD', () => {
   const out = say('ASK TOWN');
   assert.equal(out[1], 'Innkeeper (TOWN):');
   const innRoad = texts(BUILDING_POOLS.I.road), townLines = texts(TOPIC_FALLBACKS.town);
-  for (const line of afterTag(out)) { assert.ok(townLines.includes(line)); assert.ok(!innRoad.includes(line)); }
+  // The walk to town crosses sign, so the routes may be stirring and one overlay line may ride along.
+  const overlays = Object.values(EVENT_OVERLAYS).flatMap((o) => o.inject.map((f) => f.t));
+  const body = afterTag(out).filter((line) => !overlays.includes(line));
+  assert.ok(body.length >= 1);
+  for (const line of body) { assert.ok(townLines.includes(line), line); assert.ok(!innRoad.includes(line), line); }
 });
 
 // The first step at which v13's war roll comes up for the current seed.

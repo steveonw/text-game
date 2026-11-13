@@ -44,6 +44,7 @@
     ["m","CALL when you're close."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
+    ["m","Something moved through here recently."],
     ["m","> ENTER"],
     ["m","The land closes around you."],
     ["m","> LOOK"],
@@ -88,7 +89,8 @@
     ["m","> N"],
     ["m","You return to the open road."],
     ["m","> LOOK"],
-    ["m","Open land stretches out."]
+    ["m","Open land stretches out."],
+    ["m","Something moved through here recently."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -100,6 +102,7 @@
     ["m","CALL when you're close."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
+    ["m","Something moved through here recently."],
     ["m","> ENTER"],
     ["m","The land closes around you."],
     ["m","> LOOK"],
@@ -144,7 +147,8 @@
     ["m","> N"],
     ["m","You return to the open road."],
     ["m","> LOOK"],
-    ["m","Open land stretches out."]
+    ["m","Open land stretches out."],
+    ["m","Something moved through here recently."]
   ],
   "finalMap": [
     "^^^^...F.......^^^^^",

@@ -60,3 +60,18 @@ export function worldSignature(game, seedStr) {
   const hash = crypto.createHash('sha256').update(w.g + '|' + JSON.stringify(w.towns) + '|' + JSON.stringify(w.capital)).digest('hex').slice(0, 16);
   return [hash, w.start[0], w.start[1]];
 }
+
+// M3: the ten sweep seeds whose start tile, the yard, is not where v13 put it.
+// Seven of v13's starts lay in a pocket cut off from the largest region with a
+// town; three more worlds have every town in a pocket and are played on the
+// mainland. On every other sweep seed the yard is v13's start. The terrain, towns
+// and capital are v13's on all 2,000.
+export const MOVED_YARDS = {
+  'sweep-245': [2, 14], 'sweep-322': [4, 4], 'sweep-473': [12, 11], 'sweep-560': [14, 1], 'sweep-762': [8, 8],
+  'sweep-1360': [12, 3], 'sweep-1471': [1, 8], 'sweep-1610': [14, 19], 'sweep-1686': [4, 12], 'sweep-1924': [10, 0],
+};
+// What a sweep seed's world signature must be now: v13's, with the yard moved on those ten.
+export function expectedWorld(v13Entry, seedStr) {
+  const yard = MOVED_YARDS[seedStr];
+  return yard ? [v13Entry[0], yard[0], yard[1]] : v13Entry;
+}

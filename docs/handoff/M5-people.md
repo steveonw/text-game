@@ -55,6 +55,8 @@ That is 118 new lines. Tag each `// REVIEW` and list them all in the exit report
 - "Nearest" for a gesture means by walkable path. A place that cannot be walked to gives no gesture.
 - ASK at the wagon keeps v13's behavior and uses the generic pool. The merchant gets no topic lines of his own.
 - v13 has 103 pooled lines averaging 4 words. If a draft line needs 9 words, it is probably two lines.
+- From M3: `dogDirectionHint(x, y)` in `trail.js` already returns the first step of the shortest way to the dog, offers it only where sign lies within 4 tiles (`gestureSignWithin`), and applies v13's 12% error whatever the trust. On the sweep it points a step nearer the dog 92.1% of the time. Build `gestureFor` on it; the trust rule is what is missing.
+- From M3: the tracker bot stands on den 1 before the war on 82% of 500 seeds. Report the asker beside that number.
 
 ## Out of scope
 

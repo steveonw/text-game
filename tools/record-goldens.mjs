@@ -15,8 +15,9 @@
 // the replay is recorded. Seed search is deterministic, so running this again on
 // the same file rewrites identical files.
 //
-// The plans below describe the repaired game (M2). The plans that recorded v13's
-// defects are in the history of this file at tag m1.
+// The plans below describe the game with a trail (M3) and need a build that has
+// one. The plans that recorded v13's defects are in the history of this file at
+// tag m1; the plans for the repaired signal-field game, at tag m2.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -65,9 +66,11 @@ function __cell(ch){
   return null;
 }
 function __townAt(x,y){ return isTownAt(x,y) ? generateTown(x,y,false) : null; }
-// The dog on plains or in forest, where v13 could place it; and in natural ruins, where only the repaired game can.
-function __openDogTile(x,y){ return __isDogTile(x,y) && !__isNaturalRuin(x,y); }
-function __ruinDogTile(x,y){ return __isDogTile(x,y) && __isNaturalRuin(x,y); }
+// The trail (M3), as plain data a plan can read.
+function __trailInfo(){
+  const t = trail();
+  return { tiles: t.tiles, den1: t.den1, den2: t.den2, threshold: t.threshold, onRuins: t.onRuins, via: t.via, at: trailIndexAt(player.x, player.y), dog: dogIndex() };
+}
 `;
 
 class PlanFail extends Error {}
@@ -112,15 +115,40 @@ class Planner {
     for (let i = 0; i < max; i++) { if (this.get(expr)) return true; this.do('WAIT'); }
     return !!this.get(expr);
   }
-  // walk onto near tiles until the routes begin to stir
-  stir(maxSteps = 30) {
-    const start = this.get('steps');
-    while (!this.has('routes_stirring')) {
-      this.need(this.get('steps') - start <= maxSteps, 'stirring took too long');
-      // d >= 1: a hint is only recorded by moving onto a tile, never by standing on the start
-      const t = this.find('function(x,y,d){ return d >= 1 && dogIsNear(x,y) && !hasDogHint(x,y); }', 12);
-      this.walkTo(t.x, t.y);
+  // the trail
+  trail() { return this.get('__trailInfo()'); }
+  // Walk along the trail to position `to`, tile by tile. From off the trail, or from
+  // beyond `to`, it first walks the shortest way to the nearest trail tile at or before `to`.
+  followTrail(to, each) {
+    this.need(this.get('mode') === 'WORLD', 'followTrail outside the world map');
+    let t = this.trail();
+    this.need(to >= 0 && to <= t.threshold, 'no such trail position');
+    if (t.at < 0 || t.at > to) {
+      const j = this.get(`(function(){ const d = __bfsFrom(player.x, player.y).dist, t = trail(); let best = -1; for (let i = 0; i <= ${to}; i++){ const p = t.tiles[i], v = d[p.y*WORLD_SIZE+p.x]; if (v >= 0 && (best < 0 || v < d[t.tiles[best].y*WORLD_SIZE+t.tiles[best].x])) best = i; } return best; })()`);
+      this.need(j >= 0, 'the trail cannot be reached');
+      this.walkTo(t.tiles[j].x, t.tiles[j].y);
+      t = this.trail();
     }
+    for (let i = t.at + 1; i <= to; i++) {
+      const a = t.tiles[i - 1], b = t.tiles[i];
+      this.do(b.x > a.x ? 'E' : b.x < a.x ? 'W' : b.y > a.y ? 'S' : 'N');
+      if (each) each(i);
+    }
+    this.need(this.trail().at === to, 'did not arrive on the trail');
+  }
+  // walk the first three tiles of the trail: the third sets the routes stirring
+  stir() {
+    const t = this.trail();
+    this.need(t.dog >= 3, 'the dog is too close to the yard to stir the routes first');
+    if (!this.has('routes_stirring')) this.followTrail(3);
+    this.need(this.has('routes_stirring'), 'three sign tiles did not stir the routes');
+  }
+  // on the dog's tile: ENTER, walk to the dog
+  enterAndReachDog() {
+    this.do('ENTER');
+    const dog = this.get('local.dog');
+    this.need(dog, 'no dog on this map');
+    this.localTo(dog.x, dog.y);
   }
 }
 
@@ -132,7 +160,6 @@ function findSeed(prefix, plan, opts = {}, max = opts.max || 600) {
   throw new Error(`no seed found for "${prefix}" in ${max} tries`);
 }
 
-const DOG_TILE = 'function(x,y){ return __openDogTile(x,y); }';
 const TOWN_WITH = (cells) => `function(x,y){ const t = __townAt(x,y); return !!t && ${cells.map(([cx, cy, ch]) => `t.map[${cy}][${cx}] === ${JSON.stringify(ch)}`).join(' && ')}; }`;
 const endingOf = (p) => { const l = p.game.logs.find(([, t]) => t.startsWith('Ending: ')); return l ? l[1].slice(8) : null; };
 function goToDogAndCall(p) {
@@ -215,7 +242,7 @@ const PLANS = [
     p.do('EXIT'); p.do('ASK DOG'); p.do('ASK ROAD'); p.do('STATUS');
   }],
 
-  ['07-ask-routes-and-gesture', 'Three near tiles set the routes stirring; ASK ROUTES is then answered; repeated ASK DOG earns a direction gesture.', 'routes', (p) => {
+  ['07-ask-routes-and-gesture', 'Three sign tiles set the routes stirring; ASK ROUTES is then answered; repeated ASK DOG earns a direction gesture, the first step of the way to the dog.', 'routes', (p) => {
     p.stir();
     const t = p.find(TOWN_WITH([[6, 6, 'T']]), 24);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.localTo(6, 6); p.do('LOOK');
@@ -302,49 +329,54 @@ const PLANS = [
     p.do('LOAD'); p.do('LOAD abc'); p.do('LOAD ABCDEFGHJKLMNP'); p.do('SAVE');
   }],
 
-  ['13-ending-reunion', 'A full game to "Ending: Reunion": dog found before war, without the hints and reputation Homecoming asks for.', 'reunion', (p) => {
-    const t = p.find(`function(x,y,d){ return d >= 3 && __openDogTile(x,y); }`, 10);
-    p.walkTo(t.x, t.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL');
+  ['13-ending-reunion', 'A full game to "Ending: Reunion": the trail followed from the yard to den 1 before the war, LOOK and CALL on the way, without the reputation Homecoming asks for.', 'reunion', (p) => {
+    const t = p.trail();
+    p.need(t.den1 >= 8 && t.den1 <= 14, 'den 1 not at a middling distance');
+    p.need(p.get('__warStep(400)') > t.den1 + 25, 'war too early');
+    p.do('LOOK'); p.do('CALL');
+    p.followTrail(t.den1, (i) => {
+      if (i === 1 || i === t.den1 - 4) { p.do('LOOK'); p.do('CALL'); }
+      if (i === t.den1 - 2) p.do('CALL');
+    });
+    p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL');
     goToDogAndCall(p);
-    p.need(endingOf(p) === 'Reunion', 'wrong ending');
+    p.need(endingOf(p) === 'Reunion', 'wrong ending: ' + endingOf(p));
   }],
 
-  ['14-ending-homecoming', 'A full game to "Ending: Homecoming": reputation 3 earned by talking in a town, 5 hint tiles walked, dog found before war.', 'homecoming', (p) => {
-    p.need(p.get('__warStep(400)') >= 60, 'war too early');
+  ['14-ending-homecoming', 'A full game to "Ending: Homecoming": reputation 3 earned by asking in a town, then the trail followed to den 1 with 5 sign tiles found, before the war.', 'homecoming', (p) => {
+    p.need(p.get('__warStep(400)') >= 70, 'war too early');
+    p.need(p.trail().den1 >= 6, 'den 1 too close for five sign tiles');
     const t = p.find(TOWN_WITH([[2, 2, 'I']]), 14);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.localTo(2, 2);
     p.do('TALK'); p.do('ASK DOG'); p.do('ASK ROAD'); p.do('ASK TOWN'); p.do('STATUS'); p.do('EXIT');
     p.need(p.get('player.rep') >= 3, 'reputation');
-    for (let guard = 0; p.get('dogHintCount') < 5; guard++) {
-      p.need(guard < 12, 'hints took too long');
-      const n = p.find('function(x,y,d){ return d >= 1 && dogIsNear(x,y) && !hasDogHint(x,y); }', 10);
-      p.walkTo(n.x, n.y);
-    }
-    const d = p.find(DOG_TILE, 14);
-    p.walkTo(d.x, d.y); p.do('LOOK'); p.do('ENTER');
+    p.followTrail(p.trail().den1);
+    p.need(p.get('dogHintCount') >= 5, 'too few sign tiles found');
+    p.do('LOOK'); p.do('ENTER');
     goToDogAndCall(p);
     p.need(endingOf(p) === 'Homecoming', 'wrong ending: ' + endingOf(p));
   }],
 
-  ['15-ending-found-in-time', 'A full game to "Ending: Found in Time": the player waits beside the dog until war starts, then calls.', 'war', (p) => {
+  ['15-ending-found-in-time', 'A full game to "Ending: Found in Time": the player reaches den 1 and waits beside the dog until war starts, then calls. The dog stays for a visit that began before the war.', 'war', (p) => {
     const ws = p.get('__warStep(400)');
-    p.need(ws > 0 && ws <= 45, 'war too late');
-    const d = p.find(DOG_TILE, 10);
-    p.walkTo(d.x, d.y); p.do('ENTER');
-    const dog = p.get('local.dog'); p.localTo(dog.x, dog.y); p.do('LOOK');
+    p.need(ws > 0 && ws <= 50, 'war too late');
+    const t = p.trail();
+    p.need(t.den1 + 8 < ws, 'the war would start on the way');
+    p.followTrail(t.den1); p.do('LOOK');
+    p.enterAndReachDog(); p.do('LOOK');
     p.need(p.waitUntil('worldEvents.has("war_started")', 60), 'war never came');
     p.need(!p.has('capital_fallen'), 'capital fell first');
-    p.do('STATUS'); p.do('CALL');
+    p.do('STATUS'); p.do('LOOK'); p.do('CALL');
     p.need(endingOf(p) === 'Found in Time', 'wrong ending');
   }],
 
-  ['16-ending-long-way-back', 'A full game to "Ending: The Long Way Back": the routes stir, the player waits beside the dog until the capital falls, then calls.', 'fall', (p) => {
+  ['16-ending-long-way-back', 'A full game to "Ending: The Long Way Back": the player reaches den 1 and waits beside the dog until the capital falls, then calls.', 'fall', (p) => {
     const fs_ = p.get('__fallStep(400)');
     p.need(fs_ > 0 && fs_ <= 80, 'fall too late');
-    p.stir();
-    const d = p.find(DOG_TILE, 14);
-    p.walkTo(d.x, d.y); p.do('ENTER');
-    const dog = p.get('local.dog'); p.localTo(dog.x, dog.y);
+    const t = p.trail();
+    p.need(t.den1 >= 3 && t.den1 + 8 < p.get('__warStep(400)'), 'the war would start on the way');
+    p.followTrail(t.den1);
+    p.enterAndReachDog();
     p.need(p.waitUntil('worldEvents.has("capital_fallen")', 110), 'capital never fell');
     p.do('STATUS'); p.do('CALL');
     p.need(endingOf(p) === 'The Long Way Back', 'wrong ending');
@@ -355,18 +387,26 @@ const PLANS = [
     p.walkTo(t.x, t.y); p.do('ENTER'); p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK DOG'); p.do('STATUS'); p.do('EXIT');
   }],
 
-  ['19-call-hot-and-cold', 'CALL and LOOK on tiles with no sign, near sign and a fresh trail; a fresh trail with no dog behind it; CALL at range on a map that holds the dog.', 'call', (p) => {
-    const cold = p.find('function(x,y){ return !dogIsNear(x,y); }', 6);
-    p.walkTo(cold.x, cold.y); p.do('LOOK'); p.do('CALL');
-    const near = p.find('function(x,y){ return dogIsNear(x,y) && !dogIsVeryNear(x,y); }', 8);
-    p.walkTo(near.x, near.y); p.do('LOOK'); p.do('CALL'); p.do('ASK DOG');
-    const empty = p.find('function(x,y){ return __enterableWild(x,y) && dogIsVeryNear(x,y) && !generateWilderness(x,y).dog; }', 10);
-    p.walkTo(empty.x, empty.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL'); p.do('EXIT');
-    const plain = p.find('function(x,y){ return __enterableWild(x,y) && !dogIsNear(x,y); }', 10);
-    p.walkTo(plain.x, plain.y); p.do('ENTER'); p.do('CALL'); p.do('EXIT');
-    const d = p.find(`function(x,y){ if (!__openDogTile(x,y)) return false; const g = generateWilderness(x,y).dog; return Math.abs(g.x-4) + Math.abs(g.y-4) >= 4; }`, 14);
-    p.walkTo(d.x, d.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('CALL');
+  ['19-call-hot-and-cold', 'LOOK, CALL and ASK DOG along the trail and off it: no sign; sign far from the dog; sign close to it; the dog\'s own tile; one tile past it. CALL inside a map with no dog, close and far, and at range on the map that holds it.', 'call', (p) => {
+    const t = p.trail();
+    p.need(t.den1 >= 7 && t.den1 <= 12 && t.den1 + 1 < t.den2, 'den 1 not where this plan wants it');
+    p.need(p.get('__warStep(400)') > 80, 'war too early');
+    // the yard: sign, and too far to be heard
+    p.do('LOOK'); p.do('CALL'); p.do('ASK DOG'); p.do('ENTER'); p.do('CALL'); p.do('EXIT');
+    // off the trail
+    const cold = p.find('function(x,y,d){ return d >= 1 && trailIndexAt(x,y) < 0 && __enterableWild(x,y); }', 3);
+    p.walkTo(cold.x, cold.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('CALL'); p.do('EXIT');
+    // along the trail
+    p.followTrail(t.den1 - 2); p.do('LOOK'); p.do('CALL'); p.do('ASK DOG');
+    p.need(p.get('__enterableWild(player.x, player.y)'), 'cannot enter here');
+    p.do('ENTER'); p.do('LOOK'); p.do('CALL'); p.do('EXIT');
+    p.followTrail(t.den1 + 1); p.do('LOOK'); p.do('CALL');
+    // back onto the dog's tile
+    const a = t.tiles[t.den1 + 1], b = t.tiles[t.den1];
+    p.do(b.x > a.x ? 'E' : b.x < a.x ? 'W' : b.y > a.y ? 'S' : 'N');
+    p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('CALL');
     const dog = p.get('local.dog');
+    p.need(dog && Math.abs(dog.x - 4) + Math.abs(dog.y - 4) >= 4, 'the dog is too near the middle of its map');
     // stop two cells short of the dog
     const tx = dog.x + (dog.x > 4 ? -2 : dog.x < 4 ? 2 : 0), ty = dog.x === 4 ? dog.y + (dog.y > 4 ? -2 : 2) : dog.y;
     p.localTo(tx, ty);
@@ -461,12 +501,39 @@ const PLANS = [
     p.do('LOOK'); p.do('TALK'); p.do('STATUS'); p.do('EXIT'); p.do('LOOK');
   }],
 
-  ['28-dog-in-the-old-stones', 'The trail leads into natural ruins: the tile reads as old stones with a fresh trail, opens as wilderness, and the dog is found there. v13 could not hide the dog in ruins, because ruins opened as an empty town (D6 repaired).', 'stones', (p) => {
-    const t = p.find('function(x,y,d){ return d >= 2 && __ruinDogTile(x,y); }', 12);
-    p.walkTo(t.x, t.y); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK');
+  ['28-dog-at-the-threshold', 'After the capital falls the dog is at the threshold, a natural ruin: den 1 and den 2 show sign and nothing fresh; the threshold reads as old stones with a fresh trail, opens as wilderness, and the dog is there. "Ending: The Long Way Back".', 'stones', (p) => {
+    const fs_ = p.get('__fallStep(400)');
+    p.need(fs_ > 0 && fs_ <= 75, 'fall too late');
+    const t = p.trail();
+    p.need(t.onRuins && t.den1 >= 3 && t.threshold <= 34, 'no ruin threshold close enough');
+    p.stir();
+    p.need(p.waitUntil('worldEvents.has("capital_fallen")', 110), 'capital never fell');
+    p.do('STATUS');
+    p.followTrail(t.threshold, (i) => {
+      if (i === t.den1 || i === t.den2) { p.do('LOOK'); p.do('CALL'); }
+      if (i === t.den1) { p.do('ENTER'); p.do('CALL'); p.do('EXIT'); }
+    });
+    p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK');
     p.need(p.get('local.kind') === 'WILD', 'ruins did not open as wilderness');
     goToDogAndCall(p);
-    p.need(endingOf(p) === 'Reunion', 'wrong ending');
+    p.need(endingOf(p) === 'The Long Way Back', 'wrong ending: ' + endingOf(p));
+  }],
+
+  ['29-dog-moves-on', 'The war starts before the player reaches den 1. Den 1 has sign and no dog; the trail goes on to den 2, where it is fresh and the dog is found. "Ending: Found in Time".', 'moved', (p) => {
+    const ws = p.get('__warStep(400)');
+    p.need(ws > 0 && ws <= 45, 'war too late');
+    p.need(p.get('__fallStep(400)') > ws + 45, 'the capital would fall on the way');
+    const t = p.trail();
+    p.need(t.den1 >= 3 && t.den2 >= t.den1 + 4 && t.den2 <= 24, 'dens not where this plan wants them');
+    p.do('LOOK');
+    p.need(p.waitUntil('worldEvents.has("war_started")', 60), 'war never came');
+    p.do('STATUS');
+    p.followTrail(t.den1); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL'); p.do('EXIT');
+    p.followTrail(t.den2, (i) => { if (i === t.den1 + 1) p.do('LOOK'); });
+    p.need(!p.has('capital_fallen'), 'capital fell first');
+    p.do('LOOK'); p.do('CALL'); p.do('ENTER');
+    goToDogAndCall(p);
+    p.need(endingOf(p) === 'Found in Time', 'wrong ending: ' + endingOf(p));
   }],
 ];
 
@@ -606,9 +673,10 @@ function main() {
   {
     const name = '17-after-an-ending';
     const p = findSeed('after', (q) => {
-      const t = q.find('function(x,y,d){ return d >= 1 && __openDogTile(x,y); }', 6);
-      q.walkTo(t.x, t.y); q.do('ENTER');
-      const dog = q.get('local.dog'); q.localTo(dog.x, dog.y);
+      const t = q.trail();
+      q.need(t.den1 >= 3 && t.den1 <= 9 && q.get('__warStep(400)') > 80, 'den 1 not close, or war too early');
+      q.followTrail(t.den1); q.do('ENTER');
+      const dog = q.get('local.dog'); q.need(dog, 'no dog'); q.localTo(dog.x, dog.y);
       const code = q.do('SAVE').at(-1);
       q.do('CALL');
       q.need(endingOf(q) === 'Reunion', 'wrong ending');

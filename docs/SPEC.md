@@ -164,6 +164,33 @@ The two Homecoming rows are not the same bot. v13's earned its reputation by ask
 
 The search got slightly shorter, not longer: D6 added 3,440 dog tiles in natural ruins. That is v13's signal field doing what it does on more tiles. M3 replaces the field.
 
+**M3 (one trail).** The signal field is gone. One dog waits on one seeded trail, as 4.1 describes, and D14 is closed. The clock, the people, the endings and the save format are still v13's. Measured on the build, with the same seeds:
+
+| Measure | v13 | M2 | M3 |
+| --- | --- | --- | --- |
+| Seeds with a reachable dog | 1,992 | 1,992 | 2,000 |
+| Places the dog is at once | median 10 | median 12 | 1 |
+| "The trail is fresh. ENTER to search." is true | 40.1% | 40.2% | 100% |
+| Tiles that say something moved through, within reach | median 67 | median 67 | median 13 |
+| Steps from the start to the dog, by the shortest way | median 4 | median 3 | median 10; 90th percentile 12 |
+| Gesture points a step nearer the dog | 58.9% | 59.0% | 92.1%, against 54.1% for a random open direction |
+| Gesture offered, of ASK DOG in towns | 69.5% | 69.5% | 32.0%: only where sign lies within 4 tiles |
+| Start tile | | as v13 | as v13 on 1,990 seeds; moved on 10 |
+
+The trail over 2,000 seeds: 19 to 53 tiles, median 31, and 20 or more on 1,997. The threshold is a natural ruin on 1,401 seeds and plains or forest on 599. The trail passes beside a town on 964. Den 1 sits at a median 12 tiles from the yard and den 2 at 20.
+
+Bots over 500 seeds:
+
+| Bot | Reunion | Homecoming | Found in Time | The Long Way Back | No ending | Median step at ending |
+| --- | --- | --- | --- | --- | --- | --- |
+| tracker: follows sign, never talks | 354 | 0 | 117 | 29 | 0 | 31 |
+| explorer: walks to the nearest unvisited tile, ignores sign | 39 | 0 | 138 | 295 | 28 | 140 |
+| homecoming: asks in a town, walks back, then tracks | 1 | 106 | 146 | 247 | 0 | 81 |
+
+The tracker stands on den 1 on every seed, after a median 28 steps, and before the war on 408 of 500 (82%). The 1.0 target for that last number is 40% to 60%; M4's clock and M7's tuning are what move it.
+
+Two rules were added to 4.1 from measuring, and both are in the M3 exit report: the yard goes on the mainland when every town sits in a pocket (3 seeds), and den 1 steps back when a trail ends in a long run of ruins so that the two dens stay apart (12 seeds).
+
 ## 4. The logical end: 1.0
 
 1.0 makes the opening line true: one dog on one trail, a clock that ends, and people whose answers are worth the walk. Everything in this section is proposed.
@@ -187,11 +214,11 @@ No system here is new. Each finishes something v13 already says, stores or draws
 The dog is in exactly one place, on a trail that is a pure function of the seed.
 
 - **Trail.** An ordered list of world tiles from the yard (the start tile) to the threshold, a reachable natural-ruins tile about 30 steps away. Where the nearest town is close, the trail passes beside it.
-- **Dens.** Two plains or forest tiles on the trail, at about 40% and 70% of its length.
+- **Dens.** Two plains or forest tiles on the trail, at about 40% and 70% of its length. Where the far end of the trail is all ruins, they are the nearest such tiles before it, still in order and still apart.
 - **Where the dog is.** Den 1 until the war; den 2 during the war; the threshold after the capital falls; gone once the roads change.
 - **Sign.** Every trail tile from the yard up to the dog carries sign. Standing on one records it, as v13's hint map does, and draws it on the world map.
-- **Reading sign.** LOOK reports sign but not its direction; the next tile is found by walking. "The trail is fresh. ENTER to search." prints only on the dog's own tile, and ENTER there always shows the dog.
-- **Start.** The start tile lies in the largest walkable region that holds a town, so the whole trail can be walked on every seed.
+- **Reading sign.** LOOK reports sign but not its direction; the next tile is found by walking. "The trail is fresh. ENTER to search." prints only on the dog's own tile, and ENTER there always shows the dog. CALL is answered on the dog's tile and within three trail tiles of it, on either side.
+- **Start.** The start tile lies in the largest walkable region that holds a town, so the whole trail can be walked on every seed. Where every town sits in a pocket of a few tiles and the mainland has none (3 of 2,000 seeds), the start is on the mainland.
 
 This fits the map v13 already generates. The farthest tile a player can walk to is a median 31 steps from the start (5th percentile 21), and 1,394 of 2,000 seeds have a natural-ruins tile 20 or more steps away. On the rest, a plains or forest tile serves as the threshold and opens as a ruin map.
 
@@ -410,13 +437,13 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-11: a short script of our own, `tools/build.mjs`. The owner said to go on to M1 with the default. The alternative was esbuild as a development-only dependency.
 
-- [ ] **Trail, or a signal field (before M3)**
+- [x] **Trail, or a signal field (before M3)**
 
-    Default: one dog on a walkable trail, as in 4.1. The lighter alternative keeps v13's signal field and centres it on a single dog. This is the largest design choice in the spec.
+    Decided 2026-11-12: one dog on a walkable trail, as in 4.1. The owner said to go with the defaults. The alternative kept v13's signal field and centred it on a single dog.
 
-- [ ] **Two additions to locked things (before M3)**
+- [x] **Two additions to locked things (before M3)**
 
-    Default: `?` marks found sign on the world map, and "guarded" is the status word for the war stage. Both add to a palette and vocabulary the source treats as fixed.
+    Decided 2026-11-12, with the defaults: `?` marks found sign on the world map (M3), and "guarded" is the status word for the war stage (M4). Both add to a palette and vocabulary the source treats as fixed.
 
 - [ ] **An ending without the dog (before M4)**
 

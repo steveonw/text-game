@@ -53,6 +53,12 @@ This step needs 14 new lines: three foreshadow lines for each of the three chang
 - `routes_stirring` is still a stored event. Reaching stage 1 at step 24 must add it, so v13-format saves stay truthful.
 - v13 lets the capital fall only while stirring. Stirring is now certain by step 24 and war comes no earlier than 30, so the order is fixed. Delete the old condition; do not keep two rules.
 - The fallen capital and burned towns already show burned timbers and a Survivor after M2. Ruin maps are for natural ruins and the threshold only.
+- From M3: `dogIndex()` in `trail.js` is the one place that reads the clock for the dog. It reads `war_started` and `capital_fallen`. Change it there, and add "gone once the roads change" there.
+- From M3: the trail is built on terrain alone (`walkable`), so a closure never moves it. The gesture walks the map as it is now (`passable`), so it already routes around a closed road.
+- From M3: `generateWilderness` puts the dog on the dog's tile. `generateRuin` must do the same on the threshold, or the fresh-trail gate fails. On 599 of the 2,000 sweep seeds the threshold is plains or forest, not a natural ruin; it still opens as a ruin map.
+- From M3: the gates are in `sweepGates()` in `tools/sweep.mjs`. They reach the three states of the clock by setting events. Extend that function.
+- From M3: a local map keeps its dog for the visit it began on. Transcripts 15 and 16 wait beside the dog while the war starts and the capital falls. Decide what an open visit shows when the roads change.
+- From M3: on 3 sweep seeds the yard's region holds no town (`homeRegionMinTiles` in `tuning.js`), so "shortest paths between towns" may offer no closure there.
 
 ## Out of scope
 

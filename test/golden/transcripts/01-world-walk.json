@@ -42,7 +42,6 @@
     ["m","> LOOK"],
     ["m","Trees crowd closer."],
     ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> STATUS"],
     ["m","You are fresh. People are unknown."],
     ["m","The day feels ordinary."],
@@ -84,15 +83,15 @@
     ["m","> EAST"],
     ["m","> SOUTH"],
     ["m","Paw prints. Fading."],
+    ["m","Animals have been restless. You feel it in the roads."],
     ["m","You notice old tracks crossing the land."],
     ["m","> WEST"],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> STATUS"],
     ["m","You are near-done. People are unknown."],
-    ["m","The day feels ordinary."]
+    ["m","The roads feel unsettled."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -105,7 +104,6 @@
     ["m","> LOOK"],
     ["m","Trees crowd closer."],
     ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> STATUS"],
     ["m","You are fresh. People are unknown."],
     ["m","The day feels ordinary."],
@@ -147,20 +145,20 @@
     ["m","> EAST"],
     ["m","> SOUTH"],
     ["m","Paw prints. Fading."],
+    ["m","Animals have been restless. You feel it in the roads."],
     ["m","You notice old tracks crossing the land."],
     ["m","> WEST"],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
-    ["m","The trail is fresh. ENTER to search."],
     ["m","> STATUS"],
     ["m","You are near-done. People are unknown."],
-    ["m","The day feels ordinary."]
+    ["m","The roads feel unsettled."]
   ],
   "finalMap": [
     "~~~FFFTFFFFFFFF~~~~~",
-    ".~FFFF@F.F.TFFFF~~~~",
-    "FFFFFF.^F^FFFFFF~~~.",
+    ".~FFFF@?.F.TFFFF~~~~",
+    "FFF?FF.^F^FFFFFF~~~.",
     "FFFFFFF^^.^^FFFFF...",
     "FFFFF^^^^^^^FFFFF..R",
     "FFFFF^^^^^^.^.FFFF.F",
@@ -179,8 +177,8 @@
     "~~~~.RRRRRRRRR~~~~~~",
     "~~~~..RRRRRRR~~~~~~~"
   ],
-  "finalMapHash": "1a133976435a3405",
-  "finalStatus": "Fatigue: near-done • Roads: quiet • Steps: 15",
+  "finalMapHash": "2ad08ffc81570091",
+  "finalStatus": "Fatigue: near-done • Roads: unsettled • Steps: 15",
   "finalMode": "WORLD",
   "finalPos": "(6,1) • seed 1567581954"
 }

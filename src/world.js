@@ -1,5 +1,5 @@
-// The world map: terrain fields, tiles, towns, the capital, the start tile and,
-// until M3 gives the dog a trail, the dog signal and its hint bits.
+// The world map: terrain fields, tiles, towns, the capital, the start tile (the
+// yard) and the hint bits. The dog and its trail are in trail.js.
 
 import { G } from './state.js';
 import { clamp, mix32, nCentered, noise01 } from './rng.js';
@@ -99,18 +99,6 @@ export function finalTileAt(x,y){
   return base;
 }
 
-// ---------- Dog signal ----------
-export function dogSignal(x,y){
-  const a = noise01(x*3, y*3, G.seed ^ 0x0A11CE);
-  const b = noise01(x+17, y-11, G.seed ^ 0x0D06D);
-  const c = Math.abs(Math.sin((x+y+G.seed*0.001)*0.23));
-  return (a*0.55 + b*0.30 + c*0.35);
-}
-
-export function dogIsNear(x,y){ return dogSignal(x,y) > TUNE.dogNearAbove && finalTileAt(x,y) !== "~"; }
-
-export function dogIsVeryNear(x,y){ return dogSignal(x,y) > TUNE.dogVeryNearAbove && finalTileAt(x,y) !== "~"; }
-
 // ---------- Towns + capital ----------
 export function computeTowns(){
   G.towns = [];
@@ -163,95 +151,96 @@ export function computeTowns(){
 
   // Strip score from public list for cleanliness.
   G.towns = G.towns.map(t=>({x:t.x,y:t.y}));
+
+  // The trail is a function of the seed and its towns: forget the old one.
+  G.trail = null;
 }
 
-export function dogDirectionHint(x,y){
-  // Returns a vague cardinal hint based on the local gradient of the dog signal.
-  // Intentionally fuzzy: doesn't point exactly to the max, just the strongest neighbor direction.
-  const cx = clamp(x|0, 0, WORLD_SIZE-1);
-  const cy = clamp(y|0, 0, WORLD_SIZE-1);
-
-  function sig(xx,yy){
-    xx = clamp(xx|0, 0, WORLD_SIZE-1);
-    yy = clamp(yy|0, 0, WORLD_SIZE-1);
-    // Avoid water/mountains for hinting (feels wrong to "sniff" across impassable).
-    if (finalTileAt(xx,yy)==="~" || finalTileAt(xx,yy)==="^") return -1;
-    return dogSignal(xx,yy);
-  }
-
-  const c = sig(cx,cy);
-  const n = sig(cx,cy-1);
-  const s = sig(cx,cy+1);
-  const w = sig(cx-1,cy);
-  const e = sig(cx+1,cy);
-
-  const opts = [
-    {d:"north", v:n},
-    {d:"south", v:s},
-    {d:"west",  v:w},
-    {d:"east",  v:e},
-  ].filter(o=>o.v >= 0);
-
-  if (!opts.length) return null;
-  opts.sort((a,b)=>b.v-a.v);
-  const best = opts[0];
-
-  // If the gradient is weak, don't claim direction.
-  // (Also helps keep the hint from feeling too "GPS".)
-  if (c >= 0 && best.v - c < TUNE.gestureMinGradient) return null;
-  if (best.v < TUNE.gestureMinSignal) return null;
-
-  // Rarely mislead a little to keep it mystical.
-  if (noise01(G.steps, (cx<<8)^cy, G.seed^0xD066) < TUNE.gestureMisleadChance && opts.length>1) return opts[1].d;
-
-  return best.d;
-}
-
-// ---------- Start placement (connected to a town) ----------
+// ---------- Walking ----------
 export function passable(x,y){
   const t = finalTileAt(x,y);
   return t !== "~" && t !== "^" && t !== "#";
 }
 
-export function reachableTownFrom(sx,sy){
-  const q = [{x:sx,y:sy}];
-  const seen = new Set([keyForXY(sx,sy)]);
-  while (q.length){
-    const p = q.shift();
-    if (isTownAt(p.x,p.y)) return true;
-    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-    for (const [dx,dy] of dirs){
-      const nx=p.x+dx, ny=p.y+dy;
-      if (nx<0||ny<0||nx>=WORLD_SIZE||ny>=WORLD_SIZE) continue;
-      if (!passable(nx,ny)) continue;
-      const k=keyForXY(nx,ny);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      q.push({x:nx,y:ny});
-    }
-  }
-  return false;
+// Terrain alone: the same for a seed whatever has happened in the world since.
+// The yard and the trail are built on this, so neither moves when a road closes.
+export function walkable(x,y){
+  if (x<0||y<0||x>=WORLD_SIZE||y>=WORLD_SIZE) return false;
+  const t = tileAt(x,y);
+  return t !== "~" && t !== "^";
 }
 
-export function placePlayer(){
-  // try seeded candidates
+export const STEPS = [[1,0],[-1,0],[0,1],[0,-1]];
+
+// Steps from (sx,sy) to every tile `open` allows, as an array indexed y*WORLD_SIZE+x; -1 where it cannot be reached.
+export function stepsFrom(sx,sy, open){
+  const dist = new Int16Array(WORLD_SIZE*WORLD_SIZE).fill(-1);
+  dist[sy*WORLD_SIZE+sx] = 0;
+  const q = [[sx,sy]];
+  for (let h=0; h<q.length; h++){
+    const [cx,cy] = q[h];
+    for (const [dx,dy] of STEPS){
+      const nx=cx+dx, ny=cy+dy;
+      if (nx<0||ny<0||nx>=WORLD_SIZE||ny>=WORLD_SIZE) continue;
+      const i = ny*WORLD_SIZE+nx;
+      if (dist[i]>=0 || !open(nx,ny)) continue;
+      dist[i] = dist[cy*WORLD_SIZE+cx] + 1;
+      q.push([nx,ny]);
+    }
+  }
+  return dist;
+}
+
+// ---------- Start placement: the yard ----------
+// Where the game is played: the largest connected set of walkable tiles that holds a
+// town, as a mask indexed y*WORLD_SIZE+x. Equal sizes: the first in reading order.
+// On a few seeds every town sits in a pocket of a dozen tiles or fewer while the
+// mainland has none (3 of the 2,000 sweep seeds). A pocket cannot hold a trail, so
+// below homeRegionMinTiles the largest set of all is used instead, town or no town.
+export function homeRegion(){
+  const seen = new Uint8Array(WORLD_SIZE*WORLD_SIZE);
+  let withTown = null, withTownSize = 0, largest = null, largestSize = 0;
+  for (let y=0; y<WORLD_SIZE; y++){
+    for (let x=0; x<WORLD_SIZE; x++){
+      if (seen[y*WORLD_SIZE+x] || !walkable(x,y)) continue;
+      const dist = stepsFrom(x,y, walkable);
+      let size = 0, town = false;
+      for (let i=0; i<dist.length; i++){
+        if (dist[i] < 0) continue;
+        seen[i] = 1; size++;
+        if (!town && isTownAt(i % WORLD_SIZE, (i / WORLD_SIZE) | 0)) town = true;
+      }
+      if (town && size > withTownSize){ withTown = dist; withTownSize = size; }
+      if (size > largestSize){ largest = dist; largestSize = size; }
+    }
+  }
+  const best = (withTownSize >= TUNE.homeRegionMinTiles) ? withTown : largest;
+  const mask = new Uint8Array(WORLD_SIZE*WORLD_SIZE);
+  if (best) for (let i=0; i<best.length; i++) if (best[i] >= 0) mask[i] = 1;
+  return mask;
+}
+
+// The yard: v13's seeded candidates in v13's order, but a candidate is taken only if
+// it lies in the home region, so the whole trail can be walked from it on every seed.
+// v13 took any tile that could reach a town. A pure function of the seed.
+export function startTile(){
+  const home = homeRegion();
   for (let i=0;i<300;i++){
     const x = (mix32(G.seed + i*17)>>>0)%WORLD_SIZE;
     const y = (mix32(G.seed + i*33)>>>0)%WORLD_SIZE;
-    if (!passable(x,y)) continue;
-    if (reachableTownFrom(x,y)){ G.player.x=x; G.player.y=y; return; }
+    if (home[y*WORLD_SIZE+x]) return {x, y};
   }
   // fallback scan
   for (let y=0;y<WORLD_SIZE;y++){
     for (let x=0;x<WORLD_SIZE;x++){
-      if (passable(x,y) && reachableTownFrom(x,y)){ G.player.x=x; G.player.y=y; return; }
+      if (home[y*WORLD_SIZE+x]) return {x, y};
     }
   }
-  // Absolute last resort: find any passable tile.
-  for (let yy=0; yy<WORLD_SIZE; yy++){
-    for (let xx=0; xx<WORLD_SIZE; xx++){
-      if (passable(xx,yy)){ G.player.x=xx; G.player.y=yy; return; }
-    }
-  }
-  G.player.x=10; G.player.y=10;
+  // A world with no walkable tile at all. No seed has produced one.
+  return {x:10, y:10};
+}
+
+export function placePlayer(){
+  const s = startTile();
+  G.player.x = s.x; G.player.y = s.y;
 }

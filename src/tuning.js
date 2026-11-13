@@ -21,14 +21,19 @@ export const TUNE = {
   townMinScore: 0.62,            // below this score a candidate is dropped...
   townsAlwaysKept: 2,            // ...once this many towns are placed
 
-  // The dog signal and the direction gesture
-  dogNearAbove: 0.78,            // signal above this: "near", and the tile counts as a hint
-  dogVeryNearAbove: 0.90,        // signal above this: "very near"
-  dogRollAbove: 0.6,             // a very-near wilderness tile holds the dog when its roll is above this
-  hintsToStir: 3,                // hint tiles that set the routes stirring
-  gestureMinGradient: 0.02,      // no gesture unless the best neighbour beats this tile by this much
-  gestureMinSignal: 0.55,        // no gesture toward a neighbour with a signal below this
-  gestureMisleadChance: 0.12,    // chance a gesture points to the second-best direction
+  // The trail and the dog (M3)
+  homeRegionMinTiles: 100,       // the yard goes in the largest region with a town, unless that region is smaller than this
+  trailLength: 30,               // the threshold is the candidate whose distance from the yard is closest to this
+  thresholdMinSteps: 20,         // a natural ruin serves as the threshold only at this distance or more
+  viaTownWithin: 10,             // the trail passes beside the nearest town when it is this close to the yard
+  den1At: 0.4,                   // den 1 is the plains or forest tile nearest this fraction of the trail
+  den2At: 0.7,                   // den 2, likewise
+  callNearPositions: 3,          // CALL gets the near answer within this many trail positions of the dog
+  hintsToStir: 3,                // sign tiles that set the routes stirring
+
+  // The direction gesture
+  gestureSignWithin: 4,          // a gesture is offered only where sign lies within this many tiles of the speaker
+  gestureMisleadChance: 0.12,    // chance a gesture points another open way
   gestureAtFamiliarity: 3,       // ASK DOG earns a gesture at this familiarity...
   gestureAtTrust: 2,             // ...or at this trust
 
@@ -66,7 +71,7 @@ export const TUNE = {
   // People and talk
   trustAtReputation: 3,          // at this reputation each conversation raises that person's trust
   hostilityAtFatigue: 4,         // at this fatigue each TALK raises hostility
-  talkDogTopicChance: 0.6,       // chance TALK turns to the dog on a near tile
+  talkDogTopicChance: 0.6,       // chance TALK turns to the dog on a tile with sign
   noRepeatWindow: 10,            // a line is not repeated while it is among the last this-many shown
   earnedLineBonus: 0.15,         // score bonus for a familiarity-gated line once earned
   overlayChance: 0.45,           // chance an event overlay adds a line
@@ -75,6 +80,6 @@ export const TUNE = {
   npcMemoryMax: 140,             // people remembered at once
 
   // Endings
-  homecomingHints: 5,            // Homecoming needs this many hint tiles...
+  homecomingHints: 5,            // Homecoming needs this many sign tiles found...
   homecomingReputation: 3,       // ...and this reputation
 };

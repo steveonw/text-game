@@ -15,6 +15,17 @@
 //   winnable          some dog tile can be reached from the start over tiles that
 //                     are not water, mountain or blocked
 //   fresh-trail truth dog tiles / very-near searchable tiles, summed over seeds
+//
+// From M3 the dog is on a trail, and these definitions still hold: "very near" is
+// the dog's own tile, so there is one dog tile per seed and the truth is 100%.
+//
+// Gates (M3). On a build with a trail, sweepGates() checks every seed, and the
+// test suite fails if any seed fails one:
+//   1. there is a trail: an unbroken walk from the yard, no tile twice, with two
+//      dens in order strictly between the yard and the threshold
+//   2. the yard can reach den 1, den 2 and the threshold
+//   3. in each state of the clock (quiet, war, fallen) the fresh-trail line holds
+//      on exactly one tile, that tile can be reached, and ENTER there shows the dog
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -108,11 +119,82 @@ function __measure(seedStr, full){
   return JSON.stringify(out);
 }`;
 
+const GATES = `
+function __gates(seedStr){
+  SEED = fnv1a32(seedStr); mode = "WORLD"; local = null; startNewGame();
+  const N = WORLD_SIZE, fails = [];
+  const t = trail(), L = t.tiles.length;
+  // 1. a trail
+  let whole = L >= 2 && t.tiles[0].x === player.x && t.tiles[0].y === player.y;
+  const seen = {};
+  for (let i=0;i<L;i++){
+    const p = t.tiles[i], k = p.x+"_"+p.y;
+    if (seen[k] || !passable(p.x,p.y)) whole = false;
+    seen[k] = 1;
+    if (i > 0 && Math.abs(p.x-t.tiles[i-1].x) + Math.abs(p.y-t.tiles[i-1].y) !== 1) whole = false;
+  }
+  if (!whole) fails.push("no trail");
+  if (!(0 < t.den1 && t.den1 < t.den2 && t.den2 < t.threshold)) fails.push("dens out of place: " + [t.den1, t.den2, t.threshold].join(", "));
+  // 2. the yard reaches den 1, den 2 and the threshold
+  const dist = __bfsFrom(player.x, player.y).dist;
+  const places = [["den 1", t.den1], ["den 2", t.den2], ["the threshold", t.threshold]];
+  for (const pl of places){ const p = t.tiles[pl[1]]; if (!p || dist[p.y*N+p.x] < 0) fails.push("the yard cannot reach " + pl[0]); }
+  // 3. the fresh-trail line, in each state of the clock
+  const states = [["quiet", []], ["war", ["war_started"]], ["fallen", ["war_started", "capital_fallen"]]];
+  for (const st of states){
+    worldEvents = new Set(st[1]);
+    let fresh = 0, dogs = 0;
+    for (let y=0;y<N;y++) for (let x=0;x<N;x++){
+      const very = dogIsVeryNear(x,y);
+      const dog = __enterableWild(x,y) && !!generateWilderness(x,y).dog;
+      if (very){
+        fresh++;
+        if (!dog) fails.push(st[0] + ": a fresh trail at (" + x + "," + y + ") and no dog on ENTER");
+        if (dist[y*N+x] < 0) fails.push(st[0] + ": the dog's tile cannot be reached");
+      }
+      if (dog){ dogs++; if (!very) fails.push(st[0] + ": a dog at (" + x + "," + y + ") and no fresh trail"); }
+    }
+    if (fresh !== 1 || dogs !== 1) fails.push(st[0] + ": " + fresh + " fresh-trail tiles, " + dogs + " dog tiles");
+  }
+  worldEvents = new Set();
+  return JSON.stringify({ fails: fails, length: L, den1: t.den1, den2: t.den2, onRuins: t.onRuins, via: !!t.via, startX: player.x, startY: player.y });
+}`;
+
 export function openForSweep(htmlPath = LEGACY) {
   const game = load(htmlPath, { seed: 'sweep-host' });
   game.run(HELPERS);
   game.run(MEASURE);
   return game;
+}
+
+// Does this build have a trail? v13 and M2 do not.
+export const hasTrail = (game) => game.get('typeof trail === "function"');
+
+// Runs the M3 gates on every sweep seed. `failures` is empty when every seed passes.
+export function sweepGates(htmlPath, n = SWEEP_SIZE) {
+  const game = openForSweep(htmlPath);
+  if (!hasTrail(game)) throw new Error(`${htmlPath} has no trail to gate`);
+  game.run(GATES);
+  const rows = [], failures = [];
+  for (let i = 1; i <= n; i++) {
+    const r = JSON.parse(game.run(`__gates(${JSON.stringify(sweepSeed(i))})`));
+    r.seed = sweepSeed(i);
+    rows.push(r);
+    for (const f of r.fails) failures.push(`${r.seed}: ${f}`);
+  }
+  const lengths = rows.map((r) => r.length);
+  return {
+    n, failures, rows,
+    trail: {
+      length: { min: quantile(lengths, 0), p05: quantile(lengths, 0.05), p25: quantile(lengths, 0.25), median: quantile(lengths, 0.5), p75: quantile(lengths, 0.75), p95: quantile(lengths, 0.95), max: quantile(lengths, 0.9999) },
+      atLeast20: lengths.filter((x) => x >= 20).length,
+      thresholdOnRuins: rows.filter((r) => r.onRuins).length,
+      thresholdOnOpenGround: rows.filter((r) => !r.onRuins).length,
+      passesBesideATown: rows.filter((r) => r.via).length,
+      den1Position: { p05: quantile(rows.map((r) => r.den1), 0.05), median: quantile(rows.map((r) => r.den1), 0.5), p95: quantile(rows.map((r) => r.den1), 0.95) },
+      den2Position: { p05: quantile(rows.map((r) => r.den2), 0.05), median: quantile(rows.map((r) => r.den2), 0.5), p95: quantile(rows.map((r) => r.den2), 0.95) },
+    },
+  };
 }
 
 export function measureSeed(game, seedStr, full = false) {
@@ -179,5 +261,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   console.log(JSON.stringify(r, null, 2));
   console.log(`winnable: ${r.winnable} of ${n}`);
   console.log(`fresh-trail truth: ${r.freshTrail.truth} (${r.freshTrail.dogTiles} of ${r.freshTrail.veryNearWildTiles})`);
+  if (hasTrail(openForSweep(htmlPath))) {
+    const g = sweepGates(htmlPath, n);
+    console.log(JSON.stringify(g.trail, null, 2));
+    console.log(`trail length 20 or more: ${g.trail.atLeast20} of ${n}`);
+    console.log(`gates: ${g.failures.length ? g.failures.length + ' FAILED' : 'all ' + n + ' seeds pass'}`);
+    for (const f of g.failures.slice(0, 40)) console.log('  ' + f);
+    if (g.failures.length) process.exitCode = 1;
+  }
   console.log(`(${((performance.now() - t0) / 1000).toFixed(1)} s)`);
 }
