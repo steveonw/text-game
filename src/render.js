@@ -5,6 +5,7 @@ import { G } from './state.js';
 import { clamp } from './rng.js';
 import { WORLD_SIZE } from './tuning.js';
 import { STAGE_WORDS, stage } from './clock.js';
+import { COMMANDS, LEGEND } from './content/pools.js';
 import { trailIndexAt } from './trail.js';
 import { finalTileAt, hasDogHint } from './world.js';
 
@@ -26,13 +27,35 @@ export function glyphSpan(ch){
 }
 
 // v13's renderLegend().
-export function drawLegend(){
-  const items = [["@", "Player"],["p","Person"],[".","Plains"],["F","Forest"],["~","Water"],["^","Mountains"],["T","Town"],["C","Capital"],["R","Ruins"],["#","Blocked"],["!","Distress"],["d","Dog"]];
-  const el = document.getElementById("legend");
-  el.innerHTML = items.map(([sym,name])=>{
+// M6: the legend follows the mode. Local T is a temple and local ^ a rock.
+export function legendItems(){
+  const key = (G.mode === "LOCAL" && G.local) ? G.local.kind : "WORLD";
+  return LEGEND[key] || LEGEND.WORLD;
+}
+
+export function legendHtml(){
+  return legendItems().map(([sym,name])=>{
     const col = COLORS[sym] || "#fff";
-    return '<span class="chip"><i class="dot" style="background:'+col+'"></i><span>'+sym+' '+name+'</span></span>';
+    return '<span class="chip"><i class="dot" style="background:'+col+'"></i><span>'+escapeHtml(sym)+' '+escapeHtml(name)+'</span></span>';
   }).join("");
+}
+
+export function drawLegend(){
+  document.getElementById("legend").innerHTML = legendHtml();
+}
+
+// M6: what the map's aria-label says: the mode and the position.
+export function mapLabel(){
+  if (G.mode === "LOCAL" && G.local){
+    const name = ({TOWN:"Town", WILD:"Wild", RUIN:"Ruins"})[G.local.kind] || "Local";
+    return name + " map, at " + G.local.tx + ", " + G.local.ty + ". You are at " + G.local.px + ", " + G.local.py + ".";
+  }
+  return "World map. You are at " + G.player.x + ", " + G.player.y + ".";
+}
+
+// The side panel's command list: the same table HELP reads.
+export function commandsHtml(){
+  return COMMANDS.map(([cmd, what]) => '<div><span class="kbd">'+escapeHtml(cmd)+'</span> '+escapeHtml(what)+'</div>').join("");
 }
 
 // Found sign is drawn as ? on plains and forest. Towns, the capital, ruins and closed
@@ -110,6 +133,10 @@ export function renderPage(){
 
   const mapOut = document.getElementById("mapOut");
   mapOut.innerHTML = mapHtml();
+  mapOut.setAttribute("aria-label", mapLabel());
+  drawLegend();
+  const cmds = document.getElementById("commands");
+  if (cmds && !cmds.innerHTML) cmds.innerHTML = commandsHtml();
 
   document.getElementById("statusLine").textContent = statusText();
 

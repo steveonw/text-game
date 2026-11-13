@@ -30,7 +30,8 @@ const PLAIN = [
   ...Object.entries(OMENS).flatMap(([k, v]) => v.map((t, i) => ({ t, where: `OMENS.${k}[${i}]` }))),
   ...Object.entries(POOLS.STONES).map(([k, t]) => ({ t, where: `STONES[${k}]` })),
   { t: POOLS.ROAD_CLOSED_RUMOR, where: 'ROAD_CLOSED_RUMOR' },
-  { t: POOLS.ROADS_CHANGED, where: 'ROADS_CHANGED' },
+  ...POOLS.OPEN_GATE.filter(Boolean).map((t, i) => ({ t, where: `OPEN_GATE[${i}]` })),
+  ...Object.entries(POOLS.LEGEND).flatMap(([k, v]) => v.map(([, t], i) => ({ t, where: `LEGEND.${k}[${i}]` }))),
   { t: POOLS.STATUS_GUARDED, where: 'STATUS_GUARDED' },
 ];
 const words = (t) => t.trim().split(/\s+/).length;

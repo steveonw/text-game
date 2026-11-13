@@ -22,6 +22,7 @@ export const G = {
   towns: [],                                  // towns
   townSet: new Set(),                         // townSet
   cabbageRoute: [],                           // cabbageRoute
+  townsEntered: 0,                            // one bit per entry of towns: ENTERed this game (M6)
   trail: null,                                // the dog's trail for this seed, built on first use (trail.js); not saved
   terrain: null,                              // terrain glyphs for this seed, filled in as they are asked for (world.js); not saved
 
@@ -53,6 +54,7 @@ export function resetState(){
   G.cabbageRoute = [];
   G.trail = null;
   G.terrain = null;
+  G.townsEntered = 0;
   G.hintBits.fill(0);
   G.dogHintCount = 0;
 }

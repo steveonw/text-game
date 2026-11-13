@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { load, SNAPSHOT_EXPR } from '../tools/harness/load.mjs';
-import { ROOT, LEGACY, GOLDEN, GOLDEN_V13, COMPARED_FIELDS, MOVED_YARDS, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes, replay, worldSignature } from '../tools/harness/golden.mjs';
+import { ROOT, LEGACY, GOLDEN, GOLDEN_V13, COMPARED_FIELDS, MOVED_YARDS, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes, readSaveCodes, SAVE_SNAPSHOT_EXPR, replay, worldSignature } from '../tools/harness/golden.mjs';
 import { sweepCore, sweepGates, sweepGestures, sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 import { build, DIST, MARKER } from '../tools/build.mjs';
 
@@ -29,9 +29,22 @@ test('bundle: one file, one script, nothing from outside', () => {
   assert.ok(!/^\s*(import|export)\b/m.test(script), 'no import or export left in the script');
 });
 
-test('bundle: markup and CSS are v13\'s, byte for byte', () => {
+// M6 changed one thing in the markup: the side panel's six commands became an empty
+// list the game fills from the same table HELP reads.
+const V13_PANEL = `        <div class="small" style="margin-top:10px; line-height:1.6">
+          <div><span class="kbd">N S E W</span> move</div>
+          <div><span class="kbd">ENTER</span> town/wild</div>
+          <div><span class="kbd">TALK</span> speak</div>
+          <div><span class="kbd">CALL</span> call dog</div>
+          <div><span class="kbd">ASK DOG</span> ask about</div>
+          <div><span class="kbd">SAVE</span> password</div>
+        </div>`;
+const M6_PANEL = `        <div class="small" id="commands" style="margin-top:10px; line-height:1.6"></div>`;
+
+test('bundle: markup and CSS are v13\'s, byte for byte, but for the side panel\'s command list', () => {
   const legacy = fs.readFileSync(LEGACY, 'utf8');
-  const head = legacy.slice(0, legacy.indexOf('<script>') + 8);
+  assert.ok(legacy.includes(V13_PANEL));
+  const head = legacy.slice(0, legacy.indexOf('<script>') + 8).replace(V13_PANEL, M6_PANEL);
   const tail = legacy.slice(legacy.indexOf('</script>'));
   assert.ok(html.startsWith(head));
   assert.ok(html.endsWith(tail));
@@ -82,20 +95,27 @@ test('goldens: the current world hashes are v13\'s, entry for entry, but for the
   for (const s of Object.keys(v13)) assert.deepEqual(now[s], expectedWorld(v13[s], s), s);
 });
 
-for (const [who, golden] of [['codes made by v13', GOLDEN_V13], ['codes made by the current game', GOLDEN]]) {
-  test(`bundle: ${who} load to their recorded state`, async (t) => {
-    const { codes } = readLegacyCodes(golden);
-    assert.equal(codes.length, 19);
-    for (const [i, c] of codes.entries()) {
-      await t.test(`${i + 1}: ${c.format}, ${c.label}`, () => {
-        const game = load(DIST, { seed: 'codes-host' });
-        const reply = game.cmd('LOAD ' + c.code).map(([, text]) => text).slice(1);
-        assert.deepEqual(reply, c.reply);
-        assert.deepEqual(game.get(SNAPSHOT_EXPR), c.restores);
-      });
-    }
-  });
-}
+// M6: the owner decided old codes need not load. v13's are refused with v13's lines.
+test('bundle: codes made by v13 are refused, with v13\'s refusal line', () => {
+  const { codes } = readLegacyCodes(GOLDEN_V13);
+  assert.equal(codes.length, 19);
+  for (const c of codes) {
+    const game = load(DIST, { seed: 'codes-host' });
+    assert.deepEqual(game.cmd('LOAD ' + c.code).map(([, text]) => text).slice(1), ['The password refuses to settle.'], `${c.format}: ${c.label}`);
+  }
+});
+
+test('bundle: codes made by the current game load to their recorded state', async (t) => {
+  const { codes } = readSaveCodes(GOLDEN);
+  for (const [i, c] of codes.entries()) {
+    await t.test(`${i + 1}: ${c.label}`, () => {
+      const game = load(DIST, { seed: 'codes-host' });
+      const reply = game.cmd('LOAD ' + c.code).map(([, text]) => text).slice(1);
+      assert.deepEqual(reply, c.reply);
+      assert.deepEqual(game.get(SAVE_SNAPSHOT_EXPR), c.restores);
+    });
+  }
+});
 
 // The sweep is pinned so that a change to the numbers is a decision, not an accident.
 // v13: 1,992 of 2,000 winnable; the fresh-trail line true on 40.1% of the tiles that showed it.

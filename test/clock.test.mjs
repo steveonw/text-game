@@ -12,7 +12,7 @@ import { cabbageTown, closedRoads, dates, nextWagonStop, stage, wagonStops } fro
 import { generateRuin } from '../src/local.js';
 import { enterKind } from '../src/commands.js';
 import { mapHtml, statusText } from '../src/render.js';
-import { OMENS, ROAD_CLOSED_RUMOR, ROADS_CHANGED, STATUS_GUARDED, STONES } from '../src/content/pools.js';
+import { OMENS, OPEN_GATE, ROAD_CLOSED_RUMOR, STATUS_GUARDED, STONES } from '../src/content/pools.js';
 
 const SEEDS = ['clock-1', 'clock-2', 'clock-3', 'clock-4', 'clock-5', 'clock-6', 'sweep-1', 'sweep-99', 'sweep-762'];
 const N = WORLD_SIZE;
@@ -72,7 +72,7 @@ test('stages: each change comes on its date, announced with v13\'s line, and the
     assert.equal(G.mode, 'END');
     assert.equal(G.steps, d.change, `${seed}: the story ends on the change date`);
     assert.ok(lines.some(([s, l]) => s === d.change && l === 'Ending: The Open Gate'));
-    assert.ok(lines.some(([, l]) => l === ROADS_CHANGED));
+    assert.ok(OPEN_GATE.filter(Boolean).every((g) => lines.some(([, l]) => l === g)));
     assert.ok(lines.some(([, l]) => l === 'Steps taken: ' + d.change));
     assert.equal(stage(), 4);
   }

@@ -8,7 +8,7 @@
 // It writes three things:
 //   <outDir>/transcripts/*.json   scripted games: seed + commands -> every logged line and the final map
 //   <outDir>/world-hashes.json    terrain, towns, capital and start tile for each sweep seed
-//   <outDir>/legacy-codes.json    save codes in every format the game reads, with the state each restores
+//   <outDir>/save-codes.json      save v5 codes the game made, with the state each restores
 //
 // Each transcript is planned on one loaded game (using read-only helpers to find
 // routes and seeds), then replayed from a fresh load with nothing injected. Only
@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { load, play, SNAPSHOT_EXPR } from './harness/load.mjs';
 import { HELPERS } from './harness/helpers.mjs';
 import { LEGACY, SWEEP_SIZE, sweepSeed } from './sweep.mjs';
-import { worldSignature } from './harness/golden.mjs';
+import { GOLDEN_V13, SAVE_SNAPSHOT_EXPR, readLegacyCodes, worldSignature } from './harness/golden.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist', 'index.html');
@@ -610,69 +610,32 @@ const PLANS = [
 // ---------------------------------------------------------------------------
 // Save codes
 // ---------------------------------------------------------------------------
-const b64urlToBytes = (s) => Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-const bytesToB64url = (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-function readVarint(bytes, i) {
-  let res = 0, shift = 0, b;
-  do { b = bytes[i++]; res |= (b & 127) << shift; shift += 7; } while (b & 128);
-  return [res >>> 0, i];
-}
-// v13 writes packed version 4 but still reads version 3, which has no hint-tile
-// bytes. Nothing writes version 3 any more, so one is rebuilt from a version 4 code.
-function packedV4toV3(game, code) {
-  const bytes = b64urlToBytes(code);
-  const payload = bytes.subarray(0, bytes.length - 2);
-  if (payload[0] !== 4) throw new Error('not a version 4 code');
-  let i = 1;
-  [, i] = readVarint(payload, i);   // seed
-  i += 4;                            // x, y, fatigue, reputation
-  [, i] = readVarint(payload, i);   // steps
-  i += 1;                            // flags
-  const head = payload.subarray(1, i);
-  let hintLen; [hintLen, i] = readVarint(payload, i);
-  const rest = payload.subarray(i + hintLen);
-  const out = Buffer.concat([Buffer.from([3]), head, rest]);
-  const crc = game.run(`crc16ccitt(new Uint8Array(${JSON.stringify([...out])}))`);
-  return bytesToB64url(Buffer.concat([out, Buffer.from([crc & 255, (crc >>> 8) & 255])]));
-}
-// The oldest base32 form: an event-name list and a people object. v13 has a reader for it and no writer.
-function oldestBase32(game, snap) {
-  const events = snap.events.map((e) => (e === 'war_started' ? 'war_on_roads' : e));
-  for (const t of snap.hintTiles) events.push(`doghint_${t % 20}_${Math.floor(t / 20)}`);
-  const st = { s: snap.seed, x: snap.x, y: snap.y, f: snap.fatigue, r: snap.rep, st: snap.steps, e: events, n: snap.npc };
-  return game.run(`(function(json){ const body = b32enc(new TextEncoder().encode(json)); return body + chk(body); })(${JSON.stringify(JSON.stringify(st))})`);
-}
+// M6: the game writes save v5 and reads nothing else. v13's codes, kept in
+// test/golden-v13/legacy-codes.json, are refused.
+const SAVE_SNAPSHOT = SAVE_SNAPSHOT_EXPR;
 function restore(code) {
   const game = load(TARGET, { seed: 'codes-host' });
   const reply = game.cmd('LOAD ' + code).map(([, t]) => t);
-  return { reply: reply.slice(1), state: game.get(SNAPSHOT_EXPR) };
+  return { reply: reply.slice(1), state: game.get(SAVE_SNAPSHOT) };
 }
 
 function buildCodes() {
   const out = [];
-  const add = (label, format, code, source) => {
+  const add = (label, code, source) => {
     const r = restore(code);
     if (!r.reply.includes('The password takes.')) throw new Error(`code "${label}" was refused: ${r.reply.join(' / ')}`);
-    if (source) for (const k of ['seed', 'x', 'y', 'fatigue', 'rep', 'steps']) {
-      if (r.state[k] !== source[k]) throw new Error(`code "${label}" restored ${k}=${r.state[k]}, source had ${source[k]}`);
+    for (const k of ['seed', 'x', 'y', 'fatigue', 'rep', 'steps', 'events', 'hintTiles', 'npc', 'townsEntered']) {
+      if (JSON.stringify(r.state[k]) !== JSON.stringify(source[k])) throw new Error(`code "${label}" restored ${k}=${JSON.stringify(r.state[k])}, source had ${JSON.stringify(source[k])}`);
     }
-    out.push({ label, format, code, reply: r.reply, restores: r.state });
+    out.push({ label, format: 'v5', code, reply: r.reply, restores: r.state });
   };
   const fresh = new Planner('codes-fresh');
-  add('a new game at step 0', 'packed-v4', fresh.game.run('savePasswordPacked()'), fresh.snapshot());
-  const packedFrom = ['02-enter-town', '05-talk-six-times', '06-ask-every-topic', '07-ask-routes-and-gesture', '09-ride', '20-tired-walking', '21-debug-and-block', '30-a-road-closes', '24-fallen-capital', '25-burned-town', '26-sick-town'];
-  for (const name of packedFrom) {
+  add('a new game at step 0', fresh.game.run('savePassword()'), fresh.game.get(SAVE_SNAPSHOT));
+  const from = ['02-enter-town', '05-talk-six-times', '06-ask-every-topic', '07-ask-routes-and-gesture', '09-ride', '20-tired-walking', '21-debug-and-block', '24-fallen-capital', '25-burned-town', '26-sick-town', '30-a-road-closes', '31-earned-lines', '32-seen-and-not-seen', '34-gestures-for-every-topic'];
+  for (const name of from) {
     const p = harvested[name];
-    add(`end of transcript ${name}`, 'packed-v4', p.game.run('savePasswordPacked()'), p.snapshot());
-  }
-  for (const name of ['07-ask-routes-and-gesture', '30-a-road-closes', '26-sick-town']) {
-    const p = harvested[name];
-    add(`end of transcript ${name}`, 'base32-v2', p.game.run('savePasswordLegacy()'), p.snapshot());
-  }
-  for (const name of ['07-ask-routes-and-gesture', '30-a-road-closes']) {
-    const p = harvested[name];
-    add(`end of transcript ${name}, rebuilt as packed version 3`, 'packed-v3', packedV4toV3(p.game, p.game.run('savePasswordPacked()')), p.snapshot());
-    add(`end of transcript ${name}, rebuilt in the oldest base32 form`, 'base32-oldest', oldestBase32(p.game, p.snapshot()), p.snapshot());
+    if (p.get('mode') !== 'WORLD') p.do('EXIT'); // a code is saved from the world map in these
+    add(`end of transcript ${name}`, p.game.run('savePassword()'), p.game.get(SAVE_SNAPSHOT));
   }
   return out;
 }
@@ -732,13 +695,16 @@ function main() {
 
   console.log('Save codes');
   const codes = buildCodes();
-  const byFormat = (f) => codes.find((c) => c.format === f).code;
+  const v13codes = readLegacyCodes(GOLDEN_V13).codes;
+  const v13 = (f) => v13codes.find((c) => c.format === f).code;
+  const own = codes.find((c) => c.label === 'end of transcript 30-a-road-closes').code;
+  const tampered = own.slice(0, 8) + (own[8] === 'A' ? 'B' : 'A') + own.slice(9);
 
   // Two transcripts need codes made above.
   {
-    const name = '12-load-old-formats';
-    const commands = [`LOAD ${byFormat('base32-v2')}`, 'LOOK', 'STATUS', `LOAD ${byFormat('base32-oldest')}`, 'LOOK', 'STATUS', `LOAD ${byFormat('packed-v3')}`, 'LOOK', 'STATUS', 'SAVE'];
-    write(recordTranscript(name, 'LOAD accepts the two older base32 forms and packed version 3, each made in a different world from the one loaded into.', 'old-formats-1', commands));
+    const name = '12-old-codes-refused';
+    const commands = [`LOAD ${v13('packed-v4')}`, `LOAD ${v13('packed-v3')}`, `LOAD ${v13('base32-v2')}`, `LOAD ${v13('base32-oldest')}`, `LOAD ${tampered}`, 'LOAD ABC', 'STATUS', `LOAD ${own}`, 'LOOK', 'STATUS', 'SAVE'];
+    write(recordTranscript(name, 'LOAD refuses codes saved by v13 in each of its four formats, and a code with one character changed, with v13\'s refusal lines. A code this game made, in another world, loads (M6).', 'old-formats-1', commands));
   }
   {
     const name = '17-after-an-ending';
@@ -758,9 +724,9 @@ function main() {
       q.do('LOOK'); q.do('STATUS');
       q.do('ENTER'); q.localTo(dog.x, dog.y); q.do('CALL');
       q.need(endingOf(q) === 'Reunion' && q.get('mode') === 'END', 'no second ending');
-      // ...an old base32 code...
-      out = q.do(`LOAD ${byFormat('base32-v2')}`);
-      q.need(out.includes('The password takes.') && q.get('mode') === 'WORLD', 'base32 refused');
+      // ...a code from another game...
+      out = q.do(`LOAD ${own}`);
+      q.need(out.includes('The password takes.') && q.get('mode') === 'WORLD', 'other code refused');
       q.do('STATUS');
       // ...and NEW starts again, as the ending says it will.
       q.do(`LOAD ${code}`); q.do('ENTER'); q.localTo(dog.x, dog.y); q.do('CALL');
@@ -769,15 +735,17 @@ function main() {
       q.need(q.get('mode') === 'WORLD' && q.get('local') === null && q.get('steps') === 0, 'NEW did not start again');
       q.do('LOOK'); q.do('STATUS');
     });
-    write(recordTranscript(name, 'After an ending: other commands are refused, HELP answers, LOAD takes the code SAVE just printed and an old base32 code, and NEW starts again (D1 repaired).', p.seed, p.commands));
+    write(recordTranscript(name, 'After an ending: other commands are refused, HELP answers, LOAD takes the code SAVE just printed and a code from another game, and NEW starts again (D1 repaired).', p.seed, p.commands));
   }
 
-  fs.writeFileSync(path.join(GOLDEN, 'legacy-codes.json'), JSON.stringify({
-    note: 'Save codes in every format the game reads. "restores" is the state held after LOAD of the code in a fresh game with another seed. Recorded by tools/record-goldens.mjs.',
+  fs.writeFileSync(path.join(GOLDEN, 'save-codes.json'), JSON.stringify({
+    note: 'Save v5 codes made by the game, with the state each restores after LOAD in a fresh game with another seed. Recorded by tools/record-goldens.mjs.',
     source: SOURCE_LABEL,
     codes,
   }, null, 1) + '\n');
-  console.log(`  ${codes.length} codes: ${[...new Set(codes.map((c) => c.format))].join(', ')}`);
+  const stale = path.join(GOLDEN, 'legacy-codes.json');
+  if (fs.existsSync(stale) && GOLDEN !== GOLDEN_V13) fs.unlinkSync(stale);
+  console.log(`  ${codes.length} codes, save v5`);
 
   console.log('World hashes');
   const host = load(TARGET, { seed: 'hash-host' });

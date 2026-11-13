@@ -80,6 +80,9 @@ const IN_PAGE = `(function(cmds){
     screen: Array.from(document.getElementById('log').children).map(function(p){ const s = p.firstElementChild; return [s && s.className === 'm' ? 'm' : '', p.textContent]; }),
     map: text('mapOut'), mapHtml: document.getElementById('mapOut').innerHTML,
     status: text('statusLine'), mode: text('modeLabel'), pos: text('posLabel'), legendItems: document.getElementById('legend').children.length,
+    // M6: the legend follows the mode; v13's was always the same 12 entries.
+    legendWanted: (typeof legendItems === 'function') ? legendItems().length : 12, panel: (document.getElementById('commands') || {children: []}).children.length,
+    label: document.getElementById('mapOut').getAttribute('aria-label'),
   });
 })`;
 
@@ -117,7 +120,8 @@ export async function checkFile(cdp, htmlPath, transcripts) {
     if (page.status !== g.finalStatus) diffs.push('status line');
     if (page.mode !== g.finalMode) diffs.push('mode label');
     if (page.pos !== g.finalPos) diffs.push('position label');
-    if (page.legendItems !== 12) diffs.push('legend');
+    if (page.legendItems !== page.legendWanted) diffs.push('legend');
+    if (page.legendWanted !== 12 && (page.panel < 10 || !/map/.test(page.label || ''))) diffs.push('side panel or map label');
     if (diffs.length) mismatches.push(`${g.name}: ${diffs.join(', ')}`); else matched++;
   }
   await cdp.send('Target.closeTarget', { targetId });

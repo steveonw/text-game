@@ -120,7 +120,8 @@ function __measure(seedStr, full){
   }
   out.gestureGiven = given; out.gestureNone = none; out.gestureToward = toward; out.base = base; out.baseN = baseN;
   out.warStep = __warStep(400); out.fallStep = __fallStep(400);
-  out.saveLen = savePasswordPacked().length;
+  // v13 and builds to M5 named the writer savePasswordPacked; from M6 it is savePassword.
+  out.saveLen = (typeof savePassword === "function" ? savePassword() : savePasswordPacked()).length;
   return JSON.stringify(out);
 }`;
 

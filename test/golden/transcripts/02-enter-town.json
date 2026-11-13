@@ -71,6 +71,7 @@
     ["m","You notice old tracks crossing the land."],
     ["m","> LOOK"],
     ["m","A town sits where roads gather."],
+    ["m","North: mountains. East: the edge. South: the edge. West: sign."],
     ["m","> ENTER"],
     ["m","Buildings gather. The road narrows."],
     ["m","> ENTER"],
@@ -150,7 +151,8 @@
     ["m","> EXIT"],
     ["m","Not here."],
     ["m","> LOOK"],
-    ["m","A town sits where roads gather."]
+    ["m","A town sits where roads gather."],
+    ["m","North: mountains. East: the edge. South: the edge. West: sign."]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -165,6 +167,7 @@
     ["m","You notice old tracks crossing the land."],
     ["m","> LOOK"],
     ["m","A town sits where roads gather."],
+    ["m","North: mountains. East: the edge. South: the edge. West: sign."],
     ["m","> ENTER"],
     ["m","Buildings gather. The road narrows."],
     ["m","> ENTER"],
@@ -244,7 +247,8 @@
     ["m","> EXIT"],
     ["m","Not here."],
     ["m","> LOOK"],
-    ["m","A town sits where roads gather."]
+    ["m","A town sits where roads gather."],
+    ["m","North: mountains. East: the edge. South: the edge. West: sign."]
   ],
   "finalMap": [
     ".....R~~~~~~~~~.....",

@@ -7,7 +7,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { COMPARED_FIELDS, GOLDEN, GOLDEN_V13, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes } from '../tools/harness/golden.mjs';
+import { COMPARED_FIELDS, GOLDEN, GOLDEN_V13, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes, readSaveCodes } from '../tools/harness/golden.mjs';
+import { fnv1a32 } from '../src/rng.js';
 import { bootModules, playModules, sendModules, snapshotModules, worldSignatureModules } from '../tools/harness/modules.mjs';
 import { sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 import { G, resetState } from '../src/state.js';
@@ -33,21 +34,32 @@ test('modules: every sweep seed still makes the world v13 made, and starts where
   }
 });
 
-for (const [who, golden] of [['codes made by v13', GOLDEN_V13], ['codes made by the current game', GOLDEN]]) {
-  test(`modules: ${who} load to their recorded state`, async (t) => {
-    const { codes } = readLegacyCodes(golden);
-    assert.equal(codes.length, 19);
-    for (const [i, c] of codes.entries()) {
-      await t.test(`${i + 1}: ${c.format}, ${c.label}`, () => {
-        const { log } = bootModules('codes-host');
-        const before = log.length;
-        sendModules(['LOAD ' + c.code]);
-        assert.deepEqual(log.slice(before).map(([, text]) => text).slice(1), c.reply);
-        assert.deepEqual(snapshotModules(), c.restores);
-      });
-    }
-  });
-}
+// M6: the owner decided old codes need not load. v13's are refused with v13's lines.
+test('modules: codes made by v13 are refused, with v13\'s refusal line', () => {
+  const { codes } = readLegacyCodes(GOLDEN_V13);
+  assert.equal(codes.length, 19);
+  for (const c of codes) {
+    const { log } = bootModules('codes-host');
+    const before = log.length;
+    sendModules(['LOAD ' + c.code]);
+    assert.deepEqual(log.slice(before).map(([, text]) => text).slice(1), ['The password refuses to settle.'], `${c.format}: ${c.label}`);
+    assert.equal(G.seed, fnv1a32('codes-host'), 'nothing changed');
+  }
+});
+
+test('modules: codes made by the current game load to their recorded state', async (t) => {
+  const { codes } = readSaveCodes(GOLDEN);
+  assert.ok(codes.length >= 15);
+  for (const [i, c] of codes.entries()) {
+    await t.test(`${i + 1}: ${c.label}`, () => {
+      const { log } = bootModules('codes-host');
+      const before = log.length;
+      sendModules(['LOAD ' + c.code]);
+      assert.deepEqual(log.slice(before).map(([, text]) => text).slice(1), c.reply);
+      assert.deepEqual({ ...snapshotModules(), townsEntered: G.townsEntered }, c.restores);
+    });
+  }
+});
 
 test('modules: resetState restores every field of G', () => {
   resetState();

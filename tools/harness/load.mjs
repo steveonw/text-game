@@ -49,6 +49,9 @@ function makeElement(id, onAppend) {
     removeChild(child) { const i = this.kids.indexOf(child); if (i >= 0) this.kids.splice(i, 1); return child; },
     get children() { return this.kids; },
     get firstChild() { return this.kids[0]; },
+    attrs: {},
+    setAttribute(k, v) { this.attrs[k] = String(v); },
+    getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
     addEventListener() {},
     focus() {},
   };

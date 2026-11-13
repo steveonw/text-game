@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { play } from './load.mjs';
+import { play, SNAPSHOT_EXPR } from './load.mjs';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const GOLDEN = path.join(ROOT, 'test', 'golden');
@@ -33,6 +33,10 @@ export function readTranscripts(golden = GOLDEN) {
 }
 export const readWorldHashes = (golden = GOLDEN) => JSON.parse(fs.readFileSync(path.join(golden, 'world-hashes.json'), 'utf8'));
 export const readLegacyCodes = (golden = GOLDEN) => JSON.parse(fs.readFileSync(path.join(golden, 'legacy-codes.json'), 'utf8'));
+// M6: the codes the current game makes (save v5), and the state after loading each.
+export const readSaveCodes = (golden = GOLDEN) => JSON.parse(fs.readFileSync(path.join(golden, 'save-codes.json'), 'utf8'));
+// What a v5 code restores, read from a loaded game (SNAPSHOT_EXPR plus the towns entered).
+export const SAVE_SNAPSHOT_EXPR = `Object.assign(${SNAPSHOT_EXPR}, { townsEntered: G.townsEntered })`;
 
 export function replay(htmlPath, transcript) {
   const r = play(htmlPath, transcript.seed, transcript.commands, { debug: !!transcript.debug });

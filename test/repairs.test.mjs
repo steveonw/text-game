@@ -58,7 +58,7 @@ test('D1: after an ending, NEW starts a game, HELP answers, and LOAD takes the c
   for (const c of ['LOOK', 'N', 'SAVE', 'TALK', 'WAIT']) assert.deepEqual(say(c), ['> ' + c, STORY_DONE]);
   assert.equal(G.mode, 'END');
   // HELP answers
-  assert.ok(say('HELP').some((l) => l.startsWith('Commands: ')));
+  assert.ok(say('HELP').includes('Commands:'));
   assert.equal(G.mode, 'END');
   // LOAD of the packed code SAVE just printed
   assert.deepEqual(say('LOAD ' + code).slice(1), ['The password takes.']);
@@ -76,7 +76,8 @@ test('D1: after an ending, NEW starts a game, HELP answers, and LOAD takes the c
 
   // a refused code leaves the ending in place
   bootModules('reunion-2'); standOnDog(); say('CALL');
-  assert.deepEqual(say('LOAD not-a-code').slice(1), ['Invalid password.']);
+  assert.deepEqual(say('LOAD not-a-code').slice(1), ['The password refuses to settle.']); // M6: a well-formed code that does not check out
+  assert.deepEqual(say('LOAD not a code!').slice(1), ['Invalid password.']);
   assert.equal(G.mode, 'END');
 });
 
