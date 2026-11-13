@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { load, SNAPSHOT_EXPR } from '../tools/harness/load.mjs';
 import { ROOT, LEGACY, GOLDEN, GOLDEN_V13, COMPARED_FIELDS, MOVED_YARDS, expectedWorld, readTranscripts, readWorldHashes, readLegacyCodes, replay, worldSignature } from '../tools/harness/golden.mjs';
-import { sweepCore, sweepGates, sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
+import { sweepCore, sweepGates, sweepGestures, sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 import { build, DIST, MARKER } from '../tools/build.mjs';
 
 const built = build();
@@ -123,6 +123,15 @@ test('bundle: sweep gates: a trail on every seed, one dog in every state of the 
     change: { min: 82, median: 105, max: 130 },
     closures: { none: 63, median: 4, max: 5 },
   });
+});
+
+// M5 acceptance: gesture accuracy on the sweep. 100% at trust 2; 85% to 91% at
+// familiarity 3 without it. v13: 58.9%.
+test('bundle: sweep: gestures are always true at trust 2, and 89.4% true at familiarity 3 without it', () => {
+  const g = sweepGestures(DIST, SWEEP_SIZE);
+  assert.equal(g.trustedRight, g.trusted);
+  assert.ok(g.familiarRate >= 0.85 && g.familiarRate <= 0.91, `${(100 * g.familiarRate).toFixed(1)}%`);
+  assert.deepEqual({ trusted: g.trusted, familiarRight: g.familiarRight }, { trusted: 21790, familiarRight: 19477 });
 });
 
 // M2 acceptance: in every town where smith and guard both roll, both appear. v13: 0 of 2,717.

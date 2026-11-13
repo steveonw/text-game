@@ -16,7 +16,7 @@ import { cmdNew } from '../src/commands.js';
 
 test('modules: golden transcripts replay unchanged', async (t) => {
   const transcripts = readTranscripts(GOLDEN);
-  assert.ok(transcripts.length >= 30);
+  assert.ok(transcripts.length >= 34);
   for (const g of transcripts) {
     await t.test(g.name, () => {
       const r = playModules(g.seed, g.commands, { debug: !!g.debug });
