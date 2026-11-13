@@ -2,10 +2,11 @@
 // gets said. The narrator's inner voice is picked here too.
 
 import { G } from './state.js';
-import { BUILDING_POOLS, EVENT_OVERLAYS, INTERNAL, TOPIC_FALLBACKS, V } from './content/pools.js';
+import { BUILDING_POOLS, EVENT_OVERLAYS, INTERNAL, PEOPLE, TOPIC_FALLBACKS, V } from './content/pools.js';
 import { log } from './io.js';
 import { clamp, noise01 } from './rng.js';
 import { TUNE } from './tuning.js';
+import { signNear } from './trail.js';
 import { keyForXY, profileAt } from './world.js';
 
 export function vAdd(a,b){ return a.map((x,idx)=>x+b[idx]); }
@@ -148,8 +149,26 @@ export function activeOverlaysAt(tx,ty){
   return ov;
 }
 
+// The roles that keep a building in a town, and the town's locals.
+export const TOWN_ROLES = ["I","M","S","T","G","."];
+
+// Has the dog passed this town? A sign tile lies within 2 tiles of it (M5).
+export function townSeesTrail(tx,ty){ return signNear(tx, ty, TUNE.seenWithin); }
+
+// The lines a role has for a topic. M5: v13's pool, then the role's new lines and
+// its earned lines; DOG in a town off the trail draws only on the not-seen lines.
+// Beneath them, TOPIC_FALLBACKS, then the generic role's.
+export function topicLines(role, topicKey, tx, ty){
+  const old = BUILDING_POOLS[role] || {};
+  const add = PEOPLE[role] || {};
+  if (topicKey === "dog" && TOWN_ROLES.includes(role) && G.local && G.local.kind === "TOWN" && !townSeesTrail(tx,ty)) return add.unseen || [];
+  const own = [...(old[topicKey] || []), ...(add[topicKey] || []), ...((add.earned && add.earned[topicKey]) || [])];
+  if (own.length) return own;
+  return TOPIC_FALLBACKS[topicKey] || (BUILDING_POOLS["."] && BUILDING_POOLS["."][topicKey]) || [];
+}
+
 export function sayNPC(building, topic, opts={}){
-  const pool = BUILDING_POOLS[building] || BUILDING_POOLS["."];
+  const pool = BUILDING_POOLS[building] || PEOPLE[building] || BUILDING_POOLS["."];
   const topicKey = String(topic||"ROAD").toLowerCase();
   const bodyLines = clamp((opts.bodyLines|0) || 1, 1, 3);
   const overlayCap = (opts.overlayCap==null) ? 2 : clamp(opts.overlayCap|0, 0, 2);
@@ -163,11 +182,8 @@ export function sayNPC(building, topic, opts={}){
   // D5: a topic is answered from its own lines: the role's, then the generic fallback
   // table, then the generic role's. Never from another topic. In v13 a role with no
   // lines for a topic answered from its ROAD lines, and TOPIC_FALLBACKS was never read.
-  let bodyList =
-    (pool && pool[topicKey]) ||
-    TOPIC_FALLBACKS[topicKey] ||
-    (BUILDING_POOLS["."] && BUILDING_POOLS["."][topicKey]) ||
-    [];
+  // M5: topicLines() adds each role's own lines for every topic.
+  let bodyList = topicLines(building, topicKey, sx, sy);
 
   const overlays = (G.mode==="LOCAL" && G.local) ? activeOverlaysAt(G.local.tx, G.local.ty) : activeOverlaysAt(G.player.x, G.player.y);
 

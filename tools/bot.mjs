@@ -13,6 +13,15 @@
 //                   unvisited neighbour in turn and stays on the first that has
 //                   sign too. ENTERs where the trail is fresh, walks to the dog
 //                   and CALLs. Never talks.
+//   resting         M5 on. The tracker, but it RESTs wherever it stands whenever its
+//                   fatigue is 5, before it moves again.
+//   asker           M5 on. Walks to the nearest town and asks the first person
+//                   there about the dog, up to four times, until they gesture. It
+//                   leaves at once if the answer says the town has not seen the
+//                   dog. With no gesture it RIDEs if offered, and tries the town it
+//                   arrives in. It follows a gesture until it finds sign, then
+//                   tracks. It rests when spent. After two towns with no gesture
+//                   it goes back to the yard and tracks.
 //   waiter          M4 on. Only WAITs. It must end on the change date, as The Open Gate.
 //   homecoming      first walks to the nearest town, finds someone and asks until
 //                   reputation is 3. Then, on a build with a trail, it walks back
@@ -101,9 +110,12 @@ function __note(){
     if (d.x === player.x && d.y === player.y){ __den1Step = steps; __den1BeforeWar = !worldEvents.has("war_started"); }
   }
 }
+var __rests = false;
+function __restIfSpent(){ if (__rests && player.fatigue >= 5 && mode === "WORLD"){ __say("REST"); __note(); } }
 function __untried(x, y){ return passable(x, y) && !__sign.has(keyForXY(x, y)) && !__noSign.has(keyForXY(x, y)); }
-function __track(){
-  __sign = new Set(); __noSign = new Set(); __clockSeen = __clockState();
+// keep: carry on with what the bot already knows (the asker knows the yard has sign).
+function __track(keep){
+  if (!keep){ __sign = new Set(); __noSign = new Set(); __clockSeen = __clockState(); }
   __note();
   let guard = 0;
   while (mode !== "END" && guard++ < 1500){
@@ -118,9 +130,11 @@ function __track(){
     for (const n of __neighbours(player.x, player.y)){
       if (!__untried(n.x, n.y)) continue;
       const back = {N:"S", S:"N", E:"W", W:"E"}[n.dir];
+      __restIfSpent(); if (mode === "END") return;
       __say(n.dir); __note();
       if (mode === "END") return;
       if (__sign.has(keyForXY(player.x, player.y))){ found = true; break; }
+      __restIfSpent(); if (mode === "END") return;
       __say(back); __note();
     }
     if (found) continue;
@@ -130,9 +144,87 @@ function __track(){
       return __neighbours(x, y).some(function(n){ return __untried(n.x, n.y); });
     });
     if (!t || (t.x === player.x && t.y === player.y)){ __say("WAIT"); __note(); continue; }
-    for (const c of __pathTo(player.x, player.y, t.x, t.y)){ __say(c); __note(); if (mode === "END") return; }
+    for (const c of __pathTo(player.x, player.y, t.x, t.y)){ __restIfSpent(); if (mode === "END") return; __say(c); __note(); if (mode === "END") return; }
   }
 }
+// ---- asking (M5) ----
+var __heard = [];
+function __listen(){
+  if (HOST.__botListening) return;
+  const out = HOST.out;
+  HOST.out = function(t, c){ __heard.push(String(t)); return out(t, c); };
+  HOST.__botListening = true;
+}
+function __sayHear(c){ const n = __heard.length; __say(c); return __heard.slice(n); }
+function __walkWorld(x, y){
+  const path = __pathTo(player.x, player.y, x, y);
+  if (!path) return false;
+  for (const c of path){ __restIfSpent(); if (mode !== "WORLD") return false; __say(c); __note(); if (mode !== "WORLD") return false; }
+  return player.x === x && player.y === y;
+}
+// In a town: ask each person about the dog until one gestures. Returns the direction, or
+// null; rides the wagon when offered and no one gestured, and says so.
+function __askTown(){
+  __say("ENTER");
+  if (mode !== "LOCAL" || local.kind !== "TOWN"){ if (mode === "LOCAL") __say("EXIT"); return {dir: null, rode: false}; }
+  // One question tells it whether this town has seen the dog: the not-seen lines say so.
+  let dir = null, unseen = false;
+  const UNSEEN = [];
+  for (const k in PEOPLE) if (PEOPLE[k].unseen) for (const f of PEOPLE[k].unseen) UNSEEN.push(f.t);
+  for (const n of local.npcs.filter(function(n){ return n.type !== "w"; })){
+    if (!__localWalk(n.x, n.y)) continue;
+    for (let i = 0; i < 4 && !dir && !unseen && mode === "LOCAL"; i++){
+      for (const l of __sayHear("ASK DOG")){
+        // A plain string test: this code sits in a template string, which would eat a regex's backslashes.
+        if (l.indexOf("(A gesture: ") === 0) dir = l.slice(12, -2);
+        if (UNSEEN.includes(l)) unseen = true;
+      }
+    }
+    break; // one person a town
+  }
+  let rode = false;
+  if (!dir && mode === "LOCAL" && local.wagon){
+    __localWalk(1, 4);
+    for (let i = 0; i < 3 && !rode && mode === "LOCAL"; i++){
+      if (__sayHear("TALK").includes("(Type RIDE.)")) rode = __sayHear("RIDE").includes("The wagon stops.");
+    }
+  }
+  if (mode === "LOCAL") __say("EXIT");
+  return {dir: dir, rode: rode};
+}
+var __gestures = 0, __rides = 0;
+function __ask(){
+  __listen(); __rests = true;
+  __sign = new Set(); __noSign = new Set(); __clockSeen = __clockState();
+  __note(); // it looks around the yard before it sets out
+  const asked = new Set();
+  const STEP = {north:[0,-1,"N"], south:[0,1,"S"], east:[1,0,"E"], west:[-1,0,"W"]};
+  for (let towns = 0; towns < 2 && mode !== "END"; towns++){
+    const t = __find(function(x,y){ return isTownAt(x,y) && !asked.has(keyForXY(x,y)); });
+    if (!t || !__walkWorld(t.x, t.y)) break;
+    let r = {dir: null, rode: true};
+    while (!r.dir && r.rode && mode === "WORLD" && !asked.has(keyForXY(player.x, player.y))){
+      asked.add(keyForXY(player.x, player.y));
+      r = __askTown();
+      if (r.rode) __rides++;
+    }
+    if (mode === "END") return;
+    if (!r.dir) continue;
+    __gestures++;
+    // Follow the gesture until sign is found, for as long as the way is open.
+    for (let i = 0; i < 6 && mode === "WORLD"; i++){
+      const d = STEP[r.dir], nx = player.x + d[0], ny = player.y + d[1];
+      if (!passable(nx, ny)) break;
+      __restIfSpent(); if (mode !== "WORLD") return;
+      __say(d[2]); __note();
+      if (dogIsNear(player.x, player.y)){ __track(true); return; }
+    }
+  }
+  if (mode === "END") return;
+  // No gesture led to sign: go back to the nearest sign it knows of, and track from there.
+  __track(true);
+}
+
 function __neighbours(x, y){
   const out = [];
   for (const d of [["N",0,-1],["E",1,0],["S",0,1],["W",-1,0]]){
@@ -147,8 +239,10 @@ function __runBot(policy){
   __botReset();
   __den1Step = -1; __den1BeforeWar = false;
   const tracking = typeof trail === "function";
-  if (policy === "tracker"){ __track(); return; }
+  __rests = (policy === "resting");
+  if (policy === "tracker" || policy === "resting"){ __track(); return; }
   if (policy === "waiter"){ let g = 0; while (mode !== "END" && g++ < 400) __say("WAIT"); return; }
+  if (policy === "asker"){ __gestures = 0; __rides = 0; __ask(); return; }
   if (policy === "homecoming" && tracking){
     // Reputation first, from someone in the nearest town; then back to the yard to follow the sign.
     const yard = {x: player.x, y: player.y};
@@ -202,6 +296,8 @@ export function runBot(htmlPath, seedStr, policy) {
     den1BeforeWar: game.get('__den1BeforeWar'),
     hints: game.get('dogHintCount'),
     changeStep: game.get('typeof dates === "function" ? dates().change : -1'),
+    gestures: game.get('typeof __gestures === "number" ? __gestures : 0'),
+    rides: game.get('typeof __rides === "number" ? __rides : 0'),
     repAt: game.get('__repAt'),
     rep: game.get('player.rep'),
     war: game.get('worldEvents.has("war_started")'),
@@ -225,6 +321,8 @@ export function runPolicy(htmlPath, policy, n = BOT_RUNS) {
     den1: { reached: runs.filter((r) => r.den1Step >= 0).length, beforeTheWar: runs.filter((r) => r.den1Step >= 0 && r.den1BeforeWar).length, stepsMedian: quantile(runs.map((r) => r.den1Step).filter((x) => x >= 0), 0.5), stepsP90: quantile(runs.map((r) => r.den1Step).filter((x) => x >= 0), 0.9) },
     endedBeforeStep12: done.filter((r) => r.steps < 12).length,
     endedOnTheChangeDate: runs.filter((r) => r.ending === 'The Open Gate' && r.steps === r.changeStep).length,
+    followedAGesture: runs.filter((r) => r.gestures > 0).length,
+    rodeTheWagon: runs.filter((r) => r.rides > 0).length,
   };
 }
 
@@ -233,6 +331,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const n = parseInt(process.argv[3] || String(BOT_RUNS), 10);
   console.log(`Bots on ${path.relative(ROOT, htmlPath)} over ${n} seeds`);
   const trailBuild = load(htmlPath, { seed: 'bot-host' }).get('typeof trail === "function"');
-  const policies = htmlPath === LEGACY ? ['explorer', 'homecoming-v13', 'homecoming'] : trailBuild ? ['waiter', 'tracker', 'homecoming', 'explorer'] : ['explorer', 'homecoming'];
+  const policies = htmlPath === LEGACY ? ['explorer', 'homecoming-v13', 'homecoming'] : trailBuild ? ['waiter', 'tracker', 'resting', 'asker', 'homecoming', 'explorer'] : ['explorer', 'homecoming'];
   for (const policy of policies) console.log(JSON.stringify(runPolicy(htmlPath, policy, n)));
 }

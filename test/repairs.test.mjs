@@ -13,7 +13,7 @@ import { mapHtml } from '../src/render.js';
 import { noise01 } from '../src/rng.js';
 import { TUNE } from '../src/tuning.js';
 import { pickMany, sayNPC } from '../src/people.js';
-import { BUILDING_POOLS, CABBAGE, EVENT_OVERLAYS, TOPIC_FALLBACKS } from '../src/content/pools.js';
+import { BUILDING_POOLS, CABBAGE, EVENT_OVERLAYS, PEOPLE, TOPIC_FALLBACKS } from '../src/content/pools.js';
 import { cabbageIsHereWorld } from '../src/clock.js';
 
 const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/\n$/, '').split('\n');
@@ -261,7 +261,8 @@ test('D5: every topic is answered from its own lines, never from ROAD', () => {
     for (const topic of ['TOWN', 'WAR', 'SICKNESS', 'WORK']) {
       bootModules('ask-2');
       const said = sayNPC(role, topic, { bodyLines: 2, overlayCap: 0, frame: false });
-      const own = texts(TOPIC_FALLBACKS[topic.toLowerCase()]);
+      // M5 gave every role its own lines for these topics; TOPIC_FALLBACKS lies beneath them.
+      const own = texts(PEOPLE[role][topic.toLowerCase()]);
       assert.ok(said.length >= 1, `${role} ${topic}: something is said`);
       for (const line of said) {
         assert.ok(own.includes(line), `${role} ${topic}: "${line}" is a ${topic} line`);
@@ -270,7 +271,7 @@ test('D5: every topic is answered from its own lines, never from ROAD', () => {
     }
     for (const topic of ['DOG', 'ROAD', 'ROUTES']) {
       bootModules('ask-2');
-      const own = texts(BUILDING_POOLS[role][topic.toLowerCase()]);
+      const own = texts([...BUILDING_POOLS[role][topic.toLowerCase()], ...PEOPLE[role].earned[topic.toLowerCase()]]);
       for (const line of sayNPC(role, topic, { bodyLines: 2, overlayCap: 0, frame: false })) assert.ok(own.includes(line), `${role} ${topic}: "${line}" is the role's own`);
     }
   }
@@ -280,7 +281,7 @@ test('D5: every topic is answered from its own lines, never from ROAD', () => {
   walkTo(t.x, t.y); say('ENTER'); localTo(2, 2);
   const out = say('ASK TOWN');
   assert.equal(out[1], 'Innkeeper (TOWN):');
-  const innRoad = texts(BUILDING_POOLS.I.road), townLines = texts(TOPIC_FALLBACKS.town);
+  const innRoad = texts(BUILDING_POOLS.I.road), townLines = texts(PEOPLE.I.town);
   // The walk to town crosses sign, so the routes may be stirring and one overlay line may ride along.
   const overlays = Object.values(EVENT_OVERLAYS).flatMap((o) => o.inject.map((f) => f.t));
   const body = afterTag(out).filter((line) => !overlays.includes(line));

@@ -212,6 +212,17 @@ Bots over 500 seeds:
 
 The waiter ends on the change date on every seed. The tracker stands on den 1 before the war on 131 of 500 seeds (26%); the 1.0 target is 40% to 60%. With the fatigue rule switched off the same bot does so on 425 (85%) and loses only 17 games, so that one rule carries the game from too easy to too hard, and the target lies between. At the starting numbers a tired move costs what a WAIT and a fresh move cost together, so resting in the wild buys nothing. Tuning that is M7's work.
 
+**M5 (people).** Every role answers every topic, earns lines at familiarity 2 and 4, and in a town the trail does not pass says it has not seen the dog. D13 is closed. Gestures cover DOG, SICKNESS, WAR, TOWN, and ROAD asked of a guard, under the trust rule in 4.5. REST works outside a town and pays for itself (4.3). 118 lines are new, each a draft for the owner to edit.
+
+| Measure | v13 | M4 | M5 |
+| --- | --- | --- | --- |
+| Gesture points a step nearer the dog, trusted speaker | 58.9% | 92.1% | 100% |
+| ...familiar speaker without trust | 58.9% | 92.1% | 89.4% |
+| Resting tracker on den 1 before the war, 500 seeds | | 26%, as rest bought nothing | 46% |
+| Asker on den 1 before the war, 500 seeds | | | 25% |
+
+The asker follows a gesture in 302 games of 500 and still does worse than the bot that only follows sign, because the trail starts at the yard and towns are detours. Making asking pay is open; see the M5 exit report.
+
 ## 4. The logical end: 1.0
 
 1.0 makes the opening line true: one dog on one trail, a clock that ends, and people whose answers are worth the walk. Everything in this section is proposed.
@@ -263,7 +274,9 @@ The clock has five stages in a fixed order, and its three dates are drawn once f
 
 ### 4.3 Fatigue becomes time
 
-At fatigue 5, a world move advances the clock by 2 steps instead of 1. Recovery stays as in v13. Time is the only currency this game has, so tiredness is priced in it, and resting, towns and the wagon become choices.
+At fatigue 5, a world move advances the clock by 2 steps instead of 1. Time is the only currency this game has, so tiredness is priced in it, and resting, towns and the wagon become choices.
+
+Recovery (M5, at the owner's request): REST works anywhere outside a town, the world map included, and for its two steps restores all fatigue, or 3 when sleep comes shallow. In a town without sickness it restores all fatigue too; in a sick town, 1. v13 allowed REST only inside a map and restored 2 outside a town, which at fatigue 5 bought nothing.
 
 ### 4.4 Places
 
@@ -474,9 +487,9 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-12: on. The owner asked for an extra step for fatigue: a world move made at fatigue 5 takes two steps of the clock.
 
-- [ ] **Who writes about 140 new lines (before M5)**
+- [x] **Who writes about 140 new lines (before M5)**
 
-    Default: the AI drafts under the voice rules and the owner edits every line before merge. The alternative is that the owner writes them and M5 only wires them in.
+    Decided 2026-11-13, with the default: the AI drafts under the voice rules and the owner edits every line before merge. The alternative was that the owner writes them and M5 only wires them in. The owner also asked that resting outside a town be allowed; see "Since v13", M5.
 
 - [ ] **Old save codes (before M6)**
 

@@ -10,7 +10,8 @@ import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './i
 import { clamp, fnv1a32, noise01 } from './rng.js';
 import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
-import { callAnswer, dogDirectionHint, dogIsNear, dogIsVeryNear, isThreshold } from './trail.js';
+import { gestureFor } from './gesture.js';
+import { callAnswer, dogIsNear, dogIsVeryNear, isThreshold } from './trail.js';
 import { addDogHint, computeTowns, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
 // ---------- Command system ----------
@@ -185,6 +186,15 @@ export function speakerName(cell){
   return "Someone";
 }
 
+// Whose lines a speaker on this cell draws on (M5): a building's role, a local in
+// a town, a wanderer in the wild, or the survivor of a burned town.
+export function speakerRole(cell){
+  if (BUILDING_POOLS[cell] && cell !== ".") return cell;
+  if (cell === "r") return "survivor";
+  if (cell === "." || cell === "t") return (G.local && G.local.kind === "TOWN") ? "." : "wanderer";
+  return ".";
+}
+
 export function logSpeaker(cell, topic){
   const who = speakerName(cell);
   const tag = topic ? (who + " (" + topic + "):") : (who + ":");
@@ -240,7 +250,7 @@ export function cmdTalk(){
   if (G.player.fatigue>=TUNE.hostilityAtFatigue) st.hostility = clamp((st.hostility|0) + 1, 0, 5);
   setNPC(id, st);
 
-  let building = BUILDING_POOLS[cell] ? cell : ".";
+  let building = speakerRole(cell);
   const topic = (dogIsNear(G.local.tx, G.local.ty) && noise01(G.steps, 2, G.seed^0xD06) < TUNE.talkDogTopicChance) ? "DOG" : "ROAD";
   const lines = sayNPC(building, topic, {bodyLines:1, overlayCap:1, npc: st});
   logSpeaker(cell, topic);
@@ -285,16 +295,15 @@ export function cmdAsk(topic){
 
   // If the wagon symbol appears but the merchant isn't here, fall back to market-style
   // talk instead of feeling "broken". (Since D9 he is here whenever his wagon is.)
-  let building = BUILDING_POOLS[cell] ? cell : ".";
+  let building = speakerRole(cell); // the wagon's cell gives the generic role, as in v13
   if (cell === "w" && !(cabbageIsHereWorld(G.local.tx, G.local.ty) || G.local.wagonForced)) building = "M";
 
   const lines = sayNPC(building, topic, {bodyLines:2, overlayCap:1, npc: st, frame:false});
   logSpeaker(cell, topic);
   for (const ln of lines) log(ln);
-  if (topic==="DOG" && (st.familiarity>=TUNE.gestureAtFamiliarity || (st.trust|0)>=TUNE.gestureAtTrust)){
-    const dir = dogDirectionHint(G.local.tx, G.local.ty);
-    if (dir) log("(A gesture: " + dir + ".)", "m");
-  }
+  // M5: DOG, SICKNESS, WAR, TOWN, and ROAD asked of a guard, can each earn a gesture.
+  const dir = gestureFor(topic, G.local.tx, G.local.ty, st, building);
+  if (dir) log("(A gesture: " + dir + ".)", "m");
   if (topic==="DOG" && dogIsNear(G.local.tx, G.local.ty)) maybeInternal("nearDog");
   if (topic==="ROUTES") maybeInternal("routes");
   G.player.rep = clamp(G.player.rep + 1, 0, 5);
@@ -309,10 +318,12 @@ export function cmdWait(){
   render();
 }
 
+// M5: REST works anywhere outside a town, the world map included. v13 allowed it
+// only inside a map, and outside a town it restored what its two steps cost.
 export function cmdRest(){
-  if (G.mode!=="LOCAL"){ log("Not here.", "m"); return; }
+  if (G.mode!=="LOCAL" && G.mode!=="WORLD"){ log("Not here.", "m"); return; }
   const before = G.steps;
-  if (G.local.kind==="TOWN"){
+  if (G.mode==="LOCAL" && G.local.kind==="TOWN"){
     G.steps += TUNE.restSteps;
     // M4: there is little rest to be had where there is sickness.
     const sick = G.worldEvents.has("plague_"+keyForXY(G.local.tx, G.local.ty));
@@ -322,8 +333,10 @@ export function cmdRest(){
     render(); return;
   }
   G.steps += TUNE.restSteps;
-  G.player.fatigue = clamp(G.player.fatigue - TUNE.restWildRecovers, 0, 5);
-  if (noise01(G.steps, 404, G.seed^0xA357) < TUNE.shallowSleepChance) log("Sleep comes shallow. You wake too quickly.", "m");
+  // M5: the shallow sleep is shallow. It restores less, as the line says.
+  const shallow = noise01(G.steps, 404, G.seed^0xA357) < TUNE.shallowSleepChance;
+  G.player.fatigue = clamp(G.player.fatigue - (shallow ? TUNE.restShallowRecovers : TUNE.restWildRecovers), 0, 5);
+  if (shallow) log("Sleep comes shallow. You wake too quickly.", "m");
   else log("You rest. The world does not.", "m");
   advanceWorldPressureFrom(before + 1); // D10
   render();

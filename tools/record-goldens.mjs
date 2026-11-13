@@ -556,6 +556,55 @@ const PLANS = [
     p.need(p.get('player.x') === beside.x && p.get('player.y') === beside.y, 'walked onto a closed road');
     p.do('LOOK'); p.do('STATUS');
   }],
+
+  ['31-earned-lines', 'ASK ROAD six times of one innkeeper: the line earned at familiarity 2 is said from the second ask, the one earned at 4 from the fourth. Every reply is whole.', 'earned', (p) => {
+    const t = p.find(TOWN_WITH([[2, 2, 'I']]), 14);
+    p.walkTo(t.x, t.y); p.do('ENTER'); p.localTo(2, 2);
+    const heard = [];
+    for (let i = 0; i < 6; i++) heard.push(...p.do('ASK ROAD'));
+    p.need(heard.includes("The road's emptier at night now.") && heard.includes('Travelers whisper here. Not before.'), 'the earned lines were not said');
+    p.do('TALK'); p.do('STATUS');
+  }],
+
+  ['32-seen-and-not-seen', 'ASK DOG in a town the trail does not pass: no sighting, only lines for not having seen it, and no gesture. Then in a town beside the trail: sightings, and a gesture at the third ask.', 'seen', (p) => {
+    const far = p.find('function(x,y){ return isTownAt(x,y) && !townSeesTrail(x,y) && !(capital && capital.x === x && capital.y === y) && generateTown(x,y,false).map[2][2] === "I"; }', 16);
+    const near = p.find('function(x,y){ return isTownAt(x,y) && townSeesTrail(x,y) && !(capital && capital.x === x && capital.y === y) && generateTown(x,y,false).map[2][2] === "I"; }', 16);
+    p.walkTo(far.x, far.y); p.do('ENTER'); p.localTo(2, 2);
+    for (let i = 0; i < 3; i++) p.need(!p.do('ASK DOG').some((l) => l.startsWith('(A gesture: ')), 'a gesture from a town that has not seen the dog');
+    p.do('EXIT');
+    p.walkTo(near.x, near.y); p.do('ENTER'); p.localTo(2, 2);
+    let gesture = false;
+    for (let i = 0; i < 3; i++) if (p.do('ASK DOG').some((l) => l.startsWith('(A gesture: '))) gesture = true;
+    p.need(gesture, 'no gesture beside the trail');
+    p.need(!p.has('war_started'), 'the war started');
+  }],
+
+  ['33-rest-in-the-open', 'REST on the world map, outside any town, restores all fatigue for two steps; when sleep comes shallow it restores less.', 'open', (p) => {
+    let deep = false, shallow = false;
+    for (let i = 0; i < 14 && !(deep && shallow); i++) {
+      const far = p.find('function(x,y,d){ return d === 5; }', 5);
+      p.walkTo(far.x, far.y);
+      p.do('STATUS');
+      const out = p.do('REST');
+      if (out.includes('Sleep comes shallow. You wake too quickly.')) shallow = true; else deep = true;
+      p.do('STATUS');
+    }
+    p.need(deep && shallow, 'both kinds of sleep');
+    p.need(!p.has('war_started'), 'the war started');
+  }],
+
+  ['34-gestures-for-every-topic', 'During the war, once a road has closed: a guard asked about TOWN, WAR, SICKNESS and ROAD gestures from the third question on; a priest asked about ROAD does not gesture.', 'pointing', (p) => {
+    p.need(p.waitUntil('Array.from(worldEvents).some(function(e){ return e.startsWith("road_blocked_"); }) && Array.from(worldEvents).some(function(e){ return e.startsWith("plague_"); })', 100), 'no closed road and sickness');
+    p.need(!p.has('capital_fallen'), 'too late');
+    const t = p.find(TOWN_WITH([[7, 4, 'G'], [6, 6, 'T']]), 16);
+    p.walkTo(t.x, t.y, 20); p.do('ENTER'); p.localTo(7, 4);
+    const lines = [];
+    for (const c of ['ASK TOWN', 'ASK WAR', 'ASK SICKNESS', 'ASK ROAD', 'ASK TOWN']) lines.push(...p.do(c));
+    p.need(lines.filter((l) => l.startsWith('(A gesture: ')).length >= 3, 'too few gestures');
+    p.localTo(6, 6);
+    for (const c of ['ASK ROAD', 'ASK ROAD', 'ASK ROAD']) p.need(!p.do(c).some((l) => l.startsWith('(A gesture: ')), 'a priest pointed down a road');
+    p.do('EXIT'); p.do('STATUS');
+  }],
 ];
 
 // ---------------------------------------------------------------------------

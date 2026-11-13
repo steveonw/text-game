@@ -211,6 +211,41 @@ export function openForSweep(htmlPath = LEGACY) {
   return game;
 }
 
+// M5: gesture accuracy. On every sweep seed, from every town, at ten steps of the
+// quiet stage, ASK DOG of a trusted speaker (trust 2) and of a familiar one
+// (familiarity 3, trust 0). A gesture is right when it points a step nearer the dog.
+const GESTURES = `
+function __gestureSweep(seedStr){
+  SEED = fnv1a32(seedStr); mode = "WORLD"; local = null; startNewGame();
+  const N = WORLD_SIZE, dog = dogTile();
+  const toDog = __bfsFrom(dog.x, dog.y).dist;
+  const STEP = {east:[1,0], west:[-1,0], south:[0,1], north:[0,-1]};
+  const r = { trusted: 0, trustedRight: 0, familiar: 0, familiarRight: 0 };
+  for (const t of towns){
+    for (let s = 0; s < 10; s++){
+      steps = s * 3;
+      const right = function(d){ const v = STEP[d]; return toDog[(t.y+v[1])*N + t.x+v[0]] === toDog[t.y*N+t.x] - 1; };
+      const a = gestureFor("DOG", t.x, t.y, {familiarity: 0, trust: 2}, "I");
+      const b = gestureFor("DOG", t.x, t.y, {familiarity: 3, trust: 0}, "I");
+      if (a){ r.trusted++; if (right(a)) r.trustedRight++; }
+      if (b){ r.familiar++; if (right(b)) r.familiarRight++; }
+    }
+  }
+  steps = 0;
+  return JSON.stringify(r);
+}`;
+
+export function sweepGestures(htmlPath, n = SWEEP_SIZE) {
+  const game = openForSweep(htmlPath);
+  game.run(GESTURES);
+  const total = { trusted: 0, trustedRight: 0, familiar: 0, familiarRight: 0 };
+  for (let i = 1; i <= n; i++) {
+    const r = JSON.parse(game.run(`__gestureSweep(${JSON.stringify(sweepSeed(i))})`));
+    for (const k of Object.keys(total)) total[k] += r[k];
+  }
+  return { ...total, trustedRate: total.trustedRight / total.trusted, familiarRate: total.familiarRight / total.familiar };
+}
+
 // Does this build have a trail? v13 and M2 do not.
 export const hasTrail = (game) => game.get('typeof trail === "function"');
 
@@ -315,6 +350,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const g = sweepGates(htmlPath, n);
     console.log(JSON.stringify(g.trail, null, 2));
     if (g.clock) console.log(JSON.stringify(g.clock, null, 2));
+    if (openForSweep(htmlPath).get('typeof gestureFor === "function"')) console.log('gestures: ' + JSON.stringify(sweepGestures(htmlPath, n)));
     console.log(`trail length 20 or more: ${g.trail.atLeast20} of ${n}`);
     console.log(`gates: ${g.failures.length ? g.failures.length + ' FAILED' : 'all ' + n + ' seeds pass'}`);
     for (const f of g.failures.slice(0, 40)) console.log('  ' + f);

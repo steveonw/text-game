@@ -191,13 +191,20 @@ export function callAnswer(x,y){
 // shortest way from their tile to the dog's. It is offered only where sign lies
 // within a few tiles of them: people point at what passed close by.
 // v13's 12% error stays: now it points another open way.
-export function dogDirectionHint(x,y){
+// Does sign lie within d tiles of (x,y), counted across the map (M5)?
+export function signNear(x,y,d){
   const t = trail(), dogAt = dogIndex();
-  let signNearby = false;
-  for (let i = 0; i <= dogAt && !signNearby; i++){
-    if (Math.abs(t.tiles[i].x - x) + Math.abs(t.tiles[i].y - y) <= TUNE.gestureSignWithin) signNearby = true;
+  for (let i = 0; i <= dogAt; i++){
+    if (Math.abs(t.tiles[i].x - x) + Math.abs(t.tiles[i].y - y) <= d) return true;
   }
-  if (!signNearby) return null;
+  return false;
+}
+
+// With exact set, the true first step and never v13's error. gesture.js asks for
+// that and applies the trust rule itself (M5).
+export function dogDirectionHint(x,y,exact){
+  const t = trail(), dogAt = dogIndex();
+  if (!signNear(x, y, TUNE.gestureSignWithin)) return null;
 
   const dog = t.tiles[dogAt];
   const toDog = stepsFrom(dog.x, dog.y, passable);
@@ -217,6 +224,7 @@ export function dogDirectionHint(x,y){
     } else others.push(name);
   }
   if (!best) return null;
+  if (exact) return best;
 
   // Rarely mislead a little to keep it mystical.
   if (others.length && noise01(G.steps, (x<<8)^y, G.seed^0xD066) < TUNE.gestureMisleadChance){
