@@ -49,7 +49,7 @@ gates: all 2000 seeds pass
 
 `npm run browser-check`, Chrome 153: 29 of 29 transcripts in `test/golden` match on the built page, and 27 of 27 in `test/golden-v13` match on the legacy page. No errors, no request beyond the page itself.
 
-CI_RESULT
+CI on pull request 6 passed both jobs on commit `6fe304a`: `test` on Node 20 (build, 264 tests, the built file uploaded) and `browser` on Node 22 with GitHub's Chrome. The only commit after that one adds this paragraph.
 
 ### The sweep, against v13 and M2
 
