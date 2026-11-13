@@ -26,7 +26,7 @@
   {
    "label": "end of transcript 02-enter-town",
    "format": "packed-v4",
-   "code": "BMOLjIsPExMFACIIMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAgIFExMBFQABExMBFQBDeQ",
+   "code": "BMOLjIsPExMFACIJMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAgIFExMBFQABExMBFQBaGQ",
    "reply": [
     "The password takes."
    ],
@@ -38,7 +38,9 @@
     "fatigue": 5,
     "rep": 0,
     "steps": 34,
-    "events": [],
+    "events": [
+     "routes_stirring"
+    ],
     "dogHintCount": 1,
     "hintTiles": [
      398
@@ -131,7 +133,7 @@
   {
    "label": "end of transcript 07-ask-routes-and-gesture",
    "format": "packed-v4",
-   "code": "BNrVou8ECgQFBAwZMgAAAAAAAAAAAAAAAABAAAAEAEAAAAQAQAAABABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASEAAAECBAoEBCYJWsY",
+   "code": "BNrVou8ECgQFBA8ZMgAAAAAAAAAAAAAAAABAAAAEAEAAAAQAQAAABABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASEAAAECBAoEBCYJj08",
    "reply": [
     "The password takes."
    ],
@@ -142,7 +144,7 @@
     "y": 4,
     "fatigue": 5,
     "rep": 4,
-    "steps": 12,
+    "steps": 15,
     "events": [
      "plague_13_1",
      "routes_stirring"
@@ -173,22 +175,30 @@
   {
    "label": "end of transcript 09-ride",
    "format": "packed-v4",
-   "code": "BNXtzL4OEAoCAxYIMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAQADBQCZDw",
+   "code": "BMeAze4OEwwCAzUbMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAACAAAAIAAAGDAgGHAgEAAwUA_HI",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -1944689515,
+    "seed": -1995022372,
     "mode": "WORLD",
-    "x": 16,
-    "y": 10,
+    "x": 19,
+    "y": 12,
     "fatigue": 2,
     "rep": 3,
-    "steps": 22,
-    "events": [],
-    "dogHintCount": 1,
+    "steps": 53,
+    "events": [
+     "burned_19_12",
+     "road_blocked_3_13",
+     "routes_stirring",
+     "war_started"
+    ],
+    "dogHintCount": 4,
     "hintTiles": [
-     291
+     290,
+     291,
+     365,
+     385
     ],
     "npc": {
      "npc_cabbage_merchant": {
@@ -201,23 +211,25 @@
    }
   },
   {
-   "label": "end of transcript 20-fatigue-cap",
+   "label": "end of transcript 20-tired-walking",
    "format": "packed-v4",
-   "code": "BMmr7ZgEAwQDABAAMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOwF",
+   "code": "BMmr7ZgEBwAFABcIMgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJRd",
    "reply": [
     "The password takes."
    ],
    "restores": {
     "seed": -562932453,
     "mode": "WORLD",
-    "x": 3,
-    "y": 4,
-    "fatigue": 3,
+    "x": 7,
+    "y": 0,
+    "fatigue": 5,
     "rep": 0,
-    "steps": 16,
+    "steps": 23,
     "events": [],
-    "dogHintCount": 0,
-    "hintTiles": [],
+    "dogHintCount": 1,
+    "hintTiles": [
+     56
+    ],
     "npc": {}
    }
   },
@@ -245,34 +257,32 @@
    }
   },
   {
-   "label": "end of transcript 23-long-clock",
+   "label": "end of transcript 30-a-road-closes",
    "format": "packed-v4",
-   "code": "BJnB0YcEAwQAAJkBHzIAAAAAAAAAQAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANd0wGvAgHTAQAAEZg",
+   "code": "BNbU66EHDg4FAEUbMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAscBvAIAAboCANfa",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -544878669,
+    "seed": 975009067,
     "mode": "WORLD",
-    "x": 3,
-    "y": 4,
-    "fatigue": 0,
+    "x": 14,
+    "y": 14,
+    "fatigue": 5,
     "rep": 0,
-    "steps": 153,
+    "steps": 69,
     "events": [
-     "burned_11_10",
-     "capital_fallen",
-     "plague_11_10",
-     "plague_13_4",
-     "plague_3_15",
+     "plague_16_15",
+     "plague_19_9",
+     "road_blocked_14_15",
      "routes_stirring",
      "war_started"
     ],
     "dogHintCount": 3,
     "hintTiles": [
-     62,
-     82,
-     83
+     211,
+     212,
+     213
     ],
     "npc": {}
    }
@@ -280,7 +290,7 @@
   {
    "label": "end of transcript 24-fallen-capital",
    "format": "packed-v4",
-   "code": "BNmsvdQFDw0EAUIfMgAAAAAAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIGDw0CFQG6RQ",
+   "code": "BNmsvdQFDw0EAUkHMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACugLvAgECBg8NAhUB--0",
    "reply": [
     "The password takes."
    ],
@@ -291,18 +301,16 @@
     "y": 13,
     "fatigue": 4,
     "rep": 1,
-    "steps": 66,
+    "steps": 73,
     "events": [
      "capital_fallen",
+     "road_blocked_14_15",
+     "road_blocked_7_18",
      "routes_stirring",
      "war_started"
     ],
-    "dogHintCount": 3,
-    "hintTiles": [
-     48,
-     49,
-     50
-    ],
+    "dogHintCount": 0,
+    "hintTiles": [],
     "npc": {
      "npc_r_15_13": {
       "familiarity": 2,
@@ -318,28 +326,36 @@
   {
    "label": "end of transcript 25-burned-town",
    "format": "packed-v4",
-   "code": "BKu1zr8BCRMFAWQKMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAGFAwABAgYJEwIVAZ_Z",
+   "code": "BIWvzq8BCxIFAU0bMgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAu8BkgICkgLzAgL-AbkCAQIGCxICFQEOvA",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -200920406,
+    "seed": -184142787,
     "mode": "WORLD",
-    "x": 9,
-    "y": 19,
+    "x": 11,
+    "y": 18,
     "fatigue": 5,
     "rep": 1,
-    "steps": 100,
+    "steps": 77,
     "events": [
-     "burned_9_19",
+     "burned_11_18",
+     "burned_14_13",
+     "plague_14_13",
+     "plague_19_11",
+     "road_blocked_13_15",
+     "road_blocked_14_12",
+     "routes_stirring",
      "war_started"
     ],
-    "dogHintCount": 1,
+    "dogHintCount": 3,
     "hintTiles": [
-     316
+     211,
+     212,
+     232
     ],
     "npc": {
-     "npc_r_9_19": {
+     "npc_r_11_18": {
       "familiarity": 2,
       "trust": 0,
       "hostility": 1,
@@ -353,7 +369,7 @@
   {
    "label": "end of transcript 26-sick-town",
    "format": "packed-v4",
-   "code": "BPfSwakIAAAFA0cbMgYAAAAAAAAAAQAQAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAECBAAABCUhE7Y",
+   "code": "BPfSwakIAAAEA0sfMgYAAAAAAAAAAQAQAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQABigMDlQGmAYsDAQIEAAAEJSGC6A",
    "reply": [
     "The password takes."
    ],
@@ -362,11 +378,16 @@
     "mode": "WORLD",
     "x": 0,
     "y": 0,
-    "fatigue": 5,
+    "fatigue": 4,
     "rep": 3,
-    "steps": 71,
+    "steps": 75,
     "events": [
+     "burned_14_19",
+     "capital_fallen",
      "plague_0_0",
+     "road_blocked_15_19",
+     "road_blocked_6_8",
+     "road_blocked_9_7",
      "routes_stirring",
      "war_started"
     ],
@@ -394,7 +415,7 @@
   {
    "label": "end of transcript 07-ask-routes-and-gesture",
    "format": "base32-v2",
-   "code": "RNTHNJT4GJYCE63CHJ5DLN3XGS5DSPTTFSTHSJT4GE2C2JV3EJ7DJMBCN2TDWPKNEK3CEQTWFSTHG7BCHJ2VEMBCJ2TDWNKNEK2CEQU5GN3X4MBCNJTDWY47FSTGYJT4MPQU2JVQEJ7FYY3CLS2VAMTWEJYDJMBTFS3C2QL7MX8SF",
+   "code": "RNTHNJT4GJYCE63CHJ5DLN3XGS5DSPTTFSTHSJT4GE2C2JV3EJ7DJMBCN2TDWPKNEK3CEQTWFSTHG7BCHJ2VLMBCJ2TDWNKNEK2CEQU5GN3X4MBCNJTDWY47FSTGYJT4MPQU2JVQEJ7FYY3CLS2VAMTWEJYDJMBTFS3C2QL7MX8SN",
    "reply": [
     "The password takes."
    ],
@@ -405,7 +426,7 @@
     "y": 4,
     "fatigue": 5,
     "rep": 4,
-    "steps": 12,
+    "steps": 15,
     "events": [
      "plague_13_1",
      "routes_stirring"
@@ -426,26 +447,24 @@
    }
   },
   {
-   "label": "end of transcript 23-long-clock",
+   "label": "end of transcript 30-a-road-closes",
    "format": "base32-v2",
-   "code": "RNTHNJT4GJYCE63CHJYVLPBWHA5VSPTYHEYCE8BCHJ3U2JV3EJ7DJMBCN2TDWNBNEK3CEQTSFSTHG7BCHJ2VLN3NEKDCEQTZFSTHAJT4MN6VGMBUGE2U2N3SGPQU2JVCEJ7FYNTTGFQU2JVMEJ7FYZKNEKZCEQU5MX8SE",
+   "code": "RNTHNJT4GJYCE63CHJ6VQPKSGA6VAPTZFSTHSJT4GE4C2JV3EJ7DCPBNEKVCEQTXFSTHEJT4GAYCE65WEJ7DNQKNEKDCEQTVFSTHAJT4MN2VUQKNGN2VNZKNEKTCEQU5MWYCE43CHKPVGNKWMWYCE5TCHKPX49J5",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -544878669,
+    "seed": 975009067,
     "mode": "WORLD",
-    "x": 3,
-    "y": 4,
-    "fatigue": 0,
+    "x": 14,
+    "y": 14,
+    "fatigue": 5,
     "rep": 0,
-    "steps": 153,
+    "steps": 69,
     "events": [
-     "burned_11_10",
-     "capital_fallen",
-     "plague_11_10",
-     "plague_13_4",
-     "plague_3_15",
+     "plague_16_15",
+     "plague_19_9",
+     "road_blocked_14_15",
      "routes_stirring",
      "war_started"
     ],
@@ -457,7 +476,7 @@
   {
    "label": "end of transcript 26-sick-town",
    "format": "base32-v2",
-   "code": "RNTHNJT4GJYCE63CHJYVCNKTG63DQNKUGJ6C2JV2EJ7DAMBCRETDWNBNEKVCEQTXFSTHEJT4GNYCE65WEJ7DQNKNEKDCEQTVFSTHAJT4MN2F4MBCNJTDWY47FSTGYJT4MPQU2JVQEJ7FYY3CLS2C6NBCFS4C2NBNGJYDGN47MX8SF",
+   "code": "RNTHNJT4GJYCE63CHJYVCNKTG63DQNKUGJ6C2JV2EJ7DAMBCRETDWNBNEKVCEQTWFSTHEJT4GNYCE65WEJ7DQPKNEKDCEQTZFSTHAJT4MN2F4MBCNJTDWY3VHE4F4MBCPNTDWY3TGS6U2NKYG2YDGQKXMWYCE5TCHKPXYJUWGAZDAJTNGSYDAMBUFS3VGZL7RW5",
    "reply": [
     "The password takes."
    ],
@@ -466,11 +485,16 @@
     "mode": "WORLD",
     "x": 0,
     "y": 0,
-    "fatigue": 5,
+    "fatigue": 4,
     "rep": 3,
-    "steps": 71,
+    "steps": 75,
     "events": [
+     "burned_14_19",
+     "capital_fallen",
      "plague_0_0",
+     "road_blocked_15_19",
+     "road_blocked_6_8",
+     "road_blocked_9_7",
      "routes_stirring",
      "war_started"
     ],
@@ -492,7 +516,7 @@
   {
    "label": "end of transcript 07-ask-routes-and-gesture, rebuilt as packed version 3",
    "format": "packed-v3",
-   "code": "A9rVou8ECgQFBAwZASEAAAECBAoEBCYJGmA",
+   "code": "A9rVou8ECgQFBA8ZASEAAAECBAoEBCYJue0",
    "reply": [
     "The password takes."
    ],
@@ -503,7 +527,7 @@
     "y": 4,
     "fatigue": 5,
     "rep": 4,
-    "steps": 12,
+    "steps": 15,
     "events": [
      "plague_13_1",
      "routes_stirring"
@@ -526,7 +550,7 @@
   {
    "label": "end of transcript 07-ask-routes-and-gesture, rebuilt in the oldest base32 form",
    "format": "base32-oldest",
-   "code": "RNTHGJT4G24VGPKWG26DNNKNEK6CEQTTGAYCE8KCHJ4C2JVGEJ7DLMBCQJTDWPBNEK3ZJJT4GE3C2JVFEJ7FYJVSPTSYQ7MFM62VGZ3TEJYCE6VRQX4GL649QP4GU6VUPFZGQJTNEKUG835JPFZHJZ3TGBRVLJTNEKUG835JPFZHJZ3TGBRVNJTNEKUG835JPFZHJZ3TGBRVQJTNEKUG835JPFZHJZ3TGBRVSJTNEKUG835JPFZHJZ3TGBRVUJTNEKUG835JPFZHJZ3TGBRVCNBCFSTGJ55HPBWY67C9GE2F8NKTEKQU2JVQEJ7HYJVQQBTX8XC9GE2F8PBCHK7UE3VBPXWY24MBQKWZJ8KCHJ4C2JVWQK4ZG7BCHJ2U2JVJP73ZJ4MNPF4HUJT4GJYCE3VNNFVZGJT4MNTGC65MNXUF83DRN6TC2JVBQPXYL3C9QKZZL7DFQNTF49M7RW6",
+   "code": "RNTHGJT4G24VGPKWG26DNNKNEK6CEQTTGAYCE8KCHJ4C2JVGEJ7DLMBCQJTDWPBNEK3ZJJT4GE4U2JVFEJ7FYJVSPTSYQ7MFM62VGZ3TEJYCE6VRQX4GL649QP4GU6VUPFZGQJTNEKUG835JPFZHJZ3TGBRVLJTNEKUG835JPFZHJZ3TGBRVNJTNEKUG835JPFZHJZ3TGBRVQJTNEKUG835JPFZHJZ3TGBRVSJTNEKUG835JPFZHJZ3TGBRVUJTNEKUG835JPFZHJZ3TGBRVCNBCFSTGJ55HPBWY67C9GE2F8NKTEKQU2JVQEJ7HYJVQQBTX8XC9GE2F8PBCHK7UE3VBPXWY24MBQKWZJ8KCHJ4C2JVWQK4ZG7BCHJ2U2JVJP73ZJ4MNPF4HUJT4GJYCE3VNNFVZGJT4MNTGC65MNXUF83DRN6TC2JVBQPXYL3C9QKZZL7DFQNTF49M7RWS",
    "reply": [
     "The password takes."
    ],
@@ -537,7 +561,7 @@
     "y": 4,
     "fatigue": 5,
     "rep": 4,
-    "steps": 12,
+    "steps": 15,
     "events": [
      "plague_13_1",
      "routes_stirring"
@@ -566,26 +590,24 @@
    }
   },
   {
-   "label": "end of transcript 23-long-clock, rebuilt as packed version 3",
+   "label": "end of transcript 30-a-road-closes, rebuilt as packed version 3",
    "format": "packed-v3",
-   "code": "A5nB0YcEAwQAAJkBHwNd0wGvAgHTAQAA7TA",
+   "code": "A9bU66EHDg4FAEUbAscBvAIAAboCAMBN",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -544878669,
+    "seed": 975009067,
     "mode": "WORLD",
-    "x": 3,
-    "y": 4,
-    "fatigue": 0,
+    "x": 14,
+    "y": 14,
+    "fatigue": 5,
     "rep": 0,
-    "steps": 153,
+    "steps": 69,
     "events": [
-     "burned_11_10",
-     "capital_fallen",
-     "plague_11_10",
-     "plague_13_4",
-     "plague_3_15",
+     "plague_16_15",
+     "plague_19_9",
+     "road_blocked_14_15",
      "routes_stirring",
      "war_started"
     ],
@@ -595,34 +617,32 @@
    }
   },
   {
-   "label": "end of transcript 23-long-clock, rebuilt in the oldest base32 form",
+   "label": "end of transcript 30-a-road-closes, rebuilt in the oldest base32 form",
    "format": "base32-oldest",
-   "code": "RNTHGJT4FW4VJPB2G66DNPT3FSTHSJT4GNYCE8KCHJ4C2JVGEJ7DAMBCQJTDWNBNEK3ZJJT4GE4VGMBCNWTDWY3CNK4ZE5VFNTRVCNL9GE2CEMBCNPSZA4MWNFYF83VBPTYGL5TCFSTHA5DBN74YLZ3TGFRVCNBCFSTHA5DBN74YLZ3TGPRVJJTNEK2G22MHQXUX8N49GE4UEMBCQKZZL7DFQPRZG7DKQK3GU5VHEJYCE75BQKRY85U9QKZYC3DVEJYCE3DRN7WGU5VWM63F8N3CFSTGJ55HPBWY67C9GKRVJJTNEKUG835JPFZHJZ3VM64CEZKNEKZCEQV5RX8SA",
+   "code": "RNTHGJT4HE5VLNBSHE2DNP3NEK6CEQTTGSYCE8KCHJ2VJMBCN2TDWPKNEK3CEQTSFSTHG7BCHJ5DUMBCNWTDWY3CQBYGC35XNXRVCPU9GE4UEMBCQBYGC35XNXRVCQL9HETC2JVUP7SYJZ5CPTZYG45FNTRVCPC9GE4UEMBCQKZZL7DFQPRZG7DKQK3GU5VHEJYCE75BQKRY85U9QKZYC3DVEJYCE3DRN7WGU5VWM62VCZ3TGATC2JVEP7VYS4MQQTRVCNU9GE2CEMBCNTZYQ4DKP34F8NKVM62VAJU7FSTG6JT4RP8Z4R",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -544878669,
+    "seed": 975009067,
     "mode": "WORLD",
-    "x": 3,
-    "y": 4,
-    "fatigue": 0,
+    "x": 14,
+    "y": 14,
+    "fatigue": 5,
     "rep": 0,
-    "steps": 153,
+    "steps": 69,
     "events": [
-     "burned_11_10",
-     "capital_fallen",
-     "plague_11_10",
-     "plague_13_4",
-     "plague_3_15",
+     "plague_16_15",
+     "plague_19_9",
+     "road_blocked_14_15",
      "routes_stirring",
      "war_started"
     ],
     "dogHintCount": 3,
     "hintTiles": [
-     62,
-     82,
-     83
+     211,
+     212,
+     213
     ],
     "npc": {}
    }

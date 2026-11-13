@@ -13,6 +13,7 @@
 //                   unvisited neighbour in turn and stays on the first that has
 //                   sign too. ENTERs where the trail is fresh, walks to the dog
 //                   and CALLs. Never talks.
+//   waiter          M4 on. Only WAITs. It must end on the change date, as The Open Gate.
 //   homecoming      first walks to the nearest town, finds someone and asks until
 //                   reputation is 3. Then, on a build with a trail, it walks back
 //                   to the yard and tracks; on v13 and M2 it takes the explorer's
@@ -147,6 +148,7 @@ function __runBot(policy){
   __den1Step = -1; __den1BeforeWar = false;
   const tracking = typeof trail === "function";
   if (policy === "tracker"){ __track(); return; }
+  if (policy === "waiter"){ let g = 0; while (mode !== "END" && g++ < 400) __say("WAIT"); return; }
   if (policy === "homecoming" && tracking){
     // Reputation first, from someone in the nearest town; then back to the yard to follow the sign.
     const yard = {x: player.x, y: player.y};
@@ -199,6 +201,7 @@ export function runBot(htmlPath, seedStr, policy) {
     den1Step: game.get('__den1Step'),
     den1BeforeWar: game.get('__den1BeforeWar'),
     hints: game.get('dogHintCount'),
+    changeStep: game.get('typeof dates === "function" ? dates().change : -1'),
     repAt: game.get('__repAt'),
     rep: game.get('player.rep'),
     war: game.get('worldEvents.has("war_started")'),
@@ -221,6 +224,7 @@ export function runPolicy(htmlPath, policy, n = BOT_RUNS) {
     reputationThree: runs.filter((r) => r.rep >= 3).length,
     den1: { reached: runs.filter((r) => r.den1Step >= 0).length, beforeTheWar: runs.filter((r) => r.den1Step >= 0 && r.den1BeforeWar).length, stepsMedian: quantile(runs.map((r) => r.den1Step).filter((x) => x >= 0), 0.5), stepsP90: quantile(runs.map((r) => r.den1Step).filter((x) => x >= 0), 0.9) },
     endedBeforeStep12: done.filter((r) => r.steps < 12).length,
+    endedOnTheChangeDate: runs.filter((r) => r.ending === 'The Open Gate' && r.steps === r.changeStep).length,
   };
 }
 
@@ -229,6 +233,6 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const n = parseInt(process.argv[3] || String(BOT_RUNS), 10);
   console.log(`Bots on ${path.relative(ROOT, htmlPath)} over ${n} seeds`);
   const trailBuild = load(htmlPath, { seed: 'bot-host' }).get('typeof trail === "function"');
-  const policies = htmlPath === LEGACY ? ['explorer', 'homecoming-v13', 'homecoming'] : trailBuild ? ['tracker', 'explorer', 'homecoming'] : ['explorer', 'homecoming'];
+  const policies = htmlPath === LEGACY ? ['explorer', 'homecoming-v13', 'homecoming'] : trailBuild ? ['waiter', 'tracker', 'homecoming', 'explorer'] : ['explorer', 'homecoming'];
   for (const policy of policies) console.log(JSON.stringify(runPolicy(htmlPath, policy, n)));
 }

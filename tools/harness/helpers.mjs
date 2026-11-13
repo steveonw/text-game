@@ -41,15 +41,34 @@ function __find(pred){
   }
   return best;
 }
-// Does ENTER open wilderness here? From M2 the game answers that itself (enterKind);
-// v13 has no such function, and there it is plains and forest only.
+// Can this tile be searched: does ENTER open a map that could hold the dog?
+// v13: plains and forest. M2 and M3: wherever enterKind() says "WILD". From M4:
+// "WILD" or "RUIN" (natural ruins and the threshold have a map of their own).
 function __enterableWild(x,y){
+  if (typeof enterKind === "function"){ const k = enterKind(x,y); return k === "WILD" || k === "RUIN"; }
+  const t = finalTileAt(x,y); return t === "." || t === "F";
+}
+// Wilderness and nothing else.
+function __isWild(x,y){
   if (typeof enterKind === "function") return enterKind(x,y) === "WILD";
   const t = finalTileAt(x,y); return t === "." || t === "F";
 }
-// A dog tile: ENTER opens wilderness, the signal is very near, and the wilderness roll places the dog.
-function __isDogTile(x,y){ return __enterableWild(x,y) && dogIsVeryNear(x,y) && !!generateWilderness(x,y).dog; }
+// The map ENTER opens on a tile that can be searched.
+function __localAt(x,y){
+  if (typeof generateRuin === "function" && enterKind(x,y) === "RUIN") return generateRuin(x,y);
+  return generateWilderness(x,y);
+}
+// A dog tile: it can be searched, the dog is "very near", and the map ENTER opens holds the dog.
+function __isDogTile(x,y){ return __enterableWild(x,y) && dogIsVeryNear(x,y) && !!__localAt(x,y).dog; }
 function __isNaturalRuin(x,y){ return tileAt(x,y) === "R" && !isTownAt(x,y); }
-function __warStep(limit){ for (let s = 29; s <= (limit||400); s++) if (noise01(s, 9001, SEED ^ 0xBEEF) < 0.08) return s; return -1; }
-function __fallStep(limit){ for (let s = 61; s <= (limit||400); s++) if (noise01(s, 1337, SEED ^ 0xC0DE) < 0.06) return s; return -1; }
+// The step the war starts and the step the capital falls. From M4 they are dates read
+// from the seed. Before M4 they were rolled each step: these replay v13's rolls.
+function __warStep(limit){
+  if (typeof dates === "function") return dates().war;
+  for (let s = 29; s <= (limit||400); s++) if (noise01(s, 9001, SEED ^ 0xBEEF) < 0.08) return s; return -1;
+}
+function __fallStep(limit){
+  if (typeof dates === "function") return dates().fall;
+  for (let s = 61; s <= (limit||400); s++) if (noise01(s, 1337, SEED ^ 0xC0DE) < 0.06) return s; return -1;
+}
 `;

@@ -112,6 +112,7 @@
     ["m","> E"],
     ["m","> E"],
     ["m","> N"],
+    ["m","Animals have been restless. You feel it in the roads."],
     ["m","> N"],
     ["m","> LOOK"],
     ["m","A guard post. Eyes on the road. A guard stands ready."],
@@ -205,6 +206,7 @@
     ["m","> E"],
     ["m","> E"],
     ["m","> N"],
+    ["m","Animals have been restless. You feel it in the roads."],
     ["m","> N"],
     ["m","> LOOK"],
     ["m","A guard post. Eyes on the road. A guard stands ready."],
@@ -267,7 +269,7 @@
     "RRR....~.~~~~~..FR?@"
   ],
   "finalMapHash": "944b856471b7561d",
-  "finalStatus": "Fatigue: near-done • Roads: quiet • Steps: 34",
+  "finalStatus": "Fatigue: near-done • Roads: unsettled • Steps: 34",
   "finalMode": "WORLD",
   "finalPos": "(19,19) • seed -2024899298"
 }

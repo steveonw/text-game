@@ -23,6 +23,7 @@ export const G = {
   townSet: new Set(),                         // townSet
   cabbageRoute: [],                           // cabbageRoute
   trail: null,                                // the dog's trail for this seed, built on first use (trail.js); not saved
+  terrain: null,                              // terrain glyphs for this seed, filled in as they are asked for (world.js); not saved
 
   // --- Dog hint tracking (bounded, no memory leak) ---
   // We used to store "doghint_x_y" strings inside worldEvents, which grows forever.
@@ -51,6 +52,7 @@ export function resetState(){
   G.townSet = new Set();
   G.cabbageRoute = [];
   G.trail = null;
+  G.terrain = null;
   G.hintBits.fill(0);
   G.dogHintCount = 0;
 }

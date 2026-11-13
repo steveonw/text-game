@@ -198,15 +198,16 @@ const PLANS = [
     for (const [x, y] of [[2, 2], [6, 2], [6, 6], [2, 6], [7, 4]]) { p.localTo(x, y); p.do('LOOK'); }
     p.do('TALK');
     const person = p.get('local.npcs.filter(function(n){ return n.type === "n"; })[0]');
+    p.need(person, 'the townsperson left');
     p.localTo(person.x, person.y); p.do('LOOK'); p.do('TALK');
     p.localTo(1, 1); p.do('LOOK'); p.do('W'); p.do('N'); p.do('TALK');
     p.do('EXIT'); p.do('EXIT'); p.do('LOOK');
-    // a quiet visit: no war, no sickness, and the routes have not stirred
-    p.need(p.get('worldEvents.size') === 0, 'the world moved during the visit');
+    // a quiet visit: no war and no sickness. The routes stir by step 24 whatever the player does.
+    p.need(p.get('Array.from(worldEvents).every(function(e){ return e === "routes_stirring"; })'), 'the world moved during the visit');
   }, { max: 3000 }],
 
   ['03-enter-wilderness', 'ENTER wilderness; LOOK at open ground, brush, rock and a wanderer; TALK to the wanderer; REST; walk off the edge to leave.', 'wild', (p) => {
-    const t = p.find(`function(x,y){ if (!__enterableWild(x,y)) return false; const w = generateWilderness(x,y); const cells = w.map.join(); return !w.dog && w.npcs.length === 1 && cells.includes("t") && cells.includes("^"); }`, 12);
+    const t = p.find(`function(x,y){ if (!__isWild(x,y)) return false; const w = generateWilderness(x,y); const cells = w.map.join(); return !w.dog && w.npcs.length === 1 && cells.includes("t") && cells.includes("^"); }`, 12);
     p.walkTo(t.x, t.y);
     p.do('LOOK'); p.do('ENTER'); p.do('LOOK');
     const who = p.get('local.npcs[0]');
@@ -218,11 +219,13 @@ const PLANS = [
     p.do('LOOK');
   }],
 
-  ['04-enter-natural-ruins', 'A natural ruins tile reads "Old stones. A place avoided." and ENTERs as wilderness, with no walls and no one to speak with (D6 repaired).', 'ruins', (p) => {
-    const t = p.find('function(x,y){ if (!__isNaturalRuin(x,y)) return false; const w = generateWilderness(x,y); return !w.dog && w.npcs.length === 0; }', 12);
+  ['04-enter-natural-ruins', 'A natural ruins tile reads "Old stones. A place avoided." and opens as a ruin map: open ground and stones, no walls, no one to speak with. LOOK at the ground, a fallen stone and a standing stone.', 'ruins', (p) => {
+    const t = p.find('function(x,y){ if (!__isNaturalRuin(x,y) || isThreshold(x,y)) return false; const cells = generateRuin(x,y).map.join(); return cells.includes("r") && cells.includes("^"); }', 12);
     p.walkTo(t.x, t.y);
-    p.do('LOOK'); p.do('ENTER'); p.do('LOOK'); p.do('TALK'); p.do('N'); p.do('LOOK'); p.do('ASK DOG');
-    p.need(p.get('local.kind') === 'WILD', 'ruins did not open as wilderness');
+    p.do('LOOK'); p.do('ENTER'); p.do('LOOK'); p.do('TALK');
+    p.need(p.get('local.kind') === 'RUIN', 'ruins did not open as a ruin map');
+    for (const ch of ['r', '^']) { const c = p.get(`__cell(${JSON.stringify(ch)})`); p.localTo(c.x, c.y); p.do('LOOK'); }
+    p.do('ASK DOG'); p.do('CALL');
     p.do('EXIT'); p.do('LOOK');
   }],
 
@@ -256,7 +259,7 @@ const PLANS = [
   ['08-wait-and-rest', 'WAIT; REST refused on the world map; REST in the wild and in a town; fatigue words in STATUS.', 'rest', (p) => {
     for (let i = 0; i < 3; i++) p.do('WAIT');
     p.do('REST');
-    const w = p.find('function(x,y,d){ return d >= 3 && __enterableWild(x,y) && !generateWilderness(x,y).dog; }', 8);
+    const w = p.find('function(x,y,d){ return d >= 3 && __isWild(x,y) && !generateWilderness(x,y).dog; }', 8);
     p.walkTo(w.x, w.y); p.do('STATUS'); p.do('ENTER'); p.do('REST'); p.do('REST'); p.do('STATUS'); p.do('EXIT');
     const t = p.find('function(x,y){ return isTownAt(x,y); }', 20);
     p.walkTo(t.x, t.y); p.do('STATUS'); p.do('ENTER'); p.do('REST'); p.do('STATUS'); p.do('EXIT');
@@ -344,7 +347,6 @@ const PLANS = [
   }],
 
   ['14-ending-homecoming', 'A full game to "Ending: Homecoming": reputation 3 earned by asking in a town, then the trail followed to den 1 with 5 sign tiles found, before the war.', 'homecoming', (p) => {
-    p.need(p.get('__warStep(400)') >= 70, 'war too early');
     p.need(p.trail().den1 >= 6, 'den 1 too close for five sign tiles');
     const t = p.find(TOWN_WITH([[2, 2, 'I']]), 14);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.localTo(2, 2);
@@ -358,11 +360,9 @@ const PLANS = [
   }],
 
   ['15-ending-found-in-time', 'A full game to "Ending: Found in Time": the player reaches den 1 and waits beside the dog until war starts, then calls. The dog stays for a visit that began before the war.', 'war', (p) => {
-    const ws = p.get('__warStep(400)');
-    p.need(ws > 0 && ws <= 50, 'war too late');
     const t = p.trail();
-    p.need(t.den1 + 8 < ws, 'the war would start on the way');
     p.followTrail(t.den1); p.do('LOOK');
+    p.need(!p.has('war_started'), 'the war started on the way');
     p.enterAndReachDog(); p.do('LOOK');
     p.need(p.waitUntil('worldEvents.has("war_started")', 60), 'war never came');
     p.need(!p.has('capital_fallen'), 'capital fell first');
@@ -371,11 +371,10 @@ const PLANS = [
   }],
 
   ['16-ending-long-way-back', 'A full game to "Ending: The Long Way Back": the player reaches den 1 and waits beside the dog until the capital falls, then calls.', 'fall', (p) => {
-    const fs_ = p.get('__fallStep(400)');
-    p.need(fs_ > 0 && fs_ <= 80, 'fall too late');
     const t = p.trail();
-    p.need(t.den1 >= 3 && t.den1 + 8 < p.get('__warStep(400)'), 'the war would start on the way');
+    p.need(t.den1 >= 3, 'den 1 too close');
     p.followTrail(t.den1);
+    p.need(!p.has('war_started'), 'the war started on the way');
     p.enterAndReachDog();
     p.need(p.waitUntil('worldEvents.has("capital_fallen")', 110), 'capital never fell');
     p.do('STATUS'); p.do('CALL');
@@ -383,14 +382,13 @@ const PLANS = [
   }],
 
   ['18-talk-to-nobody', 'TALK and ASK on an empty wilderness tile: no one is there to answer, and no reputation is earned (D3 repaired).', 'nobody', (p) => {
-    const t = p.find('function(x,y){ if (!__enterableWild(x,y)) return false; const w = generateWilderness(x,y); return !w.dog && w.npcs.length === 0; }', 6);
+    const t = p.find('function(x,y){ if (!__isWild(x,y)) return false; const w = generateWilderness(x,y); return !w.dog && w.npcs.length === 0; }', 6);
     p.walkTo(t.x, t.y); p.do('ENTER'); p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK DOG'); p.do('STATUS'); p.do('EXIT');
   }],
 
   ['19-call-hot-and-cold', 'LOOK, CALL and ASK DOG along the trail and off it: no sign; sign far from the dog; sign close to it; the dog\'s own tile; one tile past it. CALL inside a map with no dog, close and far, and at range on the map that holds it.', 'call', (p) => {
     const t = p.trail();
     p.need(t.den1 >= 7 && t.den1 <= 12 && t.den1 + 1 < t.den2, 'den 1 not where this plan wants it');
-    p.need(p.get('__warStep(400)') > 80, 'war too early');
     // the yard: sign, and too far to be heard
     p.do('LOOK'); p.do('CALL'); p.do('ASK DOG'); p.do('ENTER'); p.do('CALL'); p.do('EXIT');
     // off the trail
@@ -412,19 +410,24 @@ const PLANS = [
     p.localTo(tx, ty);
     p.need(p.get('Math.abs(local.px-local.dog.x) + Math.abs(local.py-local.dog.y)') === 2, 'not two cells away');
     p.do('LOOK'); p.do('CALL'); p.do('EXIT');
-    p.need(p.get('steps') <= 70, 'too long');
+    p.need(!p.has('war_started'), 'the war started before the plan was through');
   }],
 
-  ['20-fatigue-cap', 'Fatigue climbs to its cap of 5 and movement goes on at no cost (D11, open until M4).', 'tired', (p) => {
+  ['20-tired-walking', 'Fatigue climbs to 5, and from there every move on the world map takes two steps of the clock. WAIT brings it down and the next move takes one again.', 'tired', (p) => {
     p.do('STATUS');
-    const far = p.find('function(x,y,d){ return d === 14; }', 14);
+    const far = p.find('function(x,y,d){ return d === 12; }', 12);
     const path = p.get(`__pathTo(player.x, player.y, ${far.x}, ${far.y})`);
     path.forEach((c, i) => { p.do(c); if (i === 2 || i === 5) p.do('STATUS'); });
-    p.need(p.get('player.fatigue') === 5 && p.get('steps') === 14, 'not at cap');
+    p.need(p.get('player.fatigue') === 5 && p.get('steps') > 12, 'tired moves were not charged');
     p.do('STATUS'); p.do('WAIT'); p.do('WAIT'); p.do('STATUS');
+    const back = { N: 'S', S: 'N', E: 'W', W: 'E' }[path[path.length - 1]];
+    const before = p.get('steps');
+    p.do(back);
+    p.need(p.get('steps') === before + 1, 'a rested move was charged');
+    p.do(path[path.length - 1]); p.do('STATUS');
   }],
 
-  ['21-debug-and-block', 'On a page opened with ?debug=1: the maintenance commands DEBUG and BLOCK; a blocked tile stops movement and is drawn as #. Nothing in play closes a road yet (D12).', 'debug', (p) => {
+  ['21-debug-and-block', 'On a page opened with ?debug=1: the maintenance commands DEBUG and BLOCK; a blocked tile stops movement and is drawn as #.', 'debug', (p) => {
     p.do('DEBUG');
     p.need(p.get('__enterableWild(player.x, player.y)'), 'start not enterable');
     p.do('BLOCK');
@@ -443,20 +446,24 @@ const PLANS = [
     p.do('CLEAR'); p.do('LOOK'); p.do('NEW beta'); p.do('STATUS'); p.do('hello');
   }],
 
-  ['23-long-clock', 'The whole clock by waiting: routes stir, sickness spreads, war starts, a town burns, the capital falls. The final map shows the damage.', 'clock', (p) => {
-    p.stir();
-    for (let i = 0; i < 150; i++) p.do('WAIT');
-    const ev = p.get('Array.from(worldEvents)');
-    p.need(ev.includes('war_started') && ev.includes('capital_fallen') && ev.some((e) => e.startsWith('plague_')) && ev.some((e) => e.startsWith('burned_')), 'not every event');
+  ['23-long-clock', 'The whole clock by waiting, from the first step to "Ending: The Open Gate": the routes stir by step 24, sickness spreads, each change is foreshadowed once and announced on its date, a town burns, roads close, the capital falls, the roads change. STATUS at each stage.', 'clock', (p) => {
     p.do('STATUS');
+    let last = 0;
+    for (let i = 0; i < 200 && p.get('mode') !== 'END'; i++) {
+      p.do('WAIT');
+      const st = p.get('mode') === 'END' ? last : p.get('stage()');
+      if (st !== last) { last = st; p.do('STATUS'); p.do('LOOK'); }
+    }
+    p.need(p.get('mode') === 'END' && endingOf(p) === 'The Open Gate', 'the clock did not end as The Open Gate');
+    const ev = p.get('Array.from(worldEvents)');
+    p.need(ev.some((e) => e.startsWith('plague_')) && ev.some((e) => e.startsWith('burned_')) && ev.some((e) => e.startsWith('road_blocked_')), 'not every kind of event');
+    for (const c of ['LOOK', 'HELP']) p.do(c);
   }],
 
-  ['24-fallen-capital', 'After the capital falls it is drawn as ruins, reads as old stones, and is burned inside: timbers where its buildings stood and one Survivor to speak with (D7 repaired).', 'capital', (p) => {
-    const fs_ = p.get('__fallStep(400)');
-    p.need(fs_ > 0 && fs_ <= 80, 'fall too late');
-    p.stir();
+  ['24-fallen-capital', 'After the capital falls it is drawn as ruins, reads as old stones, and is burned inside: timbers where its buildings stood and one Survivor to speak with (D7 repaired). The status word is "hollow".', 'capital', (p) => {
     const c = p.get('capital');
     p.walkTo(c.x, c.y, 30); p.do('LOOK');
+    p.need(!p.has('capital_fallen'), 'the capital fell on the way');
     p.need(p.waitUntil('worldEvents.has("capital_fallen")', 110), 'capital never fell');
     p.do('LOOK'); p.do('ENTER'); p.do('LOOK');
     p.need(p.get('local.map.flat().filter(function(c){ return c === "r"; }).length') >= 2, 'too little burned');
@@ -480,7 +487,7 @@ const PLANS = [
     p.localTo(s.x, s.y); p.do('LOOK'); p.do('TALK'); p.do('ASK DOG'); p.do('EXIT');
   }],
 
-  ['26-sick-town', 'Sickness reaches a town: it is drawn as !, the market and townsperson are gone, and people add sickness lines.', 'plague', (p) => {
+  ['26-sick-town', 'Sickness reaches a town: it is drawn as !, the market and townsperson are gone, people add sickness lines, and REST there restores little.', 'plague', (p) => {
     p.stir();
     p.need(p.waitUntil('Array.from(worldEvents).some(function(e){ return e.startsWith("plague_"); })', 60), 'no sickness');
     const key = p.get('Array.from(worldEvents).filter(function(e){ return e.startsWith("plague_"); })[0]');
@@ -489,7 +496,8 @@ const PLANS = [
     p.walkTo(x, y, 30); p.do('LOOK'); p.do('ENTER'); p.do('LOOK');
     const b = p.get('local.npcs.filter(function(n){ return "ISTG".includes(n.type); })[0]');
     p.need(b, 'no one home');
-    p.localTo(b.x, b.y); p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK SICKNESS'); p.do('ASK DOG'); p.do('EXIT'); p.do('STATUS');
+    p.localTo(b.x, b.y); p.do('LOOK'); p.do('TALK'); p.do('TALK'); p.do('ASK SICKNESS'); p.do('ASK DOG');
+    p.do('STATUS'); p.do('REST'); p.do('STATUS'); p.do('EXIT');
     p.need(p.game.logs.some(([, t]) => t === "People aren't well." || t === 'Best keep distance.'), 'no sickness line spoken');
   }],
 
@@ -501,39 +509,52 @@ const PLANS = [
     p.do('LOOK'); p.do('TALK'); p.do('STATUS'); p.do('EXIT'); p.do('LOOK');
   }],
 
-  ['28-dog-at-the-threshold', 'After the capital falls the dog is at the threshold, a natural ruin: den 1 and den 2 show sign and nothing fresh; the threshold reads as old stones with a fresh trail, opens as wilderness, and the dog is there. "Ending: The Long Way Back".', 'stones', (p) => {
-    const fs_ = p.get('__fallStep(400)');
-    p.need(fs_ > 0 && fs_ <= 75, 'fall too late');
+  ['28-dog-at-the-threshold', 'The player walks to den 2 early and waits there. The war brings the dog to that tile; the fall takes it on. The threshold, a natural ruin, reads as old stones with a fresh trail and opens as a ruin map, where the dog waits at a stone. "Ending: The Long Way Back".', 'stones', (p) => {
     const t = p.trail();
-    p.need(t.onRuins && t.den1 >= 3 && t.threshold <= 34, 'no ruin threshold close enough');
-    p.stir();
-    p.need(p.waitUntil('worldEvents.has("capital_fallen")', 110), 'capital never fell');
-    p.do('STATUS');
-    p.followTrail(t.threshold, (i) => {
-      if (i === t.den1 || i === t.den2) { p.do('LOOK'); p.do('CALL'); }
-      if (i === t.den1) { p.do('ENTER'); p.do('CALL'); p.do('EXIT'); }
-    });
+    p.need(t.onRuins && t.den1 >= 3 && t.threshold - t.den2 <= 10, 'no ruin threshold close enough to den 2');
+    p.followTrail(t.den2);
+    p.need(!p.has('war_started'), 'the war started on the way');
+    p.do('LOOK');
+    p.need(p.waitUntil('worldEvents.has("war_started")', 60), 'war never came');
+    p.do('LOOK'); p.do('STATUS');
+    p.need(p.waitUntil('worldEvents.has("capital_fallen")', 60), 'capital never fell');
+    p.do('LOOK'); p.do('CALL'); p.do('STATUS');
+    p.followTrail(t.threshold);
     p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK');
-    p.need(p.get('local.kind') === 'WILD', 'ruins did not open as wilderness');
+    p.need(p.get('local.kind') === 'RUIN', 'the threshold did not open as a ruin map');
     goToDogAndCall(p);
     p.need(endingOf(p) === 'The Long Way Back', 'wrong ending: ' + endingOf(p));
   }],
 
-  ['29-dog-moves-on', 'The war starts before the player reaches den 1. Den 1 has sign and no dog; the trail goes on to den 2, where it is fresh and the dog is found. "Ending: Found in Time".', 'moved', (p) => {
-    const ws = p.get('__warStep(400)');
-    p.need(ws > 0 && ws <= 45, 'war too late');
-    p.need(p.get('__fallStep(400)') > ws + 45, 'the capital would fall on the way');
+  ['29-dog-moves-on', 'The player waits one tile short of den 1 until the war starts. Den 1 then has sign and no dog; the trail goes on to den 2, where it is fresh and the dog is found. "Ending: Found in Time".', 'moved', (p) => {
     const t = p.trail();
-    p.need(t.den1 >= 3 && t.den2 >= t.den1 + 4 && t.den2 <= 24, 'dens not where this plan wants them');
+    p.need(t.den1 >= 4 && t.den2 >= t.den1 + 3 && t.den2 <= t.den1 + 9, 'dens not where this plan wants them');
     p.do('LOOK');
+    p.followTrail(t.den1 - 1);
+    p.need(!p.has('war_started'), 'the war started on the way');
+    p.do('LOOK'); p.do('CALL');
     p.need(p.waitUntil('worldEvents.has("war_started")', 60), 'war never came');
-    p.do('STATUS');
+    p.do('STATUS'); p.do('CALL');
     p.followTrail(t.den1); p.do('LOOK'); p.do('CALL'); p.do('ENTER'); p.do('LOOK'); p.do('CALL'); p.do('EXIT');
     p.followTrail(t.den2, (i) => { if (i === t.den1 + 1) p.do('LOOK'); });
     p.need(!p.has('capital_fallen'), 'capital fell first');
     p.do('LOOK'); p.do('CALL'); p.do('ENTER');
     goToDogAndCall(p);
     p.need(endingOf(p) === 'Found in Time', 'wrong ending: ' + endingOf(p));
+  }],
+
+  ['30-a-road-closes', 'During the war a road is closed: the rumor arrives, the tile is drawn as # and cannot be walked onto, and the status word is "guarded".', 'closed', (p) => {
+    p.need(p.waitUntil('Array.from(worldEvents).some(function(e){ return e.startsWith("road_blocked_"); })', 80), 'no road closed');
+    p.do('STATUS');
+    const key = p.get('Array.from(worldEvents).filter(function(e){ return e.startsWith("road_blocked_"); })[0]');
+    const [x, y] = key.slice(13).split('_').map(Number);
+    const beside = p.get(`__neighbours(${x}, ${y}).filter(function(n){ return passable(n.x, n.y) && __bfsFrom(player.x, player.y).dist[n.y*WORLD_SIZE+n.x] >= 0; }).sort(function(a, b){ const d = __bfsFrom(player.x, player.y).dist; return d[a.y*WORLD_SIZE+a.x] - d[b.y*WORLD_SIZE+b.x]; })[0]`);
+    p.need(beside, 'the closed road cannot be walked up to');
+    p.walkTo(beside.x, beside.y, 14);
+    p.need(p.get('mode') === 'WORLD' && p.get(`finalTileAt(${x}, ${y})`) === '#', 'the road is not closed any more');
+    p.do(OPPOSITE[beside.dir]);
+    p.need(p.get('player.x') === beside.x && p.get('player.y') === beside.y, 'walked onto a closed road');
+    p.do('LOOK'); p.do('STATUS');
   }],
 ];
 
@@ -590,16 +611,16 @@ function buildCodes() {
   };
   const fresh = new Planner('codes-fresh');
   add('a new game at step 0', 'packed-v4', fresh.game.run('savePasswordPacked()'), fresh.snapshot());
-  const packedFrom = ['02-enter-town', '05-talk-six-times', '06-ask-every-topic', '07-ask-routes-and-gesture', '09-ride', '20-fatigue-cap', '21-debug-and-block', '23-long-clock', '24-fallen-capital', '25-burned-town', '26-sick-town'];
+  const packedFrom = ['02-enter-town', '05-talk-six-times', '06-ask-every-topic', '07-ask-routes-and-gesture', '09-ride', '20-tired-walking', '21-debug-and-block', '30-a-road-closes', '24-fallen-capital', '25-burned-town', '26-sick-town'];
   for (const name of packedFrom) {
     const p = harvested[name];
     add(`end of transcript ${name}`, 'packed-v4', p.game.run('savePasswordPacked()'), p.snapshot());
   }
-  for (const name of ['07-ask-routes-and-gesture', '23-long-clock', '26-sick-town']) {
+  for (const name of ['07-ask-routes-and-gesture', '30-a-road-closes', '26-sick-town']) {
     const p = harvested[name];
     add(`end of transcript ${name}`, 'base32-v2', p.game.run('savePasswordLegacy()'), p.snapshot());
   }
-  for (const name of ['07-ask-routes-and-gesture', '23-long-clock']) {
+  for (const name of ['07-ask-routes-and-gesture', '30-a-road-closes']) {
     const p = harvested[name];
     add(`end of transcript ${name}, rebuilt as packed version 3`, 'packed-v3', packedV4toV3(p.game, p.game.run('savePasswordPacked()')), p.snapshot());
     add(`end of transcript ${name}, rebuilt in the oldest base32 form`, 'base32-oldest', oldestBase32(p.game, p.snapshot()), p.snapshot());
@@ -674,7 +695,7 @@ function main() {
     const name = '17-after-an-ending';
     const p = findSeed('after', (q) => {
       const t = q.trail();
-      q.need(t.den1 >= 3 && t.den1 <= 9 && q.get('__warStep(400)') > 80, 'den 1 not close, or war too early');
+      q.need(t.den1 >= 3 && t.den1 <= 9, 'den 1 not close');
       q.followTrail(t.den1); q.do('ENTER');
       const dog = q.get('local.dog'); q.need(dog, 'no dog'); q.localTo(dog.x, dog.y);
       const code = q.do('SAVE').at(-1);

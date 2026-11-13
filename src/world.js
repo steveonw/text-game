@@ -68,8 +68,17 @@ export function danger(x,y){
   return Math.abs(Math.sin((x - s*30)*0.27) + Math.cos((y + s*28)*0.19)) + noise01(x+10,y+10,G.seed);
 }
 
+// Terrain only (towns are placed separately via townSet). A pure function of the
+// seed, so each tile is worked out once per seed and remembered on G (M4: the clock
+// walks the map far more than v13 did).
 export function tileAt(x,y){
-  // Terrain only (towns are placed separately via townSet).
+  if (x<0||y<0||x>=WORLD_SIZE||y>=WORLD_SIZE) return terrainAt(x,y);
+  if (!G.terrain || G.terrain.seed !== G.seed) G.terrain = { seed: G.seed, cells: new Array(WORLD_SIZE*WORLD_SIZE) };
+  const i = y*WORLD_SIZE + x;
+  return G.terrain.cells[i] || (G.terrain.cells[i] = terrainAt(x,y));
+}
+
+function terrainAt(x,y){
   const e = elevation(x,y);
   const m = moisture(x,y);
   const c = civ(x,y);
