@@ -45,7 +45,7 @@ Ten source files changed, by 314 lines added and 39 removed. `save.js`, `people.
 
 `npm run browser-check`, Chrome 153: 30 of 30 transcripts in `test/golden` match on the built page, and 27 of 27 in `test/golden-v13` match on the legacy page. No errors, no request beyond the page itself.
 
-CI_RESULT
+CI on pull request 7 passed both jobs on commit `01b2daf`: `test` on Node 20 (build, 282 tests, the built file uploaded) and `browser` on Node 22 with GitHub's Chrome. The only commit after that one adds this paragraph.
 
 ### The clock over 2,000 seeds
 
