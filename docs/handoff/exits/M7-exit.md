@@ -43,7 +43,7 @@ Three source files changed, by 72 lines added and 14 removed.
 
 `grep -E "https?://" dist/index.html` finds nothing, as in v13.
 
-CI_RESULT
+CI on pull request 10 passed all three jobs on commit `4e8df31`: `test` on Node 20 (build, 284 tests, the built file uploaded), `browser` on Node 22 with GitHub's Chrome, and `balance`, every bot on 2,000 seeds with every target met. The only commit after that one adds this paragraph.
 
 ### The bots, 2,000 seeds
 
@@ -92,7 +92,7 @@ Every other value is at its starting value. The trials that led here, one at a t
 
 ## 4. Acceptance
 
-- [x] Every target holds in CI. (The `balance` job; see the CI line in section 2.)
+- [x] Every target holds in CI: the `balance` job passed on `4e8df31`.
 - [x] `docs/balance.md` shows the baseline, each change and the final table.
 - [x] `grep -E "https?://" dist/index.html` finds nothing.
 - [ ] The published page opened with `?seed=test` shows the same world as a local build with that seed. Waits on publishing (section 8). The seed is read from the query string, which Pages serves unchanged on its sub-path.
