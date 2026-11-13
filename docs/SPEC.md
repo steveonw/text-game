@@ -445,13 +445,13 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-12, with the defaults: `?` marks found sign on the world map (M3), and "guarded" is the status word for the war stage (M4). Both add to a palette and vocabulary the source treats as fixed.
 
-- [ ] **An ending without the dog (before M4)**
+- [x] **An ending without the dog (before M4)**
 
-    Default: The Open Gate ends the game when the roads change. The alternative is no deadline: the dog waits at the threshold for as long as it takes.
+    Decided 2026-11-12, with the default: The Open Gate ends the game when the roads change. The alternative was no deadline: the dog waits at the threshold for as long as it takes.
 
-- [ ] **Fatigue as time (before M4)**
+- [x] **Fatigue as time (before M4)**
 
-    Default: on, at fatigue 5. Without it fatigue stays a number that only gates the ride.
+    Decided 2026-11-12: on. The owner asked for an extra step for fatigue: a world move made at fatigue 5 takes two steps of the clock.
 
 - [ ] **Who writes about 140 new lines (before M5)**
 

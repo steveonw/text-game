@@ -88,16 +88,18 @@ export function nearest(pred) {
   return best;
 }
 // Walk the world map to (x, y) by the shortest route. Returns false if there is none.
+// A road can close on the way (M4), so the route is planned again after every step.
 export function walkTo(x, y) {
-  const N = WORLD_SIZE, sx = G.player.x, sy = G.player.y, { dist, prev } = bfs(sx, sy);
-  if (dist[y * N + x] < 0) return false;
-  const cmds = []; let cur = y * N + x;
-  while (cur !== sy * N + sx) {
-    const p = prev[cur], cx = cur % N, cy = (cur / N) | 0, px = p % N, py = (p / N) | 0;
-    cmds.push(cx > px ? 'E' : cx < px ? 'W' : cy > py ? 'S' : 'N'); cur = p;
+  const N = WORLD_SIZE;
+  for (let guard = 0; guard < 400 && G.mode === 'WORLD' && !(G.player.x === x && G.player.y === y); guard++) {
+    const sx = G.player.x, sy = G.player.y, { dist, prev } = bfs(sx, sy);
+    if (dist[y * N + x] < 0) return false;
+    let cur = y * N + x;
+    while (prev[cur] !== sy * N + sx) cur = prev[cur];
+    const cx = cur % N, cy = (cur / N) | 0;
+    sendModules([cx > sx ? 'E' : cx < sx ? 'W' : cy > sy ? 'S' : 'N']);
   }
-  sendModules(cmds.reverse());
-  return true;
+  return G.mode === 'WORLD' && G.player.x === x && G.player.y === y;
 }
 // Walk a local map to cell (x, y): along the row, then the column.
 export function localTo(x, y) {

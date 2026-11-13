@@ -9,7 +9,7 @@ import { TUNE, WORLD_SIZE } from '../src/tuning.js';
 import { noise01 } from '../src/rng.js';
 import { addDogHint, finalTileAt, hasDogHint, homeRegion, isTownAt, passable, startTile, stepsFrom, tileAt, walkable } from '../src/world.js';
 import { buildTrail, callAnswer, dogDirectionHint, dogIndex, dogIsNear, dogIsVeryNear, dogTile, trail, trailIndexAt } from '../src/trail.js';
-import { generateWilderness } from '../src/local.js';
+import { generateRuin, generateWilderness } from '../src/local.js';
 import { enterKind } from '../src/commands.js';
 import { mapHtml } from '../src/render.js';
 
@@ -20,6 +20,8 @@ const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/\n$/, '').split
 const isNaturalRuin = (x, y) => tileAt(x, y) === 'R' && !isTownAt(x, y);
 const same = (a, b) => a.x === b.x && a.y === b.y;
 const allTiles = () => { const out = []; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) out.push({ x, y }); return out; };
+// The map ENTER would open on a world tile that can be searched, or null.
+const localMap = (p) => { const k = enterKind(p.x, p.y); return k === 'WILD' ? generateWilderness(p.x, p.y) : k === 'RUIN' ? generateRuin(p.x, p.y) : null; };
 const FRESH = 'The trail is fresh. ENTER to search.';
 const MOVED = 'Something moved through here recently.';
 
@@ -154,12 +156,12 @@ test('the dog: exactly one tile holds it, in every state of the clock, and ENTER
     for (const events of [[], ['war_started'], ['war_started', 'capital_fallen']]) {
       bootModules(seed);
       for (const e of events) G.worldEvents.add(e);
-      const holding = allTiles().filter((p) => enterKind(p.x, p.y) === 'WILD' && generateWilderness(p.x, p.y).dog);
+      const holding = allTiles().filter((p) => { const m = localMap(p); return m && m.dog; });
       assert.equal(holding.length, 1, `${seed} ${events.join('+') || 'quiet'}`);
       assert.ok(same(holding[0], dogTile()));
-      const dog = generateWilderness(holding[0].x, holding[0].y).dog;
+      const dog = localMap(holding[0]).dog;
       assert.ok(dog.x >= 1 && dog.x <= 7 && dog.y >= 1 && dog.y <= 7, 'at a cell inside the map');
-      assert.deepEqual(generateWilderness(holding[0].x, holding[0].y).dog, dog, 'at the same cell every time');
+      assert.deepEqual(localMap(holding[0]).dog, dog, 'at the same cell every time');
     }
   }
 });
@@ -241,7 +243,7 @@ test('ENTER: a tile with sign but no dog is empty, and so is every tile off the 
   assert.deepEqual(say('ENTER').slice(1), ['The land closes around you.']);
   assert.equal(G.local.dog, null);
   say('EXIT');
-  for (const p of allTiles()) if (enterKind(p.x, p.y) === 'WILD' && !same(p, dogTile())) assert.equal(generateWilderness(p.x, p.y).dog, null);
+  for (const p of allTiles()) if (localMap(p) && !same(p, dogTile())) assert.equal(localMap(p).dog, null);
 });
 
 test('the dog stays for a visit that began before it moved on', () => {
@@ -261,7 +263,7 @@ test('the dog stays for a visit that began before it moved on', () => {
   assert.ok(say('ENTER').includes('You sense movement nearby.'));
 });
 
-test('after the capital falls the dog is at the threshold, and ruins there open as wilderness', () => {
+test('after the capital falls the dog is at the threshold, among the stones', () => {
   let ruins = 0;
   for (const seed of SEEDS) {
     bootModules(seed);
@@ -271,8 +273,9 @@ test('after the capital falls the dog is at the threshold, and ruins there open 
     if (isNaturalRuin(end.x, end.y)) { ruins++; assert.ok(say('LOOK').includes('Old stones. A place avoided.')); }
     assert.ok(say('LOOK').includes(FRESH), seed);
     say('ENTER');
-    assert.equal(G.local.kind, 'WILD', seed);
+    assert.equal(G.local.kind, 'RUIN', seed);
     assert.ok(G.local.dog, seed);
+    assert.ok(['r', '^'].includes(G.local.map[G.local.dog.y][G.local.dog.x]), `${seed}: the dog waits at a stone`);
     localTo(G.local.dog.x, G.local.dog.y);
     assert.ok(say('CALL').includes('Ending: The Long Way Back'), seed);
   }

@@ -4,7 +4,7 @@ import { G } from './state.js';
 import { cabbageIsHereWorld } from './clock.js';
 import { fnv1a32, mix32, noise01 } from './rng.js';
 import { LOCAL_SIZE, TUNE } from './tuning.js';
-import { dogIsVeryNear } from './trail.js';
+import { dogIsVeryNear, isThreshold } from './trail.js';
 import { keyForXY } from './world.js';
 
 // ---------- Local map gen ----------
@@ -129,4 +129,28 @@ export function generateTown(tx,ty, forceWagon=false){
   // v13 set this only for arrivals by RIDE; otherwise his timetable could move on during
   // the walk to him, leaving a wagon with nobody at it.
   return { kind:"TOWN", tx, ty, size, map, px:4, py:4, wagon, wagonForced: !!wagon, npcs };
+}
+
+// M4: old stones. A ruin map has no walls and no one in it: open ground with five
+// to nine stones, fallen (r) or standing (^). Natural ruins open as one, and so does
+// the threshold, whatever its ground. When the dog is at the threshold it waits at
+// one of the stones.
+export function generateRuin(tx,ty){
+  const size = LOCAL_SIZE;
+  const map = Array.from({length:size}, ()=>Array(size).fill("."));
+  const count = TUNE.ruinStonesFrom + Math.min(TUNE.ruinStonesTo - TUNE.ruinStonesFrom, Math.floor(noise01(tx, ty, G.seed ^ 0x570E5) * (TUNE.ruinStonesTo - TUNE.ruinStonesFrom + 1)));
+  const stones = [];
+  for (let i = 0; stones.length < count && i < 200; i++){
+    const x = 1 + (mix32(fnv1a32("stone"+i+","+tx+","+ty+","+G.seed))>>>0) % (size-2);
+    const y = 1 + (mix32(fnv1a32("stone"+i+","+ty+","+tx+","+G.seed))>>>0) % (size-2);
+    if ((x === 4 && y === 4) || map[y][x] !== ".") continue; // the player arrives in the middle
+    map[y][x] = noise01(x*13+tx, y*13+ty, G.seed ^ 0x570E6) < 0.5 ? "r" : "^";
+    stones.push({x, y});
+  }
+  let dog = null;
+  if (dogIsVeryNear(tx,ty) && isThreshold(tx,ty) && stones.length){
+    const at = stones[Math.min(stones.length - 1, Math.floor(noise01(tx, ty, G.seed ^ 0x0D06) * stones.length))];
+    dog = {x: at.x, y: at.y};
+  }
+  return { kind:"RUIN", tx, ty, size, map, px:4, py:4, dog, npcs: [] };
 }

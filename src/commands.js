@@ -1,16 +1,16 @@
 // The parser and every command, and starting a new game.
 
 import { G } from './state.js';
-import { advanceWorldPressure, advanceWorldPressureFrom, cabbageIndex, cabbageIsHereWorld, initCabbageRoute } from './clock.js';
-import { BUILDING_POOLS, CABBAGE } from './content/pools.js';
+import { STAGE_WORDS, advanceWorldPressure, advanceWorldPressureFrom, cabbageIsHereWorld, initCabbageRoute, nextWagonStop, stage } from './clock.js';
+import { BUILDING_POOLS, CABBAGE, STATUS_GUARDED, STONES } from './content/pools.js';
 import { triggerEnding } from './endings.js';
-import { generateTown, generateWilderness } from './local.js';
+import { generateRuin, generateTown, generateWilderness } from './local.js';
 import { getNPC, maybeInternal, sayNPC, setNPC } from './people.js';
 import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './io.js';
 import { clamp, fnv1a32, noise01 } from './rng.js';
 import { loadPasswordAny, savePasswordPacked } from './save.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
-import { callAnswer, dogDirectionHint, dogIsNear, dogIsVeryNear } from './trail.js';
+import { callAnswer, dogDirectionHint, dogIsNear, dogIsVeryNear, isThreshold } from './trail.js';
 import { addDogHint, computeTowns, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
 
 // ---------- Command system ----------
@@ -22,9 +22,8 @@ export function cmdHelp(){
 export function cmdStatus(){
   const fatWord = ["fresh","worn","tired","heavy","spent","near-done"][clamp(G.player.fatigue,0,5)];
   const repWord = ["unknown","noticed","recognized","remembered","expected","spoken-of"][clamp(G.player.rep,0,5)];
-  const tone = G.worldEvents.has("capital_fallen") ? "The kingdom feels hollow."
-            : G.worldEvents.has("routes_stirring") ? "The roads feel unsettled."
-            : "The day feels ordinary.";
+  // One line for each of the four status words: quiet, unsettled, guarded, hollow.
+  const tone = ["The day feels ordinary.", "The roads feel unsettled.", STATUS_GUARDED, "The kingdom feels hollow.", "The kingdom feels hollow."][stage()];
   log("You are "+fatWord+". People are "+repWord+".", "m");
   log(tone, "m");
 }
@@ -46,8 +45,10 @@ export function moveWorld(dx,dy){
   if (t==="^"){ log("The mountains resist passage.", "m"); return; }
   if (t==="#"){ log("The road is blocked.", "m"); return; }
 
+  // M4: tiredness is paid for in time. A move made at fatigue 5 takes two steps of the clock.
+  const before = G.steps;
   G.player.x=nx; G.player.y=ny;
-  G.steps++;
+  G.steps += (G.player.fatigue >= 5) ? TUNE.exhaustedMoveSteps : 1;
   G.player.fatigue = clamp(G.player.fatigue + (t==="F" ? TUNE.forestFatigue : TUNE.moveFatigue), 0, 5);
 
   if (dogIsNear(G.player.x, G.player.y)){
@@ -61,17 +62,18 @@ export function moveWorld(dx,dy){
   } else maybeInternal("travel");
 
   travelEventCheck();
-  advanceWorldPressure();
+  advanceWorldPressureFrom(before + 1);
   render();
 }
 
-// What ENTER opens on a world tile: "TOWN", "WILD" or null.
-// D6: a ruins tile is a town only where a town stands (a burned town, the fallen
-// capital). Natural ruins open as wilderness until M4 gives them a map of their own.
+// What ENTER opens on a world tile: "TOWN", "RUIN", "WILD" or null.
+// A ruins tile is a town only where a town stands (a burned town, the fallen
+// capital). Natural ruins, and the threshold whatever its ground, open as a ruin map.
 export function enterKind(x,y){
   const tile = finalTileAt(x,y);
   if (tile==="T" || tile==="C" || tile==="!" || (tile==="R" && isTownAt(x,y))) return "TOWN";
-  if (tile==="." || tile==="F" || tile==="R") return "WILD";
+  if (tile==="R" || ((tile==="." || tile==="F") && isThreshold(x,y))) return "RUIN";
+  if (tile==="." || tile==="F") return "WILD";
   return null;
 }
 
@@ -84,8 +86,8 @@ export function cmdEnter(){
     log("Buildings gather. The road narrows.", "m");
     render(); return;
   }
-  if (kind==="WILD"){
-    G.local = generateWilderness(G.player.x, G.player.y);
+  if (kind==="WILD" || kind==="RUIN"){
+    G.local = (kind==="RUIN") ? generateRuin(G.player.x, G.player.y) : generateWilderness(G.player.x, G.player.y);
     G.mode="LOCAL";
     log("The land closes around you.", "m");
     if (G.local.dog) log("You sense movement nearby.", "m");
@@ -145,7 +147,8 @@ export function cmdLook(){
   // Check if there's an NPC here
   const hasNPC = G.local.npcs && G.local.npcs.some(n => n.x === G.local.px && n.y === G.local.py);
 
-  const d = (cell==="w") ? "A battered wagon. Cabbages stacked unevenly."
+  const d = (G.local.kind==="RUIN") ? (STONES[cell] || STONES["."])
+          : (cell==="w") ? "A battered wagon. Cabbages stacked unevenly."
           : (cell==="I") ? "An inn. Warmth behind a door." + (hasNPC ? " Someone moves inside." : "")
           : (cell==="M") ? "A market space. Trade leaves traces." + (hasNPC ? " A merchant watches." : "")
           : (cell==="S") ? "A smithy. Heat and hammer-sound." + (hasNPC ? " The smith is working." : "")
@@ -311,7 +314,9 @@ export function cmdRest(){
   const before = G.steps;
   if (G.local.kind==="TOWN"){
     G.steps += TUNE.restSteps;
-    G.player.fatigue = clamp(G.player.fatigue - TUNE.restTownRecovers, 0, 5);
+    // M4: there is little rest to be had where there is sickness.
+    const sick = G.worldEvents.has("plague_"+keyForXY(G.local.tx, G.local.ty));
+    G.player.fatigue = clamp(G.player.fatigue - (sick ? TUNE.restSickTownRecovers : TUNE.restTownRecovers), 0, 5);
     log("You rest for a while.", "m");
     advanceWorldPressureFrom(before + 1); // D10
     render(); return;
@@ -334,9 +339,8 @@ export function cmdRide(){
 
   // D9: the merchant is where his wagon is, so the next stop is the one after this
   // town. v13 took it from the timetable, which may have moved on without him.
-  const here = G.cabbageRoute.findIndex(t => t.x === G.local.tx && t.y === G.local.ty);
-  const idx = (here >= 0) ? here : cabbageIndex();
-  const next = G.cabbageRoute[(idx+1) % G.cabbageRoute.length];
+  // M4: he skips a town with sickness.
+  const next = nextWagonStop(G.local.tx, G.local.ty);
   if (!next){ log("The route is unclear.", "m"); return; }
 
   // D8: the page is cleared before the ride is told, not after it. In v13 these
@@ -352,6 +356,7 @@ export function cmdRide(){
   G.steps += TUNE.rideSteps;
   G.player.fatigue = clamp(G.player.fatigue - TUNE.rideRecovers, 0, 5);
   advanceWorldPressureFrom(before + 1); // D10
+  if (G.mode === "END") return; // the roads changed on the way
 
   log("The wagon stops.", "m");
   log(CABBAGE.afterRide[0], "m");
