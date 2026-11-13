@@ -46,7 +46,7 @@ The count is lower than M5's 309. M5 checked each of v13's 19 codes as its own s
 
 `npm run browser-check`, Chrome 153: 34 of 34 transcripts in `test/golden` match on the built page, and 27 of 27 in `test/golden-v13` match on the legacy page. The legend has the right number of items for the mode, the side panel lists the commands and the map has its label. No errors, no request beyond the page itself.
 
-CI_RESULT
+CI on pull request 9 passed both jobs on commit `948490c`: `test` on Node 20 (build, 275 tests, the built file uploaded) and `browser` on Node 22 with GitHub's Chrome. The only commit after that one adds this paragraph.
 
 ### Code lengths
 
