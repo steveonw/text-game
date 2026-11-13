@@ -180,7 +180,7 @@
   {
    "label": "end of transcript 09-ride",
    "format": "v5",
-   "code": "BceAze4OEwwyNQMCBhgCAAGDAgGHAgEAAwUA2Ws",
+   "code": "BceAze4OEwwyNQMCBhgDAAGDAgGHAgEAAwUAui4",
    "reply": [
     "The password takes."
    ],
@@ -213,7 +213,7 @@
       "flags": []
      }
     },
-    "townsEntered": 2
+    "townsEntered": 3
    }
   },
   {

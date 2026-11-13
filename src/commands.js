@@ -89,12 +89,17 @@ export function enterKind(x,y){
   return null;
 }
 
+// M6: for the ending's "Towns entered". One bit per entry of G.towns.
+function markTownEntered(x, y){
+  const i = G.towns.findIndex(t => t.x === x && t.y === y);
+  if (i >= 0) G.townsEntered |= (1 << i);
+}
+
 export function cmdEnter(){
   if (G.mode!=="WORLD"){ log("You are already inside.", "m"); return; }
   const kind = enterKind(G.player.x, G.player.y);
   if (kind==="TOWN"){
-    const i = G.towns.findIndex(t => t.x === G.player.x && t.y === G.player.y);
-    if (i >= 0) G.townsEntered |= (1 << i); // M6: for the ending's "Towns entered"
+    markTownEntered(G.player.x, G.player.y);
     G.local = generateTown(G.player.x, G.player.y, false);
     G.mode="LOCAL";
     log("Buildings gather. The road narrows.", "m");
@@ -389,6 +394,7 @@ export function cmdRide(){
   log(CABBAGE.afterRide[0], "m");
 
   G.player.x = next.x; G.player.y = next.y;
+  markTownEntered(G.player.x, G.player.y); // the wagon stops inside the town
   G.local = generateTown(G.player.x, G.player.y, true);
   G.mode = "LOCAL";
   render();

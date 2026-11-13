@@ -27,7 +27,18 @@ SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legac
 
 `docs/SPEC.md` describes v13 as built, how it measures when played by script across 2,000 seeds, and the design for a finished 1.0. The work is split into eight steps, M0 to M7, each with a handoff sheet in `docs/handoff/` and an exit report in `docs/handoff/exits/`.
 
-This repository is at **M5**: people answer every topic, say more as they come to know you, and point true when they trust you.
+This repository is at **M6**: all five endings report true numbers, save codes are short, and the page says what it shows.
+
+What changed in M6:
+
+- **The Open Gate is written.** If the roads change before the dog is found, the game ends with a few lines of its own, in the shape of the other four.
+- **True numbers at every ending:** steps taken, towns entered of the towns there are, people spoken to, and sign found of the whole trail. v13's "Towns visited" counted the people you remembered.
+- **Short passwords.** A fresh game saves in 23 to 26 characters (v13: 90 to 92), a game at step 40 in 27 to 68, most of it the people you have spoken to. Codes are case-sensitive. Codes made by v13 and by the builds before M6 no longer load: LOAD refuses them with "The password refuses to settle."
+- **The legend follows the map.** The world map shows `?` for sign; a town, the wild and old stones each list their own glyphs, so `T` and `^` mean one thing at a time.
+- **LOOK names the neighbours.** On the world map it adds a line such as "North: forest. East: plains. South: blocked. West: water." The game can be played without seeing the map.
+- **HELP lists every command,** with its aliases, and the side panel shows the same list. The map tells a screen reader where you are.
+
+Six lines are new in M6, also tagged `// REVIEW`.
 
 What changed in M5:
 
@@ -42,7 +53,7 @@ What changed in M5:
 What changed in M4:
 
 - **Three dates, read from the seed.** The war starts between step 30 and step 50, the capital falls 25 to 40 steps later, and 25 to 40 steps after that the roads change and the story ends. v13 rolled for the war and the fall on every step, so neither had a latest step and the game had no end.
-- **A fifth ending.** If the roads change before the dog is found, the game ends as The Open Gate. Its text is one placeholder line until M6.
+- **A fifth ending.** If the roads change before the dog is found, the game ends as The Open Gate. M6 wrote its text.
 - **Warnings.** Each change is foreshadowed by one line in the eight steps before it, and announced when it comes.
 - **Tiredness costs time.** A move made at fatigue 5 takes two steps of the clock.
 - **Roads close.** During the war a road closes every 18th step: about four in a game, six at most. A closure never cuts off anything you could reach.
@@ -72,7 +83,7 @@ What changed in M2, for a v13 player:
 - The ride on the cabbage wagon is told, and the merchant does not vanish from his wagon.
 - `DEBUG` and `BLOCK` answer only on a page opened with `?debug=1`.
 
-Still v13's: the text of the endings, the legend and the save format. Those are M6. The numbers are not balanced yet: that is M7.
+The numbers are not balanced yet: that is M7, the last step before 1.0.
 
 ## Test
 

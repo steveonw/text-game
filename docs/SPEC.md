@@ -223,6 +223,16 @@ The waiter ends on the change date on every seed. The tracker stands on den 1 be
 
 The asker follows a gesture in 302 games of 500 and still does worse than the bot that only follows sign, because the trail starts at the yard and towns are detours. Making asking pay is open; see the M5 exit report.
 
+**M6 (endings, saves, interface).** The Open Gate has its own lines, and all five endings report steps taken, towns entered of towns, people spoken to, and sign found of trail length (4.6). D15, D16 and the last of D18 are closed. Save v5 is the only format; old codes are refused, as decided in section 8. The legend follows the mode, world LOOK names the four neighbours, HELP and the side panel list every command from one table, and the map carries an `aria-label` (4.7). Six lines are new, each a draft for the owner to edit.
+
+| Measure | v13 | M6 |
+| --- | --- | --- |
+| SAVE at step 0, characters, 2,000 seeds | 90 to 92 | 23 to 26 |
+| SAVE at step 40, asker bot, median (longest) | | 43 (68) |
+| SAVE at step 40, resting bot, median (longest) | | 32 (42) |
+| "Towns" on the ending screen | remembered staff (D15) | towns entered, of 4 |
+| Legend items | 12, world only, one of them a dog the world map never draws | 12 world, 11 town, 6 wild, 5 ruins |
+
 ## 4. The logical end: 1.0
 
 1.0 makes the opening line true: one dog on one trail, a clock that ends, and people whose answers are worth the walk. Everything in this section is proposed.

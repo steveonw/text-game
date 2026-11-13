@@ -54,6 +54,9 @@
 - From M4: the sweep gates take about 40 seconds for 2,000 seeds. Keep any new gate from drawing the page or opening every tile's map on every step.
 - From M5: REST outside a town restores all fatigue (the owner asked that it be allowed). With that, the resting tracker is on den 1 before the war on 46% of seeds, inside the target, and the asker on 25%. If asking is to be worth the steps, the levers are `gestureSignWithin` and how often the trail passes a town (`viaTownWithin`).
 - From M5: `npm run bots` runs six policies and takes about eight minutes.
+- From M6: old save codes are refused (the owner's decision), so tuning can change anything a v5 code does not store without breaking a save. A v5 code stores steps but not dates: if a clock window moves, a code saved under the old numbers loads into the new dates.
+- From M6: the six Open Gate lines carry `// REVIEW`, with M5's 118 and M4's 15. The release should not ship with the tags still on; ask the owner.
+- From M6: `npm test` takes about a minute and a half, the sweep gates about 40 seconds of it.
 - The tagging workflow creates `m7`, and a tag pushed by a workflow does not start other workflows. `v1.0.0` has to be pushed by the owner, or the publish job needs a trigger the owner can run by hand.
 - The clock windows in spec 4.8 bound the roads changing to steps 80 to 130. If tuning moves a window, that target moves with it; record the new bounds.
 

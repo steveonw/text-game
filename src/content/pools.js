@@ -424,10 +424,10 @@ export const PEOPLE = {
 // The legend for each mode: [glyph, name]. Local T is a temple and local ^ a rock;
 // on the world map they are a town and mountains.
 export const LEGEND = {
-  WORLD: [["@","You"],["p","Person"],[".","Plains"],["F","Forest"],["~","Water"],["^","Mountains"],["T","Town"],["C","Capital"],["R","Ruins"],["#","Blocked"],["!","Distress"],["?","Sign"]],
-  TOWN:  [["@","You"],["p","Person"],["|","Street"],["#","Wall"],["I","Inn"],["M","Market"],["S","Smithy"],["T","Temple"],["G","Guard post"],["w","Wagon"],["r","Burned"]],
-  WILD:  [["@","You"],["p","Person"],[".","Ground"],["t","Brush"],["^","Rock"],["d","Dog"]],
-  RUIN:  [["@","You"],[".","Ground"],["r","Fallen stone"],["^","Standing stone"],["d","Dog"]],
+  WORLD: [["@","Player"],["p","Person"],[".","Plains"],["F","Forest"],["~","Water"],["^","Mountains"],["T","Town"],["C","Capital"],["R","Ruins"],["#","Blocked"],["!","Distress"],["?","Sign"]],
+  TOWN:  [["@","Player"],["p","Person"],["|","Street"],["#","Wall"],["I","Inn"],["M","Market"],["S","Smithy"],["T","Temple"],["G","Guard post"],["w","Wagon"],["r","Burned"]],
+  WILD:  [["@","Player"],["p","Person"],[".","Ground"],["t","Brush"],["^","Rock"],["d","Dog"]],
+  RUIN:  [["@","Player"],[".","Ground"],["r","Fallen stone"],["^","Standing stone"],["d","Dog"]],
 };
 
 // Every live command, as HELP lists it and the side panel shows it.

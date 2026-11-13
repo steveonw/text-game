@@ -17,7 +17,7 @@ const ENDINGS = ['Reunion', 'Homecoming', 'Found in Time', 'The Long Way Back', 
 const mapRows = () => mapHtml().replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/\n$/, '').split('\n');
 const transcriptsEnding = (name) => readTranscripts(GOLDEN).filter((t) => t.log.some(([, l]) => l === 'Ending: ' + name));
 
-// Replay a transcript's commands on the modules, keeping the town tiles ENTERed since the last LOAD or NEW.
+// Replay a transcript's commands on the modules, keeping the town tiles ENTERed (or reached by wagon) since the last LOAD or NEW.
 function replayCounting(t) {
   bootModules(t.seed, { debug: !!t.debug });
   let entered = new Set();
@@ -27,6 +27,8 @@ function replayCounting(t) {
     const steps = G.steps, seed = G.seed;
     sendModules([c]);
     if (up.startsWith('NEW')) entered = new Set();
+    // the wagon stops inside a town: that town is entered too
+    if (up === 'RIDE' && G.mode === 'LOCAL' && G.local.kind === 'TOWN' && G.steps !== steps) entered.add(G.player.x + ',' + G.player.y);
     // a LOAD that took: the towns entered are the code's
     if (up.startsWith('LOAD') && (G.seed !== seed || G.steps !== steps)) entered = new Set(G.towns.filter((_, i) => G.townsEntered & (1 << i)).map((t) => t.x + ',' + t.y));
   }
@@ -80,6 +82,17 @@ test('endings: the numbers are true: steps, towns entered of towns, people spoke
     checked++;
   }
   assert.ok(checked >= 8, `${checked} endings checked`);
+});
+
+test('endings: a town reached by wagon counts as entered, as ENTER does', () => {
+  const t = readTranscripts(GOLDEN).find((x) => x.name.startsWith('09-ride'));
+  const entered = replayCounting(t);
+  assert.ok(t.commands.some((c) => c.toUpperCase() === 'RIDE'));
+  assert.equal(G.mode, 'LOCAL');
+  assert.ok(entered.has(G.player.x + ',' + G.player.y), 'the wagon\'s town is counted by the replay');
+  const marked = new Set(G.towns.filter((_, i) => G.townsEntered & (1 << i)).map((p) => p.x + ',' + p.y));
+  assert.deepEqual([...marked].sort(), [...entered].sort());
+  assert.ok(entered.size >= 2, 'the town ridden from and the town ridden to');
 });
 
 test('LOOK: on the world map it names the four neighbours, as the map draws them, for 1,000 tiles', () => {
