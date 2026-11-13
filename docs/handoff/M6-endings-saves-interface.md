@@ -45,6 +45,9 @@
 - Local `T` is a temple and world `T` is a town. Local `^` is rock and world `^` is mountains. The legend must show the right meaning for the mode.
 - The neighbour words must come from the same function that draws the map, so closures, sickness and ruins read the same in both.
 - v13's "Towns visited" counted remembered building staff (defect D15). Replace the count; do not adjust it.
+- From M3: found sign is drawn as `?`, but the legend does not show it yet. M3 could add no text. The legend by mode is where it belongs.
+- From M3: a hint bit on a tile off the trail can only come from a v13 code. `worldGlyph` in `render.js` keeps it and does not draw it, and it still counts toward the five that Homecoming asks for. Save v5 drops such bits when it converts.
+- From M3: `trail().index` maps a world tile to its trail position, and `trail().tiles` the other way. That is the conversion the v5 mask needs.
 
 ## Out of scope
 
