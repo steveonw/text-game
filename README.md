@@ -17,7 +17,7 @@ Then open `dist/index.html` in a browser. Type `HELP` for the commands.
 - Add `?seed=anything` to the address to get the same world every time.
 - `SAVE` prints a password; `LOAD <password>` restores it.
 
-The file it builds is the v13 prototype with twelve of its defects repaired and its dog put on a trail: same worlds, same lines, same save codes. The prototype itself is kept, byte for byte and never edited, and can be opened the same way:
+The file it builds is the v13 prototype with twelve of its defects repaired, its dog put on a trail and its clock given an end: same worlds, the same lines and fifteen new ones, same save codes. The prototype itself is kept, byte for byte and never edited, and can be opened the same way:
 
 ```
 SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legacy/quiet-roads-v13.html
@@ -27,7 +27,20 @@ SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legac
 
 `docs/SPEC.md` describes v13 as built, how it measures when played by script across 2,000 seeds, and the design for a finished 1.0. The work is split into eight steps, M0 to M7, each with a handoff sheet in `docs/handoff/` and an exit report in `docs/handoff/exits/`.
 
-This repository is at **M3**: the dog is now in one place, on one trail, and every clue about it is true.
+This repository is at **M4**: the game has a clock that ends.
+
+What changed in M4:
+
+- **Three dates, read from the seed.** The war starts between step 30 and step 50, the capital falls 25 to 40 steps later, and 25 to 40 steps after that the roads change and the story ends. v13 rolled for the war and the fall on every step, so neither had a latest step and the game had no end.
+- **A fifth ending.** If the roads change before the dog is found, the game ends as The Open Gate. Its text is one placeholder line until M6.
+- **Warnings.** Each change is foreshadowed by one line in the eight steps before it, and announced when it comes.
+- **Tiredness costs time.** A move made at fatigue 5 takes two steps of the clock.
+- **Roads close.** During the war a road closes every 18th step: about four in a game, six at most. A closure never cuts off anything you could reach.
+- **Old stones.** Natural ruins have a map of their own: open ground and stones. The trail ends at one, and that is where the dog waits after the capital falls.
+- **Sickness matters.** The cabbage wagon skips a sick town, and REST there restores little.
+- **Four status words:** quiet, unsettled, guarded, hollow.
+
+Fifteen lines are new in M4. Each is a draft tagged `// REVIEW` in `src/content/pools.js`, for the owner to edit.
 
 What changed in M3:
 
@@ -49,23 +62,23 @@ What changed in M2, for a v13 player:
 - The ride on the cabbage wagon is told, and the merchant does not vanish from his wagon.
 - `DEBUG` and `BLOCK` answer only on a page opened with `?debug=1`.
 
-Still v13's: the clock, fatigue, what people say, the four endings and the save format. Those are M4 to M6.
+Still v13's: what people say, the text of the endings and the save format. Those are M5 and M6. The numbers are not balanced yet: that is M7.
 
 ## Test
 
 ```
-npm test                # goldens, the trail, repairs, worlds, save codes, sweep gates and build rules
+npm test                # goldens, the trail, the clock, repairs, worlds, save codes, sweep gates and build rules
 npm run browser-check   # play the goldens in headless Chrome (Node 22 or later, and Chrome)
 npm run sweep           # measure the built game across 2,000 seeds, and run the gates
 npm run bots            # scripted players over 500 seeds (takes a few minutes)
 npm run record          # build, then re-record test/golden/ from the build
 ```
 
-`npm test` takes about three minutes. It fails if the legacy file changes by a byte, if any recorded game plays out differently, if any of 2,000 worlds is generated differently from v13's, if a save code made by v13 or by the current game stops loading, if a repaired defect comes back, if a module breaks one of the build's rules, or if any of 2,000 seeds fails a gate: no trail, a den or the threshold out of reach, or a fresh trail with no dog behind it.
+`npm test` takes about two minutes. It fails if the legacy file changes by a byte, if any recorded game plays out differently, if any of 2,000 worlds is generated differently from v13's, if a save code made by v13 or by the current game stops loading, if a repaired defect comes back, if a module breaks one of the build's rules, or if any of 2,000 seeds fails a gate: no trail, a den or the threshold out of reach, a fresh trail with no dog behind it, a date outside its window, or a closed road that cuts the dog off.
 
 There are two sets of recorded games:
 
-- `test/golden/` is what the game does now: 29 transcripts, replayed against the modules, the built file and, in the browser check, the real page. Re-record it only when a change is meant, and say why in the step's exit report.
+- `test/golden/` is what the game does now: 30 transcripts, replayed against the modules, the built file and, in the browser check, the real page. Re-record it only when a change is meant, and say why in the step's exit report.
 - `test/golden-v13/` is what v13 did: 27 transcripts, frozen, replayed against the legacy file. It is never re-recorded.
 
 ## How the build works
@@ -99,7 +112,7 @@ tools/browser-check.mjs       plays the goldens in a real browser
 tools/harness/                runs a single-file build, or the modules, headlessly
 tools/sweep.mjs  tools/bot.mjs  tools/record-goldens.mjs
 tools/tag-milestones.mjs      tags a step, mN, when its exit report reaches main
-test/                         legacy, modules, bundle, build-rule, repair, trail and tagging tests
+test/                         legacy, modules, bundle, build-rule, repair, trail, clock and tagging tests
 test/golden/                  transcripts, world hashes, save codes: the current game
 test/golden-v13/              the same, recorded from v13 and frozen
 docs/SPEC.md                  the spec

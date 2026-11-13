@@ -1,7 +1,8 @@
-// The four endings and the numbers on the ending screen.
+// The endings and the numbers on the ending screen.
 
 import { G } from './state.js';
 import { clearLogSoft, log, render } from './io.js';
+import { ROADS_CHANGED } from './content/pools.js';
 import { TUNE } from './tuning.js';
 
 export function triggerEnding(type){
@@ -63,6 +64,16 @@ export function triggerEnding(type){
       log("THE QUIET ROADS", "m");
       log("Ending: Reunion", "m");
     }
+  }
+
+  if (type === "changed"){
+    // The Open Gate: the roads changed before the dog was found.
+    // PLACEHOLDER until M6 writes this ending. One line stands in for it.
+    log("", "m");
+    log(ROADS_CHANGED, "m");
+    log("", "m");
+    log("THE QUIET ROADS", "m");
+    log("Ending: The Open Gate", "m");
   }
 
   log("", "m");

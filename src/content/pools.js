@@ -94,3 +94,41 @@ export const INTERNAL = {
   nearDog:["Paw prints. Fading.","Something moved through here.","You're not alone."],
   routes:["The land feels thin here.","Directions feel unreliable.","Paths overlap."],
 };
+
+// ---------- M4: the clock's new lines ----------
+// Fourteen lines the clock needs and v13 does not have, and one status line.
+// Every one is a draft under the voice rules, for the owner to edit: // REVIEW
+
+// One of these is shown once, in the eight steps before a change.
+export const OMENS = {
+  war: [
+    "Smoke on the horizon, thin and straight.",   // REVIEW
+    "Dust rises where no wind is.",               // REVIEW
+    "The birds have gone quiet.",                 // REVIEW
+  ],
+  fall: [
+    "Riders pass. None look back.",               // REVIEW
+    "Bells, somewhere. Then nothing.",            // REVIEW
+    "Fewer people on the road now.",              // REVIEW
+  ],
+  change: [
+    "The road feels less certain underfoot.",     // REVIEW
+    "The milestones lean. The count is off.",     // REVIEW
+    "The way behind looks unfamiliar.",           // REVIEW
+  ],
+};
+
+export const ROAD_CLOSED_RUMOR = "Word arrives: a road has been closed.";       // REVIEW
+
+// LOOK inside a ruin map: open ground, a fallen stone (r), a standing stone (^).
+export const STONES = {
+  ".": "Old stones stand in the grass.",          // REVIEW
+  "r": "A fallen stone. Moss in the cuts.",       // REVIEW
+  "^": "A standing stone. It leans.",             // REVIEW
+};
+
+// The fifth ending. Its full text is M6's; until then this one line stands in for it.
+export const ROADS_CHANGED = "The roads have changed. The one you walked is gone.";   // REVIEW
+
+// STATUS in the war stage, beside v13's "The roads feel unsettled."
+export const STATUS_GUARDED = "The roads feel guarded.";                              // REVIEW

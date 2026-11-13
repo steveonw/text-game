@@ -72,8 +72,9 @@
     ["m","You call out."],
     ["m","The wind carries it. Maybe."],
     ["m","> E"],
-    ["m","You notice old tracks crossing the land."],
     ["m","> E"],
+    ["m","Something moved through here."],
+    ["m","You notice old tracks crossing the land."],
     ["m","> LOOK"],
     ["m","Open land stretches out."],
     ["m","Something moved through here recently."],
@@ -111,7 +112,7 @@
     ["m","THE QUIET ROADS"],
     ["m","Ending: Reunion"],
     ["m",""],
-    ["m","Steps taken: 11"],
+    ["m","Steps taken: 16"],
     ["m","Towns visited: 0"],
     ["m","People spoken to: 0"],
     ["m",""],
@@ -130,7 +131,7 @@
     ["m","THE QUIET ROADS"],
     ["m","Ending: Reunion"],
     ["m",""],
-    ["m","Steps taken: 11"],
+    ["m","Steps taken: 16"],
     ["m","Towns visited: 0"],
     ["m","People spoken to: 0"],
     ["m",""],
@@ -140,7 +141,7 @@
     ""
   ],
   "finalMapHash": "e3b0c44298fc1c14",
-  "finalStatus": "Fatigue: near-done • Roads: unsettled • Steps: 11",
+  "finalStatus": "Fatigue: near-done • Roads: unsettled • Steps: 16",
   "finalMode": "END",
   "finalPos": "WILD @ (8,10) • seed 1716835597"
 }

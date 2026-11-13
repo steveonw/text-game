@@ -1,6 +1,6 @@
 {
   "name": "21-debug-and-block",
-  "covers": "On a page opened with ?debug=1: the maintenance commands DEBUG and BLOCK; a blocked tile stops movement and is drawn as #. Nothing in play closes a road yet (D12).",
+  "covers": "On a page opened with ?debug=1: the maintenance commands DEBUG and BLOCK; a blocked tile stops movement and is drawn as #.",
   "source": "dist/index.html",
   "seed": "debug-1",
   "debug": true,

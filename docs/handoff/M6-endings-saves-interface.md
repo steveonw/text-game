@@ -48,6 +48,10 @@
 - From M3: found sign is drawn as `?`, but the legend does not show it yet. M3 could add no text. The legend by mode is where it belongs.
 - From M3: a hint bit on a tile off the trail can only come from a v13 code. `worldGlyph` in `render.js` keeps it and does not draw it, and it still counts toward the five that Homecoming asks for. Save v5 drops such bits when it converts.
 - From M3: `trail().index` maps a world tile to its trail position, and `trail().tiles` the other way. That is the conversion the v5 mask needs.
+- From M4: The Open Gate is `triggerEnding("changed")` in `endings.js`. Its body is one placeholder line, `ROADS_CHANGED`. Write the ending there.
+- From M4: the dates are computed from the seed (`dates()` in `clock.js`) and are not saved. A code saved by v13 after one of its dates catches up on the first step after loading: the war, the fall and, if it is past the change date, the end, all at once. Decide whether an old code that late should end at once.
+- From M4: the mode label reads `RUIN` inside a ruin map. The legend by mode needs an entry for stones: `r` fallen, `^` standing.
+- From M4: a tired world move adds 2 to the step counter, so "Steps taken" on the ending screen counts clock steps, not moves.
 
 ## Out of scope
 

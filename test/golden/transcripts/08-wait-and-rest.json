@@ -75,8 +75,8 @@
     ["m","This place doesn't invite stopping."],
     ["m","> S"],
     ["m","> S"],
-    ["m","> S"],
     ["m","The air shifts."],
+    ["m","> S"],
     ["m","> S"],
     ["m","> STATUS"],
     ["m","You are near-done. People are unknown."],
@@ -135,8 +135,8 @@
     ["m","This place doesn't invite stopping."],
     ["m","> S"],
     ["m","> S"],
-    ["m","> S"],
     ["m","The air shifts."],
+    ["m","> S"],
     ["m","> S"],
     ["m","> STATUS"],
     ["m","You are near-done. People are unknown."],
@@ -174,7 +174,7 @@
     ".^^^^^^^^....RRRR^^^"
   ],
   "finalMapHash": "6e2faf40ec3db902",
-  "finalStatus": "Fatigue: tired • Roads: unsettled • Steps: 20",
+  "finalStatus": "Fatigue: tired • Roads: unsettled • Steps: 23",
   "finalMode": "WORLD",
   "finalPos": "(8,4) • seed -1082310035"
 }

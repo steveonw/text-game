@@ -191,6 +191,27 @@ The tracker stands on den 1 on every seed, after a median 28 steps, and before t
 
 Two rules were added to 4.1 from measuring, and both are in the M3 exit report: the yard goes on the mainland when every town sits in a pocket (3 seeds), and den 1 steps back when a trail ends in a long run of ruins so that the two dens stay apart (12 seeds).
 
+**M4 (the clock).** The clock has three seeded dates, five stages and an end, as 4.2 describes, and fatigue costs time, as 4.3 does. D11 and D12 are closed, and D6 is now closed in full. Natural ruins and the threshold have a map of their own. Fifteen lines are new, each a draft for the owner to edit. Measured on the build:
+
+| Measure, 2,000 seeds | v13 | M4 |
+| --- | --- | --- |
+| War starts | no latest step; median 37 | step 30 to 50, median 40 |
+| Capital falls | no latest step; median 72 | step 55 to 90, median 73 |
+| The story ends | never | step 82 to 130, median 105 |
+| Roads closed in a game | 0 | median 4, 5 at most; none on 63 seeds |
+| Dog in reach from the yard at every step, with every closure | | 2,000 of 2,000 |
+
+Bots over 500 seeds:
+
+| Bot | Reunion | Homecoming | Found in Time | The Long Way Back | The Open Gate | Median step at ending |
+| --- | --- | --- | --- | --- | --- | --- |
+| waiter: only waits | 0 | 0 | 0 | 0 | 500 | 104 |
+| tracker: follows sign, never talks | 98 | 0 | 45 | 16 | 341 | 99 |
+| homecoming: asks in a town, walks back, then tracks | 0 | 9 | 7 | 5 | 479 | 104 |
+| explorer: ignores sign | 22 | 0 | 12 | 17 | 449 | 103 |
+
+The waiter ends on the change date on every seed. The tracker stands on den 1 before the war on 131 of 500 seeds (26%); the 1.0 target is 40% to 60%. With the fatigue rule switched off the same bot does so on 425 (85%) and loses only 17 games, so that one rule carries the game from too easy to too hard, and the target lies between. At the starting numbers a tired move costs what a WAIT and a fresh move cost together, so resting in the wild buys nothing. Tuning that is M7's work.
+
 ## 4. The logical end: 1.0
 
 1.0 makes the opening line true: one dog on one trail, a clock that ends, and people whose answers are worth the walk. Everything in this section is proposed.
@@ -445,13 +466,13 @@ Nine choices are the owner's; each has a default that the handoff sheets assume,
 
     Decided 2026-11-12, with the defaults: `?` marks found sign on the world map (M3), and "guarded" is the status word for the war stage (M4). Both add to a palette and vocabulary the source treats as fixed.
 
-- [ ] **An ending without the dog (before M4)**
+- [x] **An ending without the dog (before M4)**
 
-    Default: The Open Gate ends the game when the roads change. The alternative is no deadline: the dog waits at the threshold for as long as it takes.
+    Decided 2026-11-12, with the default: The Open Gate ends the game when the roads change. The alternative was no deadline: the dog waits at the threshold for as long as it takes.
 
-- [ ] **Fatigue as time (before M4)**
+- [x] **Fatigue as time (before M4)**
 
-    Default: on, at fatigue 5. Without it fatigue stays a number that only gates the ride.
+    Decided 2026-11-12: on. The owner asked for an extra step for fatigue: a world move made at fatigue 5 takes two steps of the clock.
 
 - [ ] **Who writes about 140 new lines (before M5)**
 

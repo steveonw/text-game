@@ -7,6 +7,7 @@ import { bootModules, say, screenText, nearest, walkTo, localTo } from '../tools
 import { G } from '../src/state.js';
 import { isTownAt, tileAt, finalTileAt, keyForXY } from '../src/world.js';
 import { dogIsVeryNear } from '../src/trail.js';
+import { dates } from '../src/clock.js';
 import { generateTown, generateWilderness } from '../src/local.js';
 import { mapHtml } from '../src/render.js';
 import { noise01 } from '../src/rng.js';
@@ -92,7 +93,7 @@ test('D17: DEBUG and BLOCK answer only when the page was opened with ?debug=1', 
   assert.ok(G.worldEvents.has('road_blocked_' + keyForXY(G.player.x, G.player.y)));
 });
 
-test('D6: natural ruins open as wilderness; a burned town and the fallen capital still open as towns', () => {
+test('D6: natural ruins open as open ground, not a walled town; a burned town and the fallen capital still open as towns', () => {
   bootModules('ruins-1');
   const r = nearest((x, y) => isNaturalRuin(x, y));
   assert.ok(r, 'a natural ruins tile is reachable');
@@ -101,7 +102,7 @@ test('D6: natural ruins open as wilderness; a burned town and the fallen capital
   const out = say('ENTER');
   assert.ok(out.includes('The land closes around you.'));
   assert.ok(!out.includes('Buildings gather. The road narrows.'));
-  assert.equal(G.local.kind, 'WILD');
+  assert.equal(G.local.kind, 'RUIN'); // M2 opened them as wilderness; M4 gave them a map of their own
   assert.ok(!mapRows().join('').includes('#'), 'no walls');
   assert.ok(!/[IMSTGw]/.test(mapRows().join('')), 'no buildings and no wagon');
   say('EXIT');
@@ -288,26 +289,19 @@ test('D5: every topic is answered from its own lines, never from ROAD', () => {
 });
 
 // The first step at which v13's war roll comes up for the current seed.
-const warStep = () => { for (let s = TUNE.warAfterStep + 1; s < 400; s++) if (noise01(s, 9001, G.seed ^ 0xBEEF) < TUNE.warChancePerStep) return s; return -1; };
-const warAt = (s) => noise01(s, 9001, G.seed ^ 0xBEEF) < TUNE.warChancePerStep;
-
 test('D10: REST does not skip the clock for the steps it passes', () => {
-  let checked = 0;
-  for (let n = 1; n <= 200 && checked < 5; n++) {
-    bootModules('d10-' + n);
-    const s = warStep();
-    // a seed where the roll succeeds on step s and fails on s+1, so only an every-step clock starts the war
-    if (s < 0 || warAt(s + 1) || !['.', 'F'].includes(finalTileAt(G.player.x, G.player.y))) continue;
+  // The war starts on its date even when that step is the first of the two a REST takes.
+  for (const seed of ['d10-1', 'd10-2', 'd10-3', 'd10-4', 'd10-5']) {
+    bootModules(seed);
+    const s = dates().war;
     say('ENTER');
     while (G.steps < s - 1) say('WAIT');
     assert.ok(!G.worldEvents.has('war_started'));
     const out = say('REST');
     assert.equal(G.steps, s + 1, 'REST still costs two steps');
-    assert.ok(G.worldEvents.has('war_started'), `d10-${n}: war started on step ${s}, inside the rest`);
+    assert.ok(G.worldEvents.has('war_started'), `${seed}: war started on step ${s}, inside the rest`);
     assert.equal(out.filter((l) => l === 'Soldiers begin to appear on the roads.').length, 1);
-    checked++;
   }
-  assert.equal(checked, 5);
 });
 
 // Stand at the wagon in the merchant's first stop, having talked to him twice, tired enough to be offered a ride.

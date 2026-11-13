@@ -26,6 +26,11 @@
 //   2. the yard can reach den 1, den 2 and the threshold
 //   3. in each state of the clock (quiet, war, fallen) the fresh-trail line holds
 //      on exactly one tile, that tile can be reached, and ENTER there shows the dog
+//   4. (M4) the war starts on step 30 to 50, the capital falls 25 to 40 steps
+//      later, and the roads change 25 to 40 after that
+//   5. (M4) waiting at the yard from the first step to the last, with every road
+//      the clock closes: the dog can be walked to at every step, and the story
+//      ends on the change date
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,7 +59,7 @@ function __measure(seedStr, full){
     if (r && dogIsNear(x,y)) nearReach++;
     if (dogIsVeryNear(x,y) && __enterableWild(x,y)){
       veryNearWild++; if (ruin) ruinsVeryNear++;
-      if (generateWilderness(x,y).dog){
+      if (__localAt(x,y).dog){
         dogTiles++; if (ruin) ruinDogTiles++;
         if (r){ dogTilesReach++; dogs.push({x:x,y:y}); if (bestDog < 0 || d < bestDog) bestDog = d; }
       }
@@ -141,12 +146,17 @@ function __gates(seedStr){
   for (const pl of places){ const p = t.tiles[pl[1]]; if (!p || dist[p.y*N+p.x] < 0) fails.push("the yard cannot reach " + pl[0]); }
   // 3. the fresh-trail line, in each state of the clock
   const states = [["quiet", []], ["war", ["war_started"]], ["fallen", ["war_started", "capital_fallen"]]];
+  // In the quiet every tile's map is opened. A map changes with the clock only where
+  // the dog arrives or leaves, so in the later states only the dens, the threshold and
+  // any tile that claims the dog are opened again.
+  const dogPlaces = new Set([t.den1, t.den2, t.threshold].map(function(i){ return t.tiles[i].y*N + t.tiles[i].x; }));
   for (const st of states){
     worldEvents = new Set(st[1]);
     let fresh = 0, dogs = 0;
     for (let y=0;y<N;y++) for (let x=0;x<N;x++){
       const very = dogIsVeryNear(x,y);
-      const dog = __enterableWild(x,y) && !!generateWilderness(x,y).dog;
+      if (st[0] !== "quiet" && !very && !dogPlaces.has(y*N+x)) continue;
+      const dog = __enterableWild(x,y) && !!__localAt(x,y).dog;
       if (very){
         fresh++;
         if (!dog) fails.push(st[0] + ": a fresh trail at (" + x + "," + y + ") and no dog on ENTER");
@@ -157,7 +167,41 @@ function __gates(seedStr){
     if (fresh !== 1 || dogs !== 1) fails.push(st[0] + ": " + fresh + " fresh-trail tiles, " + dogs + " dog tiles");
   }
   worldEvents = new Set();
-  return JSON.stringify({ fails: fails, length: L, den1: t.den1, den2: t.den2, onRuins: t.onRuins, via: !!t.via, startX: player.x, startY: player.y });
+  const out = { fails: fails, length: L, den1: t.den1, den2: t.den2, onRuins: t.onRuins, via: !!t.via, startX: player.x, startY: player.y };
+  if (typeof dates !== "function") return JSON.stringify(out);
+
+  // 4. (M4) the three dates fall in their windows
+  const d = dates();
+  if (d.war < 30 || d.war > 50) fails.push("war on step " + d.war);
+  if (d.fall - d.war < 25 || d.fall - d.war > 40) fails.push("the fall " + (d.fall - d.war) + " steps after the war");
+  if (d.change - d.fall < 25 || d.change - d.fall > 40) fails.push("the change " + (d.change - d.fall) + " steps after the fall");
+  // 5. (M4) wait at the yard from the first step to the last, with every closure the
+  //    clock makes: at every step the dog's tile can be walked to from the yard, and
+  //    ENTER there would show the dog. The story ends on the change date.
+  //    The page is not drawn while waiting, and the walk is checked whenever the
+  //    world has changed: a road closed, or the dog moved on.
+  const yard = { x: player.x, y: player.y };
+  const draw = HOST.render; HOST.render = function(){};
+  let guard = 0, lost = -1, closures = 0, seenState = "";
+  try {
+    while (mode !== "END" && guard++ < 400){
+      runCommand("WAIT");
+      if (mode === "END") break;
+      const state = worldEvents.size + "|" + dogIndex();
+      if (state === seenState) continue;
+      seenState = state;
+      const dog = dogTile();
+      const reach = __bfsFrom(yard.x, yard.y).dist;
+      if (lost < 0 && (reach[dog.y*N+dog.x] < 0 || !__isDogTile(dog.x, dog.y))) lost = steps;
+    }
+  } finally { HOST.render = draw; }
+  closures = 0;
+  for (const e of worldEvents) if (e.startsWith("road_blocked_")) closures++;
+  if (lost >= 0) fails.push("with closures, the dog could not be reached at step " + lost);
+  if (mode !== "END" || steps !== d.change) fails.push("waiting ended at step " + steps + ", not on the change date " + d.change);
+  if (closures > 6) fails.push(closures + " roads closed");
+  out.war = d.war; out.fall = d.fall; out.change = d.change; out.closures = closures;
+  return JSON.stringify(out);
 }`;
 
 export function openForSweep(htmlPath = LEGACY) {
@@ -193,6 +237,12 @@ export function sweepGates(htmlPath, n = SWEEP_SIZE) {
       passesBesideATown: rows.filter((r) => r.via).length,
       den1Position: { p05: quantile(rows.map((r) => r.den1), 0.05), median: quantile(rows.map((r) => r.den1), 0.5), p95: quantile(rows.map((r) => r.den1), 0.95) },
       den2Position: { p05: quantile(rows.map((r) => r.den2), 0.05), median: quantile(rows.map((r) => r.den2), 0.5), p95: quantile(rows.map((r) => r.den2), 0.95) },
+    },
+    clock: rows[0].change === undefined ? null : {
+      war: { min: quantile(rows.map((r) => r.war), 0), median: quantile(rows.map((r) => r.war), 0.5), max: quantile(rows.map((r) => r.war), 0.9999) },
+      fall: { min: quantile(rows.map((r) => r.fall), 0), median: quantile(rows.map((r) => r.fall), 0.5), max: quantile(rows.map((r) => r.fall), 0.9999) },
+      change: { min: quantile(rows.map((r) => r.change), 0), median: quantile(rows.map((r) => r.change), 0.5), max: quantile(rows.map((r) => r.change), 0.9999) },
+      closures: { none: rows.filter((r) => r.closures === 0).length, median: quantile(rows.map((r) => r.closures), 0.5), max: quantile(rows.map((r) => r.closures), 0.9999) },
     },
   };
 }
@@ -264,6 +314,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (hasTrail(openForSweep(htmlPath))) {
     const g = sweepGates(htmlPath, n);
     console.log(JSON.stringify(g.trail, null, 2));
+    if (g.clock) console.log(JSON.stringify(g.clock, null, 2));
     console.log(`trail length 20 or more: ${g.trail.atLeast20} of ${n}`);
     console.log(`gates: ${g.failures.length ? g.failures.length + ' FAILED' : 'all ' + n + ' seeds pass'}`);
     for (const f of g.failures.slice(0, 40)) console.log('  ' + f);

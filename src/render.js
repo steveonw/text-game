@@ -4,6 +4,7 @@
 import { G } from './state.js';
 import { clamp } from './rng.js';
 import { WORLD_SIZE } from './tuning.js';
+import { STAGE_WORDS, stage } from './clock.js';
 import { trailIndexAt } from './trail.js';
 import { finalTileAt, hasDogHint } from './world.js';
 
@@ -69,7 +70,7 @@ export function renderMapLocal(){
       const key = x + "_" + y;
       if (x===G.local.px && y===G.local.py) {
         html += glyphSpan("@");
-      } else if (G.local.kind==="WILD" && G.local.dog && x===G.local.dog.x && y===G.local.dog.y) {
+      } else if ((G.local.kind==="WILD" || G.local.kind==="RUIN") && G.local.dog && x===G.local.dog.x && y===G.local.dog.y) {
         html += glyphSpan("d");
       } else if (npcAt[key] === "n") {
         // Show townsperson/wanderer as 'p'
@@ -99,8 +100,7 @@ export function posText(){
 
 export function statusText(){
   const fat = ["fresh","worn","tired","heavy","spent","near-done"][clamp(G.player.fatigue,0,5)];
-  const tone = G.worldEvents.has("capital_fallen") ? "hollow" : G.worldEvents.has("routes_stirring") ? "unsettled" : "quiet";
-  return "Fatigue: "+fat+" • Roads: "+tone+" • Steps: "+G.steps;
+  return "Fatigue: "+fat+" • Roads: "+STAGE_WORDS[stage()]+" • Steps: "+G.steps;
 }
 
 // v13's render(): redraw the labels, the map and the status line from G.

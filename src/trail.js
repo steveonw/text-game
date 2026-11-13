@@ -163,6 +163,11 @@ export function dogIndex(){
 
 export function dogTile(){ return trail().tiles[dogIndex()]; }
 
+export function isThreshold(x,y){
+  const t = trail();
+  return trailIndexAt(x,y) === t.threshold;
+}
+
 // v13's two questions, now with one true answer each.
 // "Near": the dog has been here. The tile carries sign.
 export function dogIsNear(x,y){

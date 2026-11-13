@@ -40,10 +40,16 @@ export const TUNE = {
   // The clock
   sicknessEverySteps: 12,        // while stirring, sickness is rolled every this many steps
   sicknessChance: 0.55,          // chance the chosen town falls sick
-  warAfterStep: 28,              // war can start once steps exceed this
-  warChancePerStep: 0.08,        // chance per step that it does
-  fallAfterStep: 60,             // the capital can fall once steps exceed this, while stirring
-  fallChancePerStep: 0.06,       // chance per step that it does
+  stirByStep: 24,                // the routes are stirring by this step, sign or no sign
+  warFrom: 30,                   // the war starts on a seeded step from this...
+  warTo: 50,                     // ...to this
+  stageGapFrom: 25,              // the capital falls this many steps after the war starts, at least...
+  stageGapTo: 40,                // ...and at most; the roads change as long again after the fall
+  omenWithin: 8,                 // each change is foreshadowed once, on a seeded step this close before it
+  closeEverySteps: 18,           // during the war a road may close every this many steps
+  maxClosures: 6,                // roads closed in one game, at most
+  ruinStonesFrom: 5,             // a ruin map has this many stones, at least...
+  ruinStonesTo: 9,               // ...and at most
   burnEverySteps: 18,            // during war, a town may burn every this many steps
   burnAboveScore: 0.9,           // it burns only if its danger score is above this
   wagonStopSteps: 7,             // the cabbage merchant stays this many steps at each town
@@ -57,10 +63,12 @@ export const TUNE = {
 
   // Fatigue, rest and the ride
   moveFatigue: 1,                // fatigue per move
+  exhaustedMoveSteps: 2,         // a world move made at fatigue 5 takes this many steps of the clock
   forestFatigue: 2,              // fatigue per move into forest
   waitRecovers: 1,               // fatigue WAIT restores
   restSteps: 2,                  // steps REST costs
   restTownRecovers: 3,           // fatigue REST restores in a town
+  restSickTownRecovers: 1,       // ...and in a town with sickness
   restWildRecovers: 2,           // fatigue REST restores in the wild
   shallowSleepChance: 0.18,      // chance of the shallow-sleep line when resting in the wild
   rideSteps: 3,                  // steps RIDE costs
