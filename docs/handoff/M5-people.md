@@ -57,6 +57,10 @@ That is 118 new lines. Tag each `// REVIEW` and list them all in the exit report
 - v13 has 103 pooled lines averaging 4 words. If a draft line needs 9 words, it is probably two lines.
 - From M3: `dogDirectionHint(x, y)` in `trail.js` already returns the first step of the shortest way to the dog, offers it only where sign lies within 4 tiles (`gestureSignWithin`), and applies v13's 12% error whatever the trust. On the sweep it points a step nearer the dog 92.1% of the time. Build `gestureFor` on it; the trust rule is what is missing.
 - From M3: the tracker bot stands on den 1 before the war on 82% of 500 seeds. Report the asker beside that number.
+- From M4: that number is 26% at `m4`, because a tired move now costs two steps. Report the asker beside the `m4` number.
+- From M4: fifteen draft lines are in `src/content/pools.js`, tagged `// REVIEW`: `OMENS`, `ROAD_CLOSED_RUMOR`, `STONES`, `ROADS_CHANGED`, `STATUS_GUARDED`. They follow the voice rules and wait for the owner's edit. Keep the tag on any line of yours the owner has not seen.
+- From M4: a ruin map has no one in it, by rule. Do not add people there. `local.kind` is `"RUIN"`.
+- From M4: the wagon skips sick towns (`wagonStops()` in `clock.js`), so a ride can now pass over a town. The asker bot rides.
 
 ## Out of scope
 

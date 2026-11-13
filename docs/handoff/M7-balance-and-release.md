@@ -49,6 +49,9 @@
 - A bot must know nothing a player could not learn from the page. A bot that reads the trail from memory will flatter the numbers.
 - Pages serves the game from a sub-path. The seed in the URL must survive it.
 - From M3: at `m3` the tracker bot stands on den 1 before the war on 82% of 500 seeds, against a target of 40% to 60%, and ends before step 12 on 2%. The numbers that move it are in `tuning.js` under "The trail and the dog".
+- From M4: at `m4` the tracker stands on den 1 before the war on 26% of 500 seeds and loses 68% of its games to The Open Gate. With `exhaustedMoveSteps` set to 1 it is 85% and 3%. The target, 40% to 60%, lies between, so that number alone cannot be the answer.
+- From M4: at the starting numbers rest buys nothing in the wild. A tired move costs 2 steps; WAIT and a fresh move cost 2; REST costs 2 and restores 2. Only a town's REST (3 for 2) and the wagon come out ahead. If resting is meant to be a choice, `restWildRecovers` and `waitRecovers` are where to look.
+- From M4: the sweep gates take about 40 seconds for 2,000 seeds. Keep any new gate from drawing the page or opening every tile's map on every step.
 - The tagging workflow creates `m7`, and a tag pushed by a workflow does not start other workflows. `v1.0.0` has to be pushed by the owner, or the publish job needs a trigger the owner can run by hand.
 - The clock windows in spec 4.8 bound the roads changing to steps 80 to 130. If tuning moves a window, that target moves with it; record the new bounds.
 
