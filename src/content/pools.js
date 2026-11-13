@@ -129,6 +129,21 @@ export const STONES = {
 
 // The fifth ending, The Open Gate (M6): the roads change before the dog is found.
 // Shaped like v13's four. "" is a blank line.
+// M7: a person who has seen the dog, and points true, offers to walk you to where it rests.
+export const GUIDE = {
+  offer: [
+    "I can show you where.",                       // REVIEW
+    "Come. I'll walk you there.",                  // REVIEW
+    "I know the place. Follow me.",                // REVIEW
+  ],
+  walk: [
+    "You walk together, saying little.",           // REVIEW
+    "They stop, and nod at the ground.",           // REVIEW
+    "Here. This is where it lay.",                 // REVIEW
+  ],
+  declined: "They look away. Not now.",            // REVIEW
+};
+
 export const OPEN_GATE = [
   "The roads have changed.",                       // REVIEW
   "The one you walked is gone.",                   // REVIEW
@@ -442,6 +457,7 @@ export const COMMANDS = [
   ["WAIT", "let a moment pass"],
   ["REST", "rest a while"],
   ["RIDE", "ride the wagon, when offered"],
+  ["FOLLOW", "go with someone who offers to show you"],
   ["STATUS", "how you are, how the roads are"],
   ["SAVE", "get a password"],
   ["LOAD <password>", "go back to a saved game"],

@@ -30,11 +30,11 @@ function waitUntil(step) {
   return lines;
 }
 
-test('dates: war from step 30 to 50, the fall 25 to 40 after it, the change 25 to 40 after that; the same every time', () => {
+test('dates: war from step 34 to 50 (M7; M4 30), the fall 25 to 40 after it, the change 25 to 40 after that; the same every time', () => {
   for (const seed of SEEDS) {
     bootModules(seed);
     const d = dates();
-    assert.ok(d.war >= 30 && d.war <= 50, `${seed}: war on ${d.war}`);
+    assert.ok(d.war >= TUNE.warFrom && d.war <= TUNE.warTo && TUNE.warFrom === 34 && TUNE.warTo === 50, `${seed}: war on ${d.war}`);
     assert.ok(d.fall - d.war >= 25 && d.fall - d.war <= 40, `${seed}: fall ${d.fall - d.war} after`);
     assert.ok(d.change - d.fall >= 25 && d.change - d.fall <= 40, `${seed}: change ${d.change - d.fall} after`);
     G.steps = 77; G.worldEvents.add('war_started'); G.player.fatigue = 5;

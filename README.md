@@ -30,6 +30,7 @@ Then open `dist/index.html` in a browser.
 | `WAIT` | let a moment pass |
 | `REST` | rest a while |
 | `RIDE` | ride the wagon, when offered |
+| `FOLLOW` | go with someone who offers to show you |
 | `STATUS` | how you are, how the roads are |
 | `SAVE` | get a password |
 | `LOAD <password>` | go back to a saved game |
@@ -53,7 +54,16 @@ SHA-256  85616c65f91ae54598e96c0833a571a30cd8bc9dea3103fba82bd9f1fe7fea7c  legac
 
 `docs/SPEC.md` describes v13 as built, how it measures when played by script across 2,000 seeds, and the design for a finished 1.0. The work is split into eight steps, M0 to M7, each with a handoff sheet in `docs/handoff/` and an exit report in `docs/handoff/exits/`.
 
-This repository is at **M6**, with M7 under way: all five endings report true numbers, save codes are short, and the page says what it shows. The bots now run against the targets for 1.0 on every push; `docs/balance.md` has the results. Five of the six targets hold at the starting numbers. The sixth, that asking should pay, cannot be met by tuning alone and waits on a decision.
+This repository is at **M7**: the numbers are tuned against scripted players and every target for 1.0 holds on 2,000 seeds. 1.0 is published when the owner pushes the `v1.0.0` tag.
+
+What changed in M7:
+
+- **Someone can show you the way.** In a town that has seen your dog, a person who points true when you ask about it offers to walk you there. Type `FOLLOW`. The walk costs what walking costs.
+- **Asking now pays.** A scripted player who asks in a nearby town stands on the dog's first den before the war about three times in four; one who only follows sign, about half the time.
+- **Three numbers changed:** the trail passes a nearby town more often, a town counts as having seen the dog a little farther from the trail, and the war comes four steps later at the earliest.
+- **Every target is checked on every push,** by six scripted players over 2,000 worlds (`docs/balance.md`).
+
+Seven lines are new in M7, tagged `// REVIEW`.
 
 What changed in M6:
 

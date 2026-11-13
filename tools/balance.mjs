@@ -34,8 +34,8 @@ export const TARGETS = {
   change: [80, 130],
 };
 
-// Targets reported but not gated: tuning alone cannot meet them (docs/balance.md).
-export const OPEN = new Set(['askDen1']);
+// Targets reported but not gated, while the owner decides one (docs/balance.md).
+export const OPEN = new Set(); // M7: none. 'askDen1' was open until the guide (FOLLOW) was added
 
 function runChunk(htmlPath, policy, from, to) {
   const runs = [];

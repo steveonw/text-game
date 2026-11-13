@@ -2,18 +2,18 @@
 
 import { G } from './state.js';
 import { STAGE_WORDS, advanceWorldPressure, advanceWorldPressureFrom, cabbageIsHereWorld, initCabbageRoute, nextWagonStop, stage } from './clock.js';
-import { BUILDING_POOLS, CABBAGE, COMMANDS, LEGEND, STATUS_GUARDED, STONES } from './content/pools.js';
+import { BUILDING_POOLS, CABBAGE, COMMANDS, GUIDE, LEGEND, STATUS_GUARDED, STONES } from './content/pools.js';
 import { triggerEnding } from './endings.js';
 import { generateRuin, generateTown, generateWilderness } from './local.js';
-import { getNPC, maybeInternal, sayNPC, setNPC } from './people.js';
+import { getNPC, maybeInternal, sayNPC, setNPC, townSeesTrail } from './people.js';
 import { clearLogSoft, debugOn, freshSeed, log, render, renderLegend } from './io.js';
 import { clamp, fnv1a32, noise01 } from './rng.js';
 import { loadPassword, savePassword } from './save.js';
 import { worldGlyph } from './render.js';
 import { TUNE, WORLD_SIZE } from './tuning.js';
-import { gestureFor } from './gesture.js';
-import { callAnswer, dogIsNear, dogIsVeryNear, isThreshold } from './trail.js';
-import { addDogHint, computeTowns, finalTileAt, isTownAt, keyForXY, placePlayer, resetDogHints, tileAt } from './world.js';
+import { gestureFor, trueGesture } from './gesture.js';
+import { callAnswer, dogIsNear, dogIsVeryNear, dogTile, isThreshold } from './trail.js';
+import { addDogHint, computeTowns, finalTileAt, isTownAt, keyForXY, passable, placePlayer, resetDogHints, stepsFrom, tileAt } from './world.js';
 
 // ---------- Command system ----------
 // M6: every live command and alias, from the table the side panel shows.
@@ -48,6 +48,15 @@ export function travelEventCheck(){
   else if (r < 0.15) log("You feel like you are being watched.", "m");
 }
 
+// Sign on a world tile the player stands on: found, and enough of it stirs the routes.
+function noticeSign(x, y){
+  if (!addDogHint(x, y)) return;
+  if (G.dogHintCount >= TUNE.hintsToStir && !G.worldEvents.has("routes_stirring")){
+    G.worldEvents.add("routes_stirring");
+    log("Animals have been restless. You feel it in the roads.", "m");
+  }
+}
+
 export function moveWorld(dx,dy){
   if (G.mode!=="WORLD"){ log("Not here.", "m"); return; }
   const nx = G.player.x + dx, ny = G.player.y + dy;
@@ -65,12 +74,7 @@ export function moveWorld(dx,dy){
 
   if (dogIsNear(G.player.x, G.player.y)){
     maybeInternal("nearDog");
-    if (addDogHint(G.player.x, G.player.y)){
-      if (G.dogHintCount >= TUNE.hintsToStir && !G.worldEvents.has("routes_stirring")){
-        G.worldEvents.add("routes_stirring");
-        log("Animals have been restless. You feel it in the roads.", "m");
-      }
-    }
+    noticeSign(G.player.x, G.player.y);
   } else maybeInternal("travel");
 
   travelEventCheck();
@@ -323,6 +327,12 @@ export function cmdAsk(topic){
   // M5: DOG, SICKNESS, WAR, TOWN, and ROAD asked of a guard, can each earn a gesture.
   const dir = gestureFor(topic, G.local.tx, G.local.ty, st, building);
   if (dir) log("(A gesture: " + dir + ".)", "m");
+  // M7: someone who has seen the dog, and points true, offers to walk you there.
+  if (topic==="DOG" && dir && G.local.kind==="TOWN" && townSeesTrail(G.local.tx, G.local.ty) && dir === trueGesture("DOG", G.local.tx, G.local.ty, building)){
+    G.local.guide = id;
+    log(GUIDE.offer[((fnv1a32(String(id)) ^ G.steps) >>> 0) % GUIDE.offer.length]);
+    log("(Type FOLLOW.)", "m");
+  }
   if (topic==="DOG" && dogIsNear(G.local.tx, G.local.ty)) maybeInternal("nearDog");
   if (topic==="ROUTES") maybeInternal("routes");
   G.player.rep = clamp(G.player.rep + 1, 0, 5);
@@ -397,6 +407,37 @@ export function cmdRide(){
   markTownEntered(G.player.x, G.player.y); // the wagon stops inside the town
   G.local = generateTown(G.player.x, G.player.y, true);
   G.mode = "LOCAL";
+  render();
+}
+
+// M7: FOLLOW. The person who offered walks you, by the shortest open way, to the
+// tile where the dog rests. Each step costs what a move costs; sign on the way is found.
+export function cmdFollow(){
+  if (G.mode!=="LOCAL" || !G.local || G.local.kind!=="TOWN" || !G.local.guide){ log("No one is leading.", "m"); return; }
+  G.local.guide = null;
+  const dog = dogTile();
+  const dist = stepsFrom(dog.x, dog.y, passable);
+  let x = G.local.tx, y = G.local.ty;
+  if (dist[y*WORLD_SIZE + x] <= 0){ log(GUIDE.declined); return; }
+  log(GUIDE.walk[0], "m");
+  const before = G.steps;
+  while (dist[y*WORLD_SIZE + x] > 0){
+    const here = dist[y*WORLD_SIZE + x];
+    const next = [[0,-1],[1,0],[0,1],[-1,0]].map(([dx,dy]) => [x+dx, y+dy])
+      .find(([nx,ny]) => nx>=0 && ny>=0 && nx<WORLD_SIZE && ny<WORLD_SIZE && dist[ny*WORLD_SIZE + nx] === here - 1);
+    G.steps += (G.player.fatigue >= 5) ? TUNE.exhaustedMoveSteps : 1;
+    G.player.fatigue = clamp(G.player.fatigue + (finalTileAt(next[0], next[1])==="F" ? TUNE.forestFatigue : TUNE.moveFatigue), 0, 5);
+    [x, y] = next;
+    if (dogIsNear(x, y)) noticeSign(x, y);
+  }
+  G.player.x = x; G.player.y = y;
+  G.local = null;
+  G.mode = "WORLD";
+  advanceWorldPressureFrom(before + 1);
+  if (G.mode === "END") return;
+  log(GUIDE.walk[1], "m");
+  log(GUIDE.walk[2]);
+  cmdLook();
   render();
 }
 
@@ -522,6 +563,7 @@ export function runCommand(raw){
     case "WAIT": return cmdWait();
     case "REST": return cmdRest();
     case "RIDE": return cmdRide();
+    case "FOLLOW": return cmdFollow();
     case "SAVE": { const pw = savePassword(); log("Password:", "m"); log(pw, "m"); return; }
     case "LOAD": { loadPassword(arg); return; }
     case "NEW": return cmdNew(arg);

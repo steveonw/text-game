@@ -605,6 +605,23 @@ const PLANS = [
     for (const c of ['ASK ROAD', 'ASK ROAD', 'ASK ROAD']) p.need(!p.do(c).some((l) => l.startsWith('(A gesture: ')), 'a priest pointed down a road');
     p.do('EXIT'); p.do('STATUS');
   }],
+
+  ['35-follow-a-guide', 'M7: in a town that has seen the dog, a person asked about it points true and offers to show the way; FOLLOW walks there, paying a move for each step, and the trail is fresh. ENTER and CALL end the game.', 'guide', (p) => {
+    const t = p.find('function(x,y){ return isTownAt(x,y) && townSeesTrail(x,y) && !(capital && capital.x === x && capital.y === y); }', 14);
+    p.walkTo(t.x, t.y); p.do('STATUS'); p.do('ENTER');
+    const who = p.get('JSON.stringify(local.npcs.filter(function(n){ return n.type !== "w"; })[0] || null)');
+    p.need(who !== 'null', 'no one in the town');
+    const n = JSON.parse(who);
+    p.localTo(n.x, n.y);
+    let offered = false;
+    for (let i = 0; i < 4 && !offered; i++) offered = p.do('ASK DOG').includes('(Type FOLLOW.)');
+    p.need(offered, 'no offer');
+    p.do('FOLLOW');
+    p.need(p.get('mode') === 'WORLD' && p.get('dogIsVeryNear(player.x, player.y)'), 'not at the dog');
+    p.do('STATUS'); p.do('ENTER');
+    goToDogAndCall(p);
+    p.need(endingOf(p) !== 'none', 'no ending');
+  }],
 ];
 
 // ---------------------------------------------------------------------------

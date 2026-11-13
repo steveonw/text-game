@@ -94,7 +94,6 @@
     ["m","> W"],
     ["m","> W"],
     ["m","> N"],
-    ["m","Smoke on the horizon, thin and straight."],
     ["m","> N"],
     ["m","> ASK DOG"],
     ["m","Innkeeper (DOG):"],
@@ -105,11 +104,15 @@
     ["","Drank from the trough. Then gone."],
     ["","That dog? Always underfoot."],
     ["m","(A gesture: west.)"],
+    ["","Come. I'll walk you there."],
+    ["m","(Type FOLLOW.)"],
     ["m","> ASK DOG"],
     ["m","Innkeeper (DOG):"],
     ["","Left before dawn."],
     ["","Wouldn't sleep inside."],
-    ["m","(A gesture: west.)"]
+    ["m","(A gesture: west.)"],
+    ["","Come. I'll walk you there."],
+    ["m","(Type FOLLOW.)"]
   ],
   "finalScreen": [
     ["m","The yard gate is open."],
@@ -167,7 +170,6 @@
     ["m","> W"],
     ["m","> W"],
     ["m","> N"],
-    ["m","Smoke on the horizon, thin and straight."],
     ["m","> N"],
     ["m","> ASK DOG"],
     ["m","Innkeeper (DOG):"],
@@ -178,11 +180,15 @@
     ["","Drank from the trough. Then gone."],
     ["","That dog? Always underfoot."],
     ["m","(A gesture: west.)"],
+    ["","Come. I'll walk you there."],
+    ["m","(Type FOLLOW.)"],
     ["m","> ASK DOG"],
     ["m","Innkeeper (DOG):"],
     ["","Left before dawn."],
     ["","Wouldn't sleep inside."],
-    ["m","(A gesture: west.)"]
+    ["m","(A gesture: west.)"],
+    ["","Come. I'll walk you there."],
+    ["m","(Type FOLLOW.)"]
   ],
   "finalMap": [
     "#########",

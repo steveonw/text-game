@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import { load } from '../tools/harness/load.mjs';
 import { HELPERS } from '../tools/harness/helpers.mjs';
 import { ROOT, GOLDEN, SAVE_SNAPSHOT_EXPR, readSaveCodes } from '../tools/harness/golden.mjs';
+import { POLICY } from '../tools/bot.mjs';
 import { bootModules, say } from '../tools/harness/modules.mjs';
 import { sweepSeed, SWEEP_SIZE } from '../tools/sweep.mjs';
 import path from 'node:path';
@@ -48,9 +49,6 @@ test('save: a code cut short, or with a character added, is refused', () => {
 // 200 mid-game states from the asker bot: at a point in each game, SAVE, and remember
 // what the game held. LOAD of the code, in a fresh game, must restore every saved field.
 test('save: round trip of 200 mid-game states from the asker bot', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'tools', 'bot.mjs'), 'utf8');
-  const start = src.indexOf('const POLICY = `') + 'const POLICY = `'.length;
-  const POLICY = src.slice(start, src.indexOf('`;', start));
   const FIELDS = ['seed', 'x', 'y', 'fatigue', 'rep', 'steps', 'events', 'dogHintCount', 'hintTiles', 'npc', 'townsEntered'];
   let checked = 0, inTown = 0, late = 0;
   for (let i = 1; checked < 200 && i <= 400; i++) {

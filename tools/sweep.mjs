@@ -26,7 +26,7 @@
 //   2. the yard can reach den 1, den 2 and the threshold
 //   3. in each state of the clock (quiet, war, fallen) the fresh-trail line holds
 //      on exactly one tile, that tile can be reached, and ENTER there shows the dog
-//   4. (M4) the war starts on step 30 to 50, the capital falls 25 to 40 steps
+//   4. (M4) the war starts on step 30 to 50 (M7 tuned it to 34 to 50), the capital falls 25 to 40 steps
 //      later, and the roads change 25 to 40 after that
 //   5. (M4) waiting at the yard from the first step to the last, with every road
 //      the clock closes: the dog can be walked to at every step, and the story

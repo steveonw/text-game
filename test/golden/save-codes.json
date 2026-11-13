@@ -27,40 +27,40 @@
   {
    "label": "end of transcript 02-enter-town",
    "format": "v5",
-   "code": "BcOLjIsPExMFIgEBAgIAAAACAgUTEwEVAAETEwEVACOh",
+   "code": "BZXsyEsHAQUnAQECBAAAAAICBQcBARUAAQcBARUAzsk",
    "reply": [
     "The password takes."
    ],
    "restores": {
-    "seed": -2024899298,
+    "seed": -79239947,
     "mode": "WORLD",
-    "x": 19,
-    "y": 19,
+    "x": 7,
+    "y": 1,
     "fatigue": 5,
     "rep": 0,
-    "steps": 34,
+    "steps": 39,
     "events": [
      "routes_stirring"
     ],
     "dogHintCount": 1,
     "hintTiles": [
-     398
+     43
     ],
     "npc": {
-     "npc_G_19_19": {
+     "npc_G_7_1": {
       "familiarity": 1,
       "trust": 0,
       "hostility": 1,
       "flags": []
      },
-     "npc_ambient_TOWN_19_19": {
+     "npc_ambient_TOWN_7_1": {
       "familiarity": 1,
       "trust": 0,
       "hostility": 1,
       "flags": []
      }
     },
-    "townsEntered": 2
+    "townsEntered": 4
    }
   },
   {
@@ -180,7 +180,7 @@
   {
    "label": "end of transcript 09-ride",
    "format": "v5",
-   "code": "BceAze4OEwwyNQMCBhgDAAGDAgGHAgEAAwUAui4",
+   "code": "BceAze4OEwwyNQMCBhgDAAAAAQADBQClag",
    "reply": [
     "The password takes."
    ],
@@ -193,8 +193,6 @@
     "rep": 3,
     "steps": 53,
     "events": [
-     "burned_19_12",
-     "road_blocked_3_13",
      "routes_stirring",
      "war_started"
     ],
@@ -267,7 +265,7 @@
   {
    "label": "end of transcript 24-fallen-capital",
    "format": "v5",
-   "code": "BdmsvdQFDw0USQcAAQAAAroC7wIBAgYPDQIVARq6",
+   "code": "BdmsvdQFDw0UTAcBfgEAAAK6Au8CAQIGDw0CFQHfHQ",
    "reply": [
     "The password takes."
    ],
@@ -278,7 +276,7 @@
     "y": 13,
     "fatigue": 4,
     "rep": 1,
-    "steps": 73,
+    "steps": 76,
     "events": [
      "capital_fallen",
      "road_blocked_14_15",
@@ -286,8 +284,15 @@
      "routes_stirring",
      "war_started"
     ],
-    "dogHintCount": 0,
-    "hintTiles": [],
+    "dogHintCount": 6,
+    "hintTiles": [
+     71,
+     72,
+     73,
+     74,
+     75,
+     95
+    ],
     "npc": {
      "npc_r_15_13": {
       "familiarity": 2,
@@ -348,7 +353,7 @@
   {
    "label": "end of transcript 26-sick-town",
    "format": "v5",
-   "code": "BffSwakIAAA0SwcCDgMEAQABigMDlQGmAYsDAQIEAAAEJSEiaQ",
+   "code": "BffSwakIAAA0SwMCDgMEAQABigMCpgGNAwECBAAABCUhHR8",
    "reply": [
     "The password takes."
    ],
@@ -362,11 +367,9 @@
     "steps": 75,
     "events": [
      "burned_14_19",
-     "capital_fallen",
      "plague_0_0",
-     "road_blocked_15_19",
+     "road_blocked_17_19",
      "road_blocked_6_8",
-     "road_blocked_9_7",
      "routes_stirring",
      "war_started"
     ],

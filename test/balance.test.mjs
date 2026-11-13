@@ -32,10 +32,10 @@ test('balance: each target misses where it should', () => {
   assert.ok(!missed.some((t) => t.startsWith('Homecoming')), '50 of 1,000 is 5%, which is enough');
 });
 
-test('balance: the ask target is reported but not gated while it is open', () => {
-  assert.ok(OPEN.has('askDen1'));
+test('balance: no target is open, so a miss on the ask target fails the gate', () => {
+  assert.equal(OPEN.size, 0);
   const rows = { [TARGETS.askBot]: row(270, {}) };
   const c = check(rows, [100], 1000).find((x) => x.target.startsWith(TARGETS.askBot + ' on den 1'));
   assert.equal(c.ok, false);
-  assert.equal(c.open, true);
+  assert.ok(!c.open);
 });
